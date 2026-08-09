@@ -9,37 +9,23 @@
 package admin
 
 import (
-	"embed"
+	"context"
 	"fmt"
-	"html/template"
 	"io"
 	"net/http"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/a-h/templ"
 	"github.com/go-chi/chi/v5"
 
+	"odes/internal/admin/views"
 	"odes/internal/anon"
 	"odes/internal/model"
 	"odes/internal/service"
-	"odes/internal/stats"
 	"odes/web"
 )
-
-//go:embed templates/*.html
-var files embed.FS
-
-var funcs = template.FuncMap{
-	"pct":   func(f float64) string { return fmt.Sprintf("%.1f%%", f) },
-	"f1":    func(f float64) string { return fmt.Sprintf("%.1f", f) },
-	"date":  func(t time.Time) string { return t.Format("2006-01-02 15:04") },
-	"hex":   func(id anon.ID) string { return id.Hex() },
-	"inc":   func(i int) int { return i + 1 },
-	"lower": strings.ToLower,
-}
-
-var tmpl = template.Must(template.New("").Funcs(funcs).ParseFS(files, "templates/*.html"))
 
 type Handler struct {
 	Svc *service.Service
@@ -61,6 +47,9 @@ func (h *Handler) Routes() http.Handler {
 	// 不存在任何外部请求（CON-02 全程离线）。
 	r.Get("/static/admin.css", serveAsset("text/css; charset=utf-8", web.AdminCSS))
 	r.Get("/static/htmx.min.js", serveAsset("text/javascript; charset=utf-8", web.HTMX))
+	r.Get("/static/admin.js", serveAsset("text/javascript; charset=utf-8", web.AdminJS))
+	r.Get("/favicon.svg", serveAsset("image/svg+xml", web.Favicon))
+	r.Get("/favicon.ico", serveAsset("image/svg+xml", web.Favicon))
 
 	r.Get("/admin/login", h.loginPage)
 	r.Post("/admin/login", h.doLogin)
@@ -119,27 +108,32 @@ func (h *Handler) requireLogin(next http.Handler) http.Handler {
 	})
 }
 
-func (h *Handler) render(w http.ResponseWriter, name string, data map[string]any) {
-	if data == nil {
-		data = map[string]any{}
+// chrome 装配每页共用的外壳数据（启动自检告警、接入终端数）。
+func (h *Handler) chrome() views.Chrome {
+	c := views.Chrome{
+		SelfSigned: h.SelfSigned, CertOK: h.CertOK, CertMsg: h.CertMsg,
+		Warns: h.Preflight, DomainWarns: h.DomainWarns,
 	}
-	data["CertOK"] = h.CertOK
-	data["CertMsg"] = h.CertMsg
-	data["SelfSigned"] = h.SelfSigned
-	data["PreflightWarn"] = h.Preflight
-	data["DomainWarns"] = h.DomainWarns
 	if h.LeaseCount != nil {
-		data["Leases"] = h.LeaseCount()
+		c.Leases = h.LeaseCount()
 	}
+	return c
+}
+
+func (h *Handler) render(w http.ResponseWriter, r *http.Request, c templ.Component) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.Header().Set("Cache-Control", "no-store")
-	if err := tmpl.ExecuteTemplate(w, name, data); err != nil {
+	ctx := context.Background()
+	if r != nil {
+		ctx = r.Context()
+	}
+	if err := c.Render(ctx, w); err != nil {
 		http.Error(w, "渲染失败: "+err.Error(), http.StatusInternalServerError)
 	}
 }
 
 func (h *Handler) fail(w http.ResponseWriter, err error) {
-	h.render(w, "error.html", map[string]any{"Err": err.Error()})
+	h.render(w, nil, views.Error(h.chrome(), err.Error()))
 }
 
 // ── 首页 ────────────────────────────────────────────────────────────
@@ -150,18 +144,14 @@ func (h *Handler) home(w http.ResponseWriter, r *http.Request) {
 		h.fail(w, err)
 		return
 	}
-	type row struct {
-		P                 *model.Project
-		Submitted, Tokens int
-	}
-	var rows []row
+	var rows []views.HomeRow
 	for _, p := range ps {
 		n, _ := h.Svc.DB.CountAnswers(p.ID)
 		t, _, _ := h.Svc.DB.CountTokens(p.ID)
-		rows = append(rows, row{P: p, Submitted: n, Tokens: t})
+		rows = append(rows, views.HomeRow{P: p, Submitted: n, Tokens: t})
 	}
 	archives, _ := h.Svc.DB.ArchiveMetas()
-	h.render(w, "home.html", map[string]any{"Rows": rows, "Archives": archives})
+	h.render(w, r, views.Home(h.chrome(), rows, archives))
 }
 
 // progress 是 htmx 轮询的提交进度片段（FR-STA-010）。
@@ -197,13 +187,12 @@ func (h *Handler) project(w http.ResponseWriter, r *http.Request) {
 	trials, _ := h.Svc.DB.TrialTokens(p.ID)
 	logs, _ := h.Svc.DB.OpLogs(p.ID, 20)
 
-	h.render(w, "project.html", map[string]any{
-		"P": p, "F": f, "Items": f.ItemCount(),
-		"Tokens": total, "Used": used, "Submitted": submitted,
-		"Trials": trials, "Logs": logs,
-		"Checks": h.Svc.Preflight(p, h.CertOK, h.CertMsg),
-		"CanPub": p.Status == model.StatusDraft,
-	})
+	h.render(w, r, views.Project(h.chrome(), views.ProjectView{
+		P: p, F: f, Items: f.ItemCount(),
+		Tokens: total, Used: used, Submitted: submitted,
+		Trials: trials, Logs: logs,
+		Checks: h.Svc.Preflight(p, h.CertOK, h.CertMsg),
+	}))
 }
 
 func (h *Handler) load(r *http.Request) (*model.Project, *model.Form, error) {
@@ -253,20 +242,15 @@ func (h *Handler) printSheets(w http.ResponseWriter, r *http.Request) {
 		h.fail(w, err)
 		return
 	}
-	type sheet struct {
-		SSID, Code, URL string
-	}
-	var sheets []sheet
+	var sheets []views.PrintSheet
 	for _, t := range toks {
-		sheets = append(sheets, sheet{
+		sheets = append(sheets, views.PrintSheet{
 			SSID: fmt.Sprintf("KCZ-EVAL-%d", t.APIndex),
 			Code: t.ShortCode[:4] + "-" + t.ShortCode[4:],
 			URL:  fmt.Sprintf("https://%s:8443/e/%s", h.Svc.Domain, t.Value),
 		})
 	}
-	h.render(w, "print.html", map[string]any{
-		"P": p, "Sheets": sheets, "Entry": h.ShortEntry,
-	})
+	h.render(w, r, views.Print(h.chrome(), views.ProjectView{P: p}, sheets, h.ShortEntry))
 }
 
 // ── 状态迁移 ────────────────────────────────────────────────────────
@@ -311,9 +295,7 @@ func (h *Handler) stats(w http.ResponseWriter, r *http.Request) {
 	// 不可查看内容统计（FR-STA-020）。
 	if time.Now().Before(p.ResultOpenAt) && p.Status != model.StatusClosed {
 		submitted, _ := h.Svc.DB.CountAnswers(p.ID)
-		h.render(w, "stats_locked.html", map[string]any{
-			"P": p, "Submitted": submitted,
-		})
+		h.render(w, r, views.StatsLocked(h.chrome(), views.StatsView{P: p, Submitted: submitted}))
 		return
 	}
 	res, err := h.Svc.Stats(p.ID)
@@ -337,18 +319,8 @@ func (h *Handler) stats(w http.ResponseWriter, r *http.Request) {
 			tags = append(tags, s.Tag)
 		}
 	}
-	h.render(w, "stats.html", map[string]any{
-		"P": p, "R": res, "Tags": tags, "Texts": res.AllTexts(),
-		"GradeCells": gradeCells(res),
-	})
-}
-
-func gradeCells(r *stats.Result) []stats.Cell {
-	var out []stats.Cell
-	for _, c := range r.Cells {
-		if c.Kind == model.KindGrade {
-			out = append(out, c)
-		}
-	}
-	return out
+	h.render(w, r, views.Stats(h.chrome(), views.StatsView{
+		P: p, R: res, Submitted: res.Submitted, Tags: tags,
+		Texts: res.AllTexts(), GradeCells: views.GradeCells(res),
+	}))
 }

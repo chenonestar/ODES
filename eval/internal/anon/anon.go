@@ -9,7 +9,9 @@ package anon
 
 import (
 	"crypto/rand"
+	"database/sql/driver"
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"math/big"
 )
@@ -176,4 +178,51 @@ func U32() uint32 {
 		panic("anon: crypto/rand 不可用: " + err.Error())
 	}
 	return binary.BigEndian.Uint32(b[:])
+}
+
+// ── database/sql 接口 ───────────────────────────────────────────────
+//
+// 实现 Valuer / Scanner 后，sqlc 生成的代码可以直接以 anon.ID 作为主键
+// 类型收发，而不必退化成 interface{}。这正是选 sqlc 想要的编译期类型
+// 安全：拿一个 string 或 int 去当主键传，编译期就过不去。
+
+// Value 实现 driver.Valuer，主键以 16 字节 BLOB 落库。
+func (id ID) Value() (driver.Value, error) { return id[:], nil }
+
+// Scan 实现 sql.Scanner。
+func (id *ID) Scan(src any) error {
+	switch v := src.(type) {
+	case []byte:
+		if len(v) != 16 {
+			return fmt.Errorf("anon: 主键长度应为 16 字节，得到 %d", len(v))
+		}
+		copy(id[:], v)
+		return nil
+	case nil:
+		return errors.New("anon: 主键为 NULL")
+	}
+	return fmt.Errorf("anon: 无法从 %T 读取主键", src)
+}
+
+// NullID 用于可空的主键列（如 op_log.project_id：擦除后仍要能写日志，
+// 那时已经没有项目了）。
+type NullID struct {
+	ID    ID
+	Valid bool
+}
+
+func (n NullID) Value() (driver.Value, error) {
+	if !n.Valid {
+		return nil, nil
+	}
+	return n.ID[:], nil
+}
+
+func (n *NullID) Scan(src any) error {
+	if src == nil {
+		n.ID, n.Valid = ID{}, false
+		return nil
+	}
+	n.Valid = true
+	return n.ID.Scan(src)
 }

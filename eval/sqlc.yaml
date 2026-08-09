@@ -1,0 +1,29 @@
+# sqlc 配置（HLD 技术选型表：SQL 层用 sqlc，编译期类型安全）
+#
+# 生成物 internal/store/gen/ **已提交进仓库**，因此 go build / go run 不需要
+# 安装 sqlc。只有改动 query/*.sql 或 schema 时才需要重新生成：
+#
+#     go generate ./internal/store
+#
+# 不用 ORM 的理由见 ADR-006：多数 ORM 的默认行为——自增主键、自动时间戳、
+# 软删除标记——每一条都会在作答记录表上制造匿名性泄露，靠"记得关掉"防守
+# 不可靠。sqlc 从手写 SQL 生成代码，表结构由迁移脚本显式定义，
+# 使"没有时间字段"成为可被 CI 断言的事实。
+version: "2"
+sql:
+  - engine: "sqlite"
+    schema: "migrations/00001_init.sql"
+    queries: "internal/store/query"
+    gen:
+      go:
+        package: "gen"
+        out: "internal/store/gen"
+        emit_empty_slices: true
+        overrides:
+          # 主键映射为 anon.ID 而非 interface{}——后者等于没有类型安全，
+          # 与选 sqlc 的目的正相反。anon.ID 已实现 Valuer / Scanner。
+          - db_type: "BLOB(16)"
+            go_type: "odes/internal/anon.ID"
+          - db_type: "BLOB(16)"
+            nullable: true
+            go_type: "odes/internal/anon.NullID"

@@ -1,0 +1,166 @@
+package views
+
+templ Stats(c Chrome, v StatsView) {
+	@Layout(c) {
+		<h1 class="text-xl font-bold mb-3">{ v.R.ProjectName } · 统计</h1>
+		<div class="stats stats-horizontal bg-base-100 border border-base-300 w-full overflow-x-auto mb-4">
+			<div class="stat">
+				<div class="stat-title">应参加人数（分母）</div>
+				<div class="stat-value text-2xl">{ itoa(v.R.ExpectedCount) }</div>
+			</div>
+			<div class="stat">
+				<div class="stat-title">实提交</div>
+				<div class="stat-value text-2xl">{ itoa(v.R.Submitted) }</div>
+			</div>
+			<div class="stat">
+				<div class="stat-title">提交率</div>
+				<div class="stat-value text-2xl">{ pct(v.R.SubmitRate) }</div>
+			</div>
+			<div class="stat">
+				<div class="stat-title">纸质补录</div>
+				<div class="stat-value text-2xl">{ itoa(v.R.PaperEntry) }</div>
+			</div>
+		</div>
+
+		<div role="alert" class="alert mb-4 items-start">
+			<div class="text-sm">
+				<b>口径</b>：全部比率的分母为<b>应参加人数</b>（标准口径）。未提交者视同弃权、计入分母。
+				四档比率之和 + 弃权率 ≡ 100.0%。<br/>
+				实到口径（分母 = { itoa(v.R.Submitted) }）仅供核对，不进正式报告主表。
+			</div>
+		</div>
+
+		if len(v.Tags) > 0 {
+			<div class="flex gap-2 items-center flex-wrap mb-3">
+				<span class="text-sm opacity-70">按分组筛选：</span>
+				<a class="btn btn-xs" href="?">全部</a>
+				for _, t := range v.Tags {
+					<a class="btn btn-xs" href={ templ.SafeURL("?tag=" + t) }>{ t }</a>
+				}
+				<span class="text-xs opacity-60">分组内对象数 &lt; 3 时不单独统计</span>
+			</div>
+		}
+
+		<h2 class="text-base font-semibold border-l-4 border-seal pl-2 mb-2">等级题主报表</h2>
+		<div class="overflow-x-auto">
+			<table class="table table-sm table-zebra bg-base-100">
+				<thead>
+					<tr>
+						<th rowspan="2">测评对象 / 题目</th>
+						<th colspan="5" class="text-center">票数</th>
+						<th colspan="2" class="text-center">主要指标</th>
+						<th rowspan="2" class="text-center">加权得分</th>
+					</tr>
+					<tr>
+						<th class="text-center">优秀</th><th class="text-center">称职</th>
+						<th class="text-center">基本称职</th><th class="text-center">不称职</th>
+						<th class="text-center">弃权</th>
+						<th class="text-center">优秀率</th><th class="text-center">称职以上率</th>
+					</tr>
+				</thead>
+				<tbody>
+					for _, cell := range v.GradeCells {
+						<tr class="hover">
+							<td>{ cell.SubjectName }<span class="mx-2 opacity-40">/</span>{ cell.QuestionName }</td>
+							<td class="text-center">{ itoa(cell.Counts[0]) }</td>
+							<td class="text-center">{ itoa(cell.Counts[1]) }</td>
+							<td class="text-center">{ itoa(cell.Counts[2]) }</td>
+							<td class="text-center text-error font-semibold">{ itoa(cell.Counts[3]) }</td>
+							<td class="text-center">{ itoa(cell.Abstain) }</td>
+							<td class="text-center font-bold">{ pct(cell.RateExcellent) }</td>
+							<td class="text-center">{ pct(cell.RateCompAbove) }</td>
+							<td class="text-center opacity-60">{ f1(cell.Weighted) }</td>
+						</tr>
+					}
+				</tbody>
+			</table>
+		</div>
+		<p class="text-xs opacity-60 mt-2">加权得分为<b>辅助排序指标</b>，不作为结论表述。</p>
+
+		if len(v.Texts) > 0 {
+			<h2 class="text-base font-semibold border-l-4 border-seal pl-2 mt-8 mb-2">评语汇总</h2>
+			<p class="text-xs opacity-60 mb-2">顺序为每次读取时重新随机排列，与提交先后无关。</p>
+			<div class="overflow-x-auto">
+				<table class="table table-sm bg-base-100">
+					<tbody>
+						for _, t := range v.Texts {
+							<tr><td class="text-sm">{ t }</td></tr>
+						}
+					</tbody>
+				</table>
+			</div>
+		}
+
+		<div class="flex gap-2 mt-6 flex-wrap">
+			<a class="btn btn-sm btn-primary" href={ templ.SafeURL(projURL(v.P.ID) + "/export") }>正式统计报告</a>
+			<a class="btn btn-sm" href={ templ.SafeURL(projURL(v.P.ID) + "/export?kind=csv") }>明细 CSV</a>
+			<a class="btn btn-sm" href={ templ.SafeURL(projURL(v.P.ID)) }>返回项目</a>
+		</div>
+	}
+}
+
+templ StatsLocked(c Chrome, v StatsView) {
+	@Layout(c) {
+		<h1 class="text-xl font-bold mb-3">{ v.P.Name } · 统计</h1>
+		<div role="alert" class="alert alert-warning mb-4 items-start">
+			<div>
+				<b>结果尚未开放</b>
+				<div class="text-sm">
+					测评进行中仅可查看提交进度，不可查看内容统计（FR-STA-020）。<br/>
+					结果开放时间：{ date(v.P.ResultOpenAt) }
+				</div>
+			</div>
+		</div>
+		<div class="stats bg-base-100 border border-base-300">
+			<div class="stat">
+				<div class="stat-title">已提交</div>
+				<div class="stat-value text-2xl"
+					hx-get={ projURL(v.P.ID) + "/progress" } hx-trigger="every 10s">
+					{ itoa(v.Submitted) }
+				</div>
+			</div>
+			<div class="stat">
+				<div class="stat-title">应参加</div>
+				<div class="stat-value text-2xl">{ itoa(v.P.ExpectedCount) }</div>
+			</div>
+		</div>
+		<div class="mt-4"><a class="btn btn-sm" href={ templ.SafeURL(projURL(v.P.ID)) }>返回项目</a></div>
+	}
+}
+
+templ Trial(c Chrome, v ProjectView, domain string) {
+	@Layout(c) {
+		<h1 class="text-xl font-bold mb-3">{ v.P.Name } · 试填验证</h1>
+		<div role="alert" class="alert mb-4 items-start">
+			<div class="text-sm">
+				试填数据写入独立数据区，<b>不进统计、不进导出、不计入提交数</b>，发布时自动清空。<br/>
+				现场组网后应先用试填令牌走通完整流程再发布。
+			</div>
+		</div>
+		<p class="text-sm mb-3">
+			已试填 <b>{ itoa(v.Submitted) }</b> 次。发布前置校验 PC-07 要求至少 1 次。
+		</p>
+		<h2 class="text-base font-semibold border-l-4 border-seal pl-2 mb-2">试填令牌（可反复使用不失效）</h2>
+		<div class="overflow-x-auto">
+			<table class="table table-sm bg-base-100">
+				<thead><tr><th class="w-12">#</th><th>作答链接</th></tr></thead>
+				<tbody>
+					for i, t := range v.Trials {
+						<tr>
+							<td>{ itoa(i + 1) }</td>
+							<td>
+								<a class="link link-primary font-mono text-sm" target="_blank"
+									href={ templ.SafeURL("/e/" + t) }>/e/{ t }</a>
+							</td>
+						</tr>
+					}
+				</tbody>
+			</table>
+		</div>
+		<p class="text-xs opacity-60 mt-2">
+			开发机上直接点击链接即可；现场用手机访问
+			<code class="kbd kbd-sm">https://{ domain }:8443/e/&lt;令牌&gt;</code>。
+		</p>
+		<div class="mt-4"><a class="btn btn-sm" href={ templ.SafeURL(projURL(v.P.ID)) }>返回项目</a></div>
+	}
+}

@@ -21,6 +21,7 @@ import (
 	"github.com/pressly/goose/v3"
 
 	"odes/internal/anon"
+	"odes/internal/store/gen"
 	"odes/migrations"
 
 	_ "modernc.org/sqlite" // 纯 Go 实现，无 CGO（CON-07）
@@ -221,8 +222,7 @@ func (db *DB) Checkpoint() error {
 // ── meta 表 ─────────────────────────────────────────────────────────
 
 func (db *DB) GetMeta(key string) ([]byte, error) {
-	var v []byte
-	err := db.QueryRow(`SELECT value FROM meta WHERE key=?`, key).Scan(&v)
+	v, err := db.q().GetMeta(context.Background(), key)
 	if err == sql.ErrNoRows {
 		return nil, nil
 	}
@@ -230,9 +230,7 @@ func (db *DB) GetMeta(key string) ([]byte, error) {
 }
 
 func (db *DB) SetMeta(key string, val []byte) error {
-	_, err := db.Exec(`INSERT INTO meta(key,value) VALUES(?,?)
-		ON CONFLICT(key) DO UPDATE SET value=excluded.value`, key, val)
-	return err
+	return db.q().SetMeta(context.Background(), gen.SetMetaParams{Key: key, Value: val})
 }
 
 // ── 操作日志（FR-SYS-050）───────────────────────────────────────────
@@ -240,15 +238,14 @@ func (db *DB) SetMeta(key string, val []byte) error {
 // 日志不得记录任何令牌值、IP 地址、作答内容。detail 字段由调用方保证。
 
 func (db *DB) Log(projectID *anon.ID, action, result, detail string) error {
-	var pid any
+	pid := anon.NullID{}
 	if projectID != nil {
-		pid = projectID.Bytes()
+		pid = anon.NullID{ID: *projectID, Valid: true}
 	}
-	id := anon.NewID()
-	_, err := db.Exec(`INSERT INTO op_log(id,project_id,action,result,detail,created_at)
-		VALUES(?,?,?,?,?,?)`, id.Bytes(), pid, action, result, detail,
-		time.Now().Format(time.RFC3339))
-	return err
+	return db.q().InsertOpLog(context.Background(), gen.InsertOpLogParams{
+		ID: anon.NewID(), ProjectID: pid, Action: action, Result: result,
+		Detail: sql.NullString{String: detail, Valid: detail != ""},
+		CreatedAt: time.Now().Format(time.RFC3339)})
 }
 
 // OpLogEntry 供管理端展示操作日志。
@@ -260,20 +257,15 @@ type OpLogEntry struct {
 }
 
 func (db *DB) OpLogs(projectID anon.ID, limit int) ([]OpLogEntry, error) {
-	rows, err := db.Query(`SELECT action,result,COALESCE(detail,''),created_at
-		FROM op_log WHERE project_id=? ORDER BY created_at DESC LIMIT ?`,
-		projectID.Bytes(), limit)
+	rows, err := db.q().ListOpLogs(context.Background(), gen.ListOpLogsParams{
+		ProjectID: anon.NullID{ID: projectID, Valid: true}, Limit: int64(limit)})
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
-	var out []OpLogEntry
-	for rows.Next() {
-		var e OpLogEntry
-		if err := rows.Scan(&e.Action, &e.Result, &e.Detail, &e.CreatedAt); err != nil {
-			return nil, err
-		}
-		out = append(out, e)
+	out := make([]OpLogEntry, 0, len(rows))
+	for _, r := range rows {
+		out = append(out, OpLogEntry{
+			Action: r.Action, Result: r.Result, Detail: r.Detail, CreatedAt: r.CreatedAt})
 	}
-	return out, rows.Err()
+	return out, nil
 }

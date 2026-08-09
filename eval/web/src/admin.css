@@ -8,7 +8,7 @@
 @import "tailwindcss";
 @import "../vendor/daisyui.css";
 
-@source "../../internal/admin/templates";
+@source "../../internal/admin/views";
 
 @theme {
   --color-seal: #9e2b25;

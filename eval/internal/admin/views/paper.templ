@@ -1,0 +1,132 @@
+package views
+
+import "odes/internal/model"
+
+templ Paper(c Chrome, v ProjectView) {
+	@Layout(c) {
+		<h1 class="text-xl font-bold mb-3">{ v.P.Name } · 纸质密封补录</h1>
+		<div role="alert" class="alert alert-warning mb-4 items-start">
+			<div class="text-sm">
+				<b>本环节的双人约束由工作程序与纸质签字保障，系统不做技术验证。</b><br/>
+				按规程：密封件须由考察组两人当场拆封，一人念、一人录入；录完后纸质原件由两人签字、
+				装回密封袋，随考察材料归档。<br/>
+				系统只把份数与复核人姓名记入操作日志，<b>不在作答记录上打任何标记</b>——补录记录与
+				在线提交完全同构、不可区分，否则补录者会构成一个可识别的小群体，而不在场者名单是
+				管理员知道的。
+			</div>
+		</div>
+		<form method="post" action={ templ.SafeURL(projURL(v.P.ID) + "/paper") }>
+			for _, s := range v.F.Subjects {
+				<h2 class="text-base font-semibold border-l-4 border-seal pl-2 mt-6 mb-2">
+					{ s.Name }
+					if s.Duty != "" {
+						<span class="opacity-60 font-normal text-sm ml-3">{ s.Duty }</span>
+					}
+				</h2>
+				for _, g := range v.F.Groups {
+					for _, q := range g.Questions {
+						@paperQuestion(v, q, hex(s.ID))
+					}
+				}
+			}
+			<div class="card bg-base-100 border border-base-300 mt-4">
+				<div class="card-body gap-3">
+					<label class="label cursor-pointer justify-start gap-2">
+						<input type="checkbox" name="confirm" class="checkbox checkbox-sm"/>
+						<span class="label-text font-medium">确认：密封件由双人当场拆封、内容已双人核对</span>
+					</label>
+					<div class="flex gap-2 items-center">
+						<span class="text-sm">复核人姓名</span>
+						<input name="reviewer" placeholder="必填" class="input input-bordered input-sm w-48"/>
+					</div>
+					<div class="flex gap-2">
+						<button class="btn btn-sm btn-primary">提交补录</button>
+						<a class="btn btn-sm" href={ templ.SafeURL(projURL(v.P.ID)) }>取消</a>
+					</div>
+				</div>
+			</div>
+		</form>
+	}
+}
+
+templ paperQuestion(v ProjectView, q model.Question, sid string) {
+	{{ key := hex(q.ID) + ":" + sid }}
+	<div class="card bg-base-100 border border-base-300 mb-2">
+		<div class="card-body py-3 gap-2">
+			<div class="font-medium text-sm">
+				{ q.Title }
+				if q.Required {
+					<span class="text-error">*</span>
+				}
+			</div>
+			<div class="flex gap-3 flex-wrap">
+				switch q.Kind {
+					case model.KindGrade:
+						for i, g := range v.F.Grades {
+							<label class="label cursor-pointer gap-1.5 py-0">
+								<input type="radio" name={ key } value={ itoa(i) } class="radio radio-sm"/>
+								<span class="label-text text-sm">{ g }</span>
+							</label>
+						}
+						<label class="label cursor-pointer gap-1.5 py-0">
+							<input type="radio" name={ key } value="-1" class="radio radio-sm"/>
+							<span class="label-text text-sm opacity-60">弃权</span>
+						</label>
+					case model.KindText:
+						<textarea name={ key } rows="2"
+							class="textarea textarea-bordered w-full text-sm"></textarea>
+					default:
+						for _, o := range q.Options {
+							<label class="label cursor-pointer gap-1.5 py-0">
+								<input type="radio" name={ key } value={ hex(o.ID) } class="radio radio-sm"/>
+								<span class="label-text text-sm">{ o.Label }</span>
+							</label>
+						}
+				}
+			</div>
+		</div>
+	</div>
+}
+
+templ Print(c Chrome, v ProjectView, sheets []PrintSheet, entry string) {
+	@Layout(c) {
+		<h1 class="text-xl font-bold mb-3 no-print">{ v.P.Name } · 令牌单</h1>
+		<div role="alert" class="alert mb-3 no-print items-start">
+			<div class="text-sm">
+				共 <b>{ itoa(len(sheets)) }</b> 张，已按 SSID 分组。
+				<b>令牌集合在生成与打印前均已随机重排</b>，打印顺序与名单顺序、生成顺序均无关。<br/>
+				令牌单上不含任何人员姓名、编号或序号。分发时请随机发放，不按座次、不按名单顺序。
+			</div>
+		</div>
+		<div class="flex gap-2 mb-4 no-print">
+			<button class="btn btn-sm btn-primary" onclick="window.print()">打印</button>
+			<a class="btn btn-sm" href={ templ.SafeURL(projURL(v.P.ID)) }>返回项目</a>
+		</div>
+		for _, s := range sheets {
+			<div class="sheet card bg-base-100 border border-base-300 mb-4">
+				<div class="card-body items-center text-center gap-2 py-8">
+					<div class="text-base font-semibold">{ v.P.Name }</div>
+					<div class="divider my-1"></div>
+					<div class="text-sm opacity-60">第一步　连接无线网络</div>
+					<div class="text-3xl font-bold tracking-wider">{ s.SSID }</div>
+					<div class="text-sm opacity-60">网络密码：现场公布</div>
+					<div class="text-sm opacity-60 mt-4">第二步　扫描二维码或输入下方编号</div>
+					<div class="border-2 border-dashed border-base-300 rounded-box px-10 py-8 text-xs opacity-50">
+						二维码占位<br/>（本地二维码生成尚未实现，见 README）
+					</div>
+					<div class="text-4xl font-bold tracking-[0.15em] border border-base-300 rounded-box px-8 py-3 mt-2">
+						{ s.Code }
+					</div>
+					<div class="text-[10px] opacity-50 break-all max-w-md">{ s.URL }</div>
+					<div class="divider my-1"></div>
+					<div class="text-left text-xs opacity-70 leading-relaxed w-full max-w-md">
+						· 本单一人一份，仅可提交一次，提交后自动失效<br/>
+						· 手机提示"无法上网"属正常现象，选择"仍然连接"即可<br/>
+						· 扫码不成功？浏览器打开 { entry } 输入上方编号<br/>
+						· 填写完毕请将本单投入会场出口回收箱
+					</div>
+				</div>
+			</div>
+		}
+	}
+}

@@ -7,6 +7,7 @@ import (
 	"sync"
 	"time"
 
+	"odes/internal/admin/views"
 	"odes/internal/crypto"
 )
 
@@ -110,7 +111,7 @@ func (e errLocked) Error() string {
 // ── 登录处理器 ──────────────────────────────────────────────────────
 
 func (h *Handler) loginPage(w http.ResponseWriter, r *http.Request) {
-	h.render(w, "login.html", map[string]any{})
+	h.render(w, r, views.Login(""))
 }
 
 func (h *Handler) doLogin(w http.ResponseWriter, r *http.Request) {
@@ -120,7 +121,7 @@ func (h *Handler) doLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err := h.SessionMgr.Login(w, r.FormValue("password"), meta); err != nil {
-		h.render(w, "login.html", map[string]any{"Err": err.Error()})
+		h.render(w, r, views.Login(err.Error()))
 		return
 	}
 	http.Redirect(w, r, "/admin/", http.StatusSeeOther)

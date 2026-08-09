@@ -7,3 +7,5 @@ eval
 eval.exe
 tools/.tailwindcss
 tools/.tailwindcss.exe
+
+# sqlc / templ 的生成物是**提交**进仓库的（见 README），此处不忽略。

@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"strings"
 
+	"odes/internal/admin/views"
 	"odes/internal/anon"
 	"odes/internal/crypto"
 	"odes/internal/export"
@@ -24,7 +25,7 @@ func (h *Handler) paperForm(w http.ResponseWriter, r *http.Request) {
 		h.fail(w, err)
 		return
 	}
-	h.render(w, "paper.html", map[string]any{"P": p, "F": f})
+	h.render(w, r, views.Paper(h.chrome(), views.ProjectView{P: p, F: f}))
 }
 
 func (h *Handler) paperSubmit(w http.ResponseWriter, r *http.Request) {
@@ -93,9 +94,8 @@ func (h *Handler) trial(w http.ResponseWriter, r *http.Request) {
 	}
 	toks, _ := h.Svc.DB.TrialTokens(p.ID)
 	n, _ := h.Svc.DB.CountTrialAnswers(p.ID)
-	h.render(w, "trial.html", map[string]any{
-		"P": p, "Toks": toks, "Count": n, "Domain": h.Svc.Domain,
-	})
+	h.render(w, r, views.Trial(h.chrome(),
+		views.ProjectView{P: p, Trials: toks, Submitted: n}, h.Svc.Domain))
 }
 
 // ── 导出（FR-EXP-010~013）───────────────────────────────────────────

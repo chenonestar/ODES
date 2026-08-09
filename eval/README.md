@@ -116,13 +116,16 @@ internal/
   anon/            随机主键、令牌、短码、输出重排　★所有对外输出必经
   crypto/          KEK/DEK 双层密钥、AES-256-GCM 字段加密
   model/           领域实体　★匿名区两个结构体不得有时间字段
-  store/           数据访问，手写 SQL，只做事务性读写不做聚合
+  store/           数据访问，sqlc 生成代码 + 薄封装，只做事务性读写不做聚合
+    query/         sqlc 的查询源文件
+    gen/           sqlc 生成物（已提交）
   service/         业务编排　★唯一可以开启事务的层
   stats/           内存聚合管线　★全部口径规则的唯一归属地
   export/          CSV / HTML 报告
   wipe/            VACUUM + 覆写空闲空间 + 残留校验
   httpd/           路由装配，管理端与作答端分属两个监听器
-  admin/           管理端服务端渲染
+  admin/           管理端处理器
+    views/         templ 视图与生成物（已提交）
   evalui/          作答端自包含单页
   netsvc/          DHCP / DNS / 门户探测应答（由技术尖刺①移入）
   config/          config.toml 解析、证书装载与 CK-01~05
@@ -149,19 +152,29 @@ tools/buildcss/    CSS 构建器（Go 程序，三平台通用）
 | Tailwind v4 + daisyUI 5 | ✅ 已回滚，见「构建 CSS」 |
 | htmx | ✅ 已回滚，管理端进度轮询用 `hx-get` |
 | Alpine.js | ✅ 已回滚，作答端内联 **CSP 构建**（无需 `unsafe-eval`） |
-| sqlc | ⏳ 待回滚，目前是手写 SQL + `database/sql` |
-| templ | ⏳ 待回滚，目前是 `html/template` |
+| sqlc | ✅ 已回滚，主键映射为强类型 `anon.ID` |
+| templ | ✅ 已回滚，视图在 `internal/admin/views/*.templ` |
 
-最后两项待回滚是有代价的，值得写明：sqlc 提供的**编译期类型安全**、templ
-提供的**编译期模板检查**，手写 SQL 与 `html/template` 都没有。开发过程中就
-撞上过一次——模板变量作用域写错，`html/template` 直到程序启动才 panic，
-用 templ 的话那是编译错误。
+六项全部回滚完毕。
 
 第三方依赖：`modernc.org/sqlite`（CON-07 要求的纯 Go 驱动）、
 `golang.org/x/crypto`（Argon2id）、`github.com/go-chi/chi/v5`、
-`github.com/pressly/goose/v3`，以及 `golang.org/x/term`（口令输入不回显）。
-前端资源 daisyUI / htmx / Alpine 以文件形式 vendored 在 `web/vendor/`，
-不经 npm。
+`github.com/pressly/goose/v3`、`github.com/a-h/templ`，以及
+`golang.org/x/term`（口令输入不回显）。前端资源 daisyUI / htmx / Alpine
+以文件形式 vendored 在 `web/vendor/`，不经 npm。
+
+### 代码生成
+
+sqlc 与 templ 的生成物**已提交进仓库**，因此 `go build` / `go run` 不需要
+安装任何代码生成工具。只有改动 `internal/store/query/*.sql`、迁移脚本或
+`*.templ` 时才需要重新生成：
+
+```
+go generate ./...
+```
+
+两个都是 Go 工具，用 `go run pkg@version` 直接跑，版本锁在 `go:generate`
+指令里，不需要预先安装、也不需要 shell。
 
 ### 尚未实现
 

@@ -12,6 +12,7 @@ package evalui
 
 import (
 	_ "embed"
+	"encoding/base64"
 	"encoding/json"
 	"html/template"
 	"net/http"
@@ -129,6 +130,10 @@ func Render(w http.ResponseWriter, p *model.Project, f *model.Form,
 		"FormJSON": template.JS(safe),
 		"CSS":      template.CSS(web.EvalCSS),
 		"Alpine":   template.JS(web.Alpine),
+		// data URI：作答页是自包含单页，不为一个图标再发一次请求；
+		// CSP 的 img-src 已允许 data:
+		"Favicon": template.URL("data:image/svg+xml;base64," +
+			base64.StdEncoding.EncodeToString([]byte(web.Favicon))),
 	})
 }
 

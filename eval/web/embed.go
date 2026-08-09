@@ -21,6 +21,15 @@ var EvalCSS string
 //go:embed vendor/htmx.min.js
 var HTMX string
 
+//go:embed src/admin-extra.js
+var AdminJS string
+
+// Favicon 用 SVG：单文件、可缩放、几百字节，不需要额外工具生成多尺寸 ico。
+// 不给 favicon 时浏览器会自己去请求 /favicon.ico 并吃一个 404。
+//
+//go:embed src/favicon.svg
+var Favicon string
+
 // Alpine 用的是 **CSP 构建**：表达式只能是属性名或方法名，不使用
 // new Function()，因此作答页不必在 CSP 里开 'unsafe-eval'。
 //
