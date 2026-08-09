@@ -23,6 +23,7 @@ import (
 	"odes/internal/admin/views"
 	"odes/internal/anon"
 	"odes/internal/model"
+	"odes/internal/qr"
 	"odes/internal/service"
 	"odes/web"
 )
@@ -247,10 +248,19 @@ func (h *Handler) printSheets(w http.ResponseWriter, r *http.Request) {
 	}
 	var sheets []views.PrintSheet
 	for _, t := range toks {
+		url := fmt.Sprintf("https://%s:8443/e/%s", h.Svc.Domain, t.Value)
+		// 二维码生成失败不能静默：那张单子发下去参评人员扫不出来，
+		// 而现场没人会去核对每一张。宁可整页报错也不出半成品。
+		code, err := qr.DataURI(url)
+		if err != nil {
+			h.fail(w, fmt.Errorf("生成二维码失败，令牌单未输出：%w", err))
+			return
+		}
 		sheets = append(sheets, views.PrintSheet{
 			SSID: fmt.Sprintf("KCZ-EVAL-%d", t.APIndex),
 			Code: t.ShortCode[:4] + "-" + t.ShortCode[4:],
-			URL:  fmt.Sprintf("https://%s:8443/e/%s", h.Svc.Domain, t.Value),
+			URL:  url,
+			QR:   code,
 		})
 	}
 	h.render(w, r, views.Print(h.chrome(), views.ProjectView{P: p}, sheets, h.ShortEntry))
@@ -325,5 +335,7 @@ func (h *Handler) stats(w http.ResponseWriter, r *http.Request) {
 	h.render(w, r, views.Stats(h.chrome(), views.StatsView{
 		P: p, R: res, Submitted: res.Submitted, Tags: tags,
 		Texts: res.AllTexts(), GradeCells: views.GradeCells(res),
+		ScoreCells: views.ScoreCells(res), OptCells: views.OptionCells(res),
+		Matrix: views.BuildMatrix(res),
 	}))
 }

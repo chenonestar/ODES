@@ -30,8 +30,11 @@ func StatsCSV(w io.Writer, r *stats.Result) error {
 	cw := csv.NewWriter(w)
 	defer cw.Flush()
 
+	// 列序与统计页、正式报告保持一致：三个出口摆出来的表必须能逐列对上，
+	// 否则核对的人得先在心里做一次列映射，那正是口径事故的温床。
 	head := []string{"测评对象", "题目", "优秀", "称职", "基本称职", "不称职", "弃权",
-		"优秀率", "称职以上率", "基本称职率", "不称职率", "弃权率", "加权得分"}
+		"优秀率", "称职率", "基本称职率", "不称职率", "弃权率", "合计",
+		"称职以上率", "加权得分"}
 	if err := cw.Write(head); err != nil {
 		return err
 	}
@@ -43,9 +46,9 @@ func StatsCSV(w io.Writer, r *stats.Result) error {
 			safe(c.SubjectName), safe(c.QuestionName),
 			itoa(c.Counts[0]), itoa(c.Counts[1]), itoa(c.Counts[2]), itoa(c.Counts[3]),
 			itoa(c.Abstain),
-			pct(c.RateExcellent), pct(c.RateCompAbove),
-			pct(c.Rates[2]), pct(c.Rates[3]), pct(c.RateAbst),
-			fmt.Sprintf("%.1f", c.Weighted),
+			pct(c.Rates[0]), pct(c.Rates[1]), pct(c.Rates[2]), pct(c.Rates[3]),
+			pct(c.RateAbst), pct(c.RateTotal),
+			pct(c.RateCompAbove), fmt.Sprintf("%.1f", c.Weighted),
 		}
 		if err := cw.Write(row); err != nil {
 			return err
@@ -239,15 +242,22 @@ font-size:12px;color:#5c6675;text-align:center}
 <h2>二、等级测评结果</h2>
 <table>
 <tr><th rowspan="2" class="l">测评对象 / 题目</th><th colspan="5">票数</th>
-<th colspan="2">主要指标</th><th rowspan="2">加权<br>得分</th></tr>
+<th colspan="6">比率（分母为应参加人数）</th>
+<th colspan="2">主要指标</th></tr>
 <tr><th>优秀</th><th>称职</th><th>基本称职</th><th>不称职</th><th>弃权</th>
-<th>优秀率</th><th>称职以上率</th></tr>
+<th>优秀率</th><th>称职率</th><th>基本称职率</th><th>不称职率</th><th>弃权率</th>
+<th class="aux">合计</th>
+<th>称职以上率</th><th>加权<br>得分</th></tr>
 {{range .Cells}}
 <tr><td class="l">{{.SubjectName}}　{{.QuestionName}}</td>
 <td>{{index .Counts 0}}</td><td>{{index .Counts 1}}</td>
 <td>{{index .Counts 2}}</td><td class="bad">{{index .Counts 3}}</td>
 <td>{{.Abstain}}</td>
-<td><b>{{pct .RateExcellent}}</b></td><td>{{pct .RateCompAbove}}</td>
+<td><b>{{pct (index .Rates 0)}}</b></td><td>{{pct (index .Rates 1)}}</td>
+<td>{{pct (index .Rates 2)}}</td><td class="bad">{{pct (index .Rates 3)}}</td>
+<td>{{pct .RateAbst}}</td>
+<td class="aux">{{pct .RateTotal}}</td>
+<td>{{pct .RateCompAbove}}</td>
 <td class="aux">{{f1 .Weighted}}</td></tr>
 {{end}}
 </table>

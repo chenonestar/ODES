@@ -111,10 +111,17 @@ templ Print(c Chrome, v ProjectView, sheets []PrintSheet, entry string) {
 					<div class="text-3xl font-bold tracking-wider">{ s.SSID }</div>
 					<div class="text-sm opacity-60">网络密码：现场公布</div>
 					<div class="text-sm opacity-60 mt-4">第二步　扫描二维码或输入下方编号</div>
-					<div class="border-2 border-dashed border-base-300 rounded-box px-10 py-8 text-xs opacity-50">
-						二维码占位<br/>（本地二维码生成尚未实现，见 README）
-					</div>
-					<div class="text-4xl font-bold tracking-[0.15em] border border-base-300 rounded-box px-8 py-3 mt-2">
+					if s.QR != "" {
+						// 边长 ≥8cm 是 LLD 4.3 的硬要求，打印样式里锁死；
+						// image-rendering: pixelated 防止浏览器把模块边缘
+						// 平滑成灰边，那会显著拉低扫码成功率。
+						<img class="qr" src={ s.QR } alt="作答二维码" width="1024" height="1024"/>
+					} else {
+						<div class="border-2 border-dashed border-error rounded-box px-10 py-8 text-xs text-error">
+							二维码生成失败，请勿使用本单
+						</div>
+					}
+					<div class="code text-4xl font-bold tracking-[0.15em] border border-base-300 rounded-box px-8 py-3 mt-2">
 						{ s.Code }
 					</div>
 					<div class="text-[10px] opacity-50 break-all max-w-md">{ s.URL }</div>

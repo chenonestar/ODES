@@ -17,3 +17,55 @@
   --color-rule: #ddd7cb;
   --color-slate: #5c6675;
 }
+
+/* ── 令牌单打印样式（LLD 4.3）────────────────────────────────────
+ *
+ * 这些类此前在 paper.templ 里用了但从未定义过，等于没有打印样式：
+ * 打印出来会连管理端导航、提示框、按钮一起印上去，也不保证一人一张。
+ * 令牌单是这个页面**唯一**的用途，硬性尺寸要求写在这里。
+ *
+ * 三条硬要求：A4 纵向一人一张、二维码边长 ≥8cm、短码 ≥36pt。 */
+
+.qr {
+  width: 8cm;
+  height: 8cm;
+  /* 防止浏览器把模块边缘平滑成灰边——会明显拉低扫码成功率 */
+  image-rendering: pixelated;
+}
+
+.sheet .code {
+  font-size: 40pt;          /* ≥36pt */
+  letter-spacing: 0.15em;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+@media print {
+  @page { size: A4 portrait; margin: 12mm; }
+
+  .no-print { display: none !important; }
+
+  /* 打印时去掉屏幕上的底色与阴影：整版铺色既费墨，
+   * 也会让二维码周围的静区变灰，影响识别。 */
+  html, body { background: #fff !important; }
+
+  .sheet {
+    break-after: page;
+    page-break-after: always;   /* 兼容旧引擎 */
+    break-inside: avoid;
+    page-break-inside: avoid;
+    border: none !important;
+    box-shadow: none !important;
+    background: #fff !important;
+    margin: 0 !important;
+    /* 一人一张：撑满整页，避免两张挤在一页上 */
+    min-height: 250mm;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .sheet:last-child { break-after: auto; page-break-after: auto; }
+
+  /* 二维码周围必须留白（静区），否则边缘紧贴文字会扫不出 */
+  .qr { margin: 4mm auto; }
+}

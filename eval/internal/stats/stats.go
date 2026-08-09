@@ -51,6 +51,12 @@ type Cell struct {
 	Rates    [NumGrades]float64
 	RateAbst float64
 
+	// RateTotal 是四档 + 弃权的合计，恒为 100.0。
+	// 由本包算好而不是让出口自己相加：一旦让 PDF、Excel、统计页各自
+	// 求和，浮点相加的舍入差异就会让同一份数据在三处显示出不同的合计，
+	// 而这正是 HLD 7.3 要求口径单点归属所要防的事。
+	RateTotal float64
+
 	// 主指标（SRS 6.4）
 	RateExcellent float64 // 优秀率
 	RateCompAbove float64 // 称职以上率
@@ -284,6 +290,7 @@ func finalize(p *model.Project, f *model.Form, q *model.Question, sid anon.ID,
 				"口径恒等式不成立：题目「%s」四档与弃权比率合计 %.1f%%，应为 100.0%%",
 				q.Title, tenthToFloat(sumTenth))
 		}
+		cell.RateTotal = tenthToFloat(sumTenth)
 	}
 	return &cell, nil
 }

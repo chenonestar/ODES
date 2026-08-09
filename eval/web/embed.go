@@ -10,7 +10,9 @@
 //     的 20KB 预算约束；管理端在回环上，可以用完整的 daisyUI。
 package web
 
-import _ "embed"
+import (
+	"embed"
+)
 
 //go:embed dist/admin.css
 var AdminCSS string
@@ -35,3 +37,27 @@ var Favicon string
 //
 //go:embed vendor/alpine-csp.min.js
 var Alpine string
+
+// ── 报告字体 ────────────────────────────────────────────────────────
+//
+// 正式报告（PDF）需要一份完整覆盖的中文字库，按 LLD 13.1 / ADR-009
+// 不做子集化——干部姓名里有生僻字，子集化会在最不该出错的地方印出方框。
+//
+// 字体文件**不入库**（约 20MB，授权与来源由使用单位自行确认），
+// 放置方法见 web/fonts/README.md。
+//
+// 这里 embed 的是**目录**而不是 fonts/report.ttf：后者在文件缺席时
+// 会让整个仓库编译不过，等于强迫每个只想跑一下系统的人先去找一份
+// 20MB 字体。embed 目录则缺席即为空，其余功能照常。
+//
+//go:embed fonts
+var fontFS embed.FS
+
+// ReportFont 返回 PDF 报告字体。ok=false 表示尚未放置字体文件。
+func ReportFont() (b []byte, ok bool) {
+	data, err := fontFS.ReadFile("fonts/report.ttf")
+	if err != nil || len(data) == 0 {
+		return nil, false
+	}
+	return data, true
+}

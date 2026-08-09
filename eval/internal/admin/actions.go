@@ -1,6 +1,7 @@
 package admin
 
 import (
+	"bytes"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -11,6 +12,7 @@ import (
 	"odes/internal/crypto"
 	"odes/internal/export"
 	"odes/internal/model"
+	"odes/web"
 )
 
 // ── 纸质密封补录（FR-ANS-090 / LLD 5.3）─────────────────────────────
@@ -100,6 +102,10 @@ func (h *Handler) trial(w http.ResponseWriter, r *http.Request) {
 
 // ── 导出（FR-EXP-010~013）───────────────────────────────────────────
 
+// xlsxMIME 是 xlsx 的正式 MIME。写全称而不是 application/octet-stream：
+// 政务机器上后者常被浏览器或安全软件当作可疑下载拦下来。
+const xlsxMIME = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+
 func (h *Handler) export(w http.ResponseWriter, r *http.Request) {
 	p, f, err := h.load(r)
 	if err != nil {
@@ -119,6 +125,15 @@ func (h *Handler) export(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Disposition", `attachment; filename="stats.csv"`)
 		_ = export.StatsCSV(w, res)
 
+	case "xlsx":
+		// 逐项统计表 xlsx，按题型分 Sheet（FR-EXP-011）
+		w.Header().Set("Content-Type", xlsxMIME)
+		w.Header().Set("Content-Disposition", `attachment; filename="stats.xlsx"`)
+		if err := export.StatsXLSX(w, res); err != nil {
+			h.fail(w, err)
+			return
+		}
+
 	case "raw":
 		// 原始匿名数据（FR-EXP-012）。导出前统一重排，编号现场生成。
 		recs, err := h.Svc.DB.LoadAnswers(p.ID)
@@ -134,6 +149,43 @@ func (h *Handler) export(w http.ResponseWriter, r *http.Request) {
 		}
 		_ = h.Svc.DB.Log(&p.ID, "export_raw", "ok",
 			fmt.Sprintf("导出原始匿名数据 %d 份（顺序已重排，编号现场生成）", len(recs)))
+
+	case "rawxlsx":
+		recs, err := h.Svc.DB.LoadAnswers(p.ID)
+		if err != nil {
+			h.fail(w, err)
+			return
+		}
+		w.Header().Set("Content-Type", xlsxMIME)
+		w.Header().Set("Content-Disposition", `attachment; filename="raw-anonymous.xlsx"`)
+		if err := export.RawXLSX(w, p, f, recs, h.Svc.Vault); err != nil {
+			h.fail(w, err)
+			return
+		}
+		_ = h.Svc.DB.Log(&p.ID, "export_raw", "ok",
+			fmt.Sprintf("导出原始匿名数据 %d 份 xlsx（顺序已重排，编号现场生成）", len(recs)))
+
+	case "tokens":
+		// 令牌清单（FR-TKN-034）：只有短码与 AP，不含任何人员信息
+		toks, err := h.Svc.DB.Tokens(p.ID, true)
+		if err != nil {
+			h.fail(w, err)
+			return
+		}
+		var rows []export.TokenListRow
+		for _, t := range toks {
+			rows = append(rows, export.TokenListRow{
+				ShortCode: t.ShortCode, APIndex: t.APIndex, Spare: t.IsSpare,
+			})
+		}
+		w.Header().Set("Content-Type", xlsxMIME)
+		w.Header().Set("Content-Disposition", `attachment; filename="token-list.xlsx"`)
+		if err := export.TokenListXLSX(w, p.Name, rows); err != nil {
+			h.fail(w, err)
+			return
+		}
+		_ = h.Svc.DB.Log(&p.ID, "export_token_list", "ok",
+			fmt.Sprintf("导出令牌清单 %d 条（不含人员信息）", len(rows)))
 
 	case "archive":
 		// 加密归档包（FR-EXP-013 / FR-SYS-030）
@@ -155,8 +207,30 @@ func (h *Handler) export(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("X-Archive-SHA256", sum)
 		_, _ = w.Write(blob)
 
+	case "pdf":
+		// 正式统计报告（PDF，ADR-009）。字体不入库，缺字体时给出可操作提示。
+		//
+		// 先写进内存再落地：ReportPDF 在缺字时会中途拒绝，若直接写
+		// ResponseWriter，浏览器已经拿到 200 与半个 PDF，管理员看到的是
+		// 一个打不开的文件而不是一句能照做的提示。
+		font, ok := web.ReportFont()
+		if !ok {
+			h.fail(w, export.ErrNoFont)
+			return
+		}
+		var buf bytes.Buffer
+		if err := export.ReportPDF(&buf, p, res,
+			strings.ToUpper(p.ID.Hex()[:8]), font); err != nil {
+			h.fail(w, err)
+			return
+		}
+		w.Header().Set("Content-Type", "application/pdf")
+		w.Header().Set("Content-Disposition", `attachment; filename="report.pdf"`)
+		_, _ = w.Write(buf.Bytes())
+
 	default:
-		// 正式统计报告（HTML）。PDF 版见 README「尚未实现」一节。
+		// 正式统计报告（HTML）。HTML 始终可用，不依赖字体——
+		// PDF 缺字体时它就是兜底出口。
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		_ = export.ReportHTML(w, p, res)
 	}

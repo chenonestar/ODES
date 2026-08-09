@@ -12,3 +12,8 @@
 /tools/.tailwindcss.exe
 
 # sqlc / templ 的生成物是**提交**进仓库的（见 README），此处不忽略。
+
+# 报告字体约 20MB，不入库；用 web/fonts/README.md 里的说明放置
+/web/fonts/*.ttf
+/web/fonts/*.otf
+/web/fonts/*.ttc

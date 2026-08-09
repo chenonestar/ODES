@@ -70,8 +70,9 @@ go run ./cmd/eval -dev -seed -password 'Test-Passw0rd'
 6. **截止** — 点「手动截止」。这一步会执行 `wal_checkpoint(TRUNCATE)` + `VACUUM`，
    是匿名化的必需步骤，不是可选优化。
 7. **看统计** — 四档票数、优秀率、称职以上率、加权得分。分母是**应参加人数**。
-8. **导出** — 统计报告（HTML）、明细 CSV、原始匿名数据 CSV。
+8. **导出** — 统计报告 PDF / HTML、明细 xlsx / CSV、原始匿名数据 xlsx / CSV。
    连点两次原始数据导出，你会看到记录顺序和编号都变了——这是刻意设计。
+   PDF 需要先按 `web/fonts/README.md` 放字体，未放置时会给出提示。
 9. **归档擦除** — 先下载加密归档包（记下 SHA 前 8 位），勾选确认、填入校验值，
    执行擦除。之后项目数据全部消失，只剩 `archive_meta` 里的核验编号。
 
@@ -149,7 +150,8 @@ internal/
     gen/           sqlc 生成物（已提交）
   service/         业务编排　★唯一可以开启事务的层
   stats/           内存聚合管线　★全部口径规则的唯一归属地
-  export/          CSV / HTML 报告
+  export/          CSV / xlsx / HTML / PDF 四个出口，口径全部取自 stats
+  qr/              二维码本地生成　★不调任何外部服务
   wipe/            VACUUM + 覆写空闲空间 + 残留校验
   httpd/           路由装配，管理端与作答端分属两个监听器
   admin/           管理端处理器
@@ -162,7 +164,9 @@ web/
   src/             Tailwind 入口（admin.css / eval.css）
   vendor/          daisyUI / htmx / Alpine，随仓库提交，不经 npm
   dist/            构建产物，已提交并 embed
+  fonts/           PDF 报告字体（不入库，见该目录 README）
 tools/buildcss/    CSS 构建器（Go 程序，三平台通用）
+tools/checkfont/   报告字体自查：glyf 还是 CFF
 ```
 
 依赖方向：`admin / evalui → service → store / crypto / stats / anon`，反向依赖禁止。
@@ -188,8 +192,11 @@ tools/buildcss/    CSS 构建器（Go 程序，三平台通用）
 第三方依赖：`modernc.org/sqlite`（CON-07 要求的纯 Go 驱动）、
 `golang.org/x/crypto`（Argon2id）、`github.com/go-chi/chi/v5`、
 `github.com/pressly/goose/v3`、`github.com/a-h/templ`，以及
-`golang.org/x/term`（口令输入不回显）。前端资源 daisyUI / htmx / Alpine
-以文件形式 vendored 在 `web/vendor/`，不经 npm。
+`golang.org/x/term`（口令输入不回显）、`github.com/xuri/excelize/v2`（HLD 2.1
+指定）、`github.com/signintech/gopdf`（ADR-009 指定）、
+`github.com/skip2/go-qrcode`（二维码本地生成，文档未指定库，选它是因为
+纯 Go、零依赖、编码是固定标准不需要持续维护）。前端资源 daisyUI / htmx /
+Alpine 以文件形式 vendored 在 `web/vendor/`，不经 npm。
 
 ### 代码生成
 
@@ -208,12 +215,57 @@ go generate ./...
 
 | 项 | 现状 | 对应文档 |
 |---|---|---|
-| PDF 报告 | 产出 HTML 报告，口径说明页与页脚核验编号都在 | ADR-009：gopdf + 内嵌完整思源宋体 |
-| Excel (xlsx) | 产出 CSV（带 BOM，Excel 直接可开，已做公式注入防护） | FR-EXP-011：excelize |
-| 二维码 | 令牌单上是占位框，短码与 URL 可用 | FR-TKN-032/033：本地生成，不调外部 API |
 | 测评表设计器 | 只能通过 `-seed` 或代码建题 | FR-FRM-020~023：拖拽排序、题组管理 |
 | 名单 Excel 导入 | 只有代码接口 | FR-TKN-010 |
-| 冷备接管 | 快照已按 5 分钟落盘，接管是手工流程 | NFR-REL-021 |
+
+冷备接管（NFR-REL-021）此前列在这里是**记错了**：文档写的就是一套手工处置
+流程（拔网线 → 拷快照 → 设网卡 → 启动输口令 → 试填验证 → 通告），
+系统侧要做的只有"快照按 5 分钟落盘"，那一条早已实现。没有待办。
+
+### 二维码（FR-TKN-032 / FR-TKN-033）
+
+令牌单上是真二维码，`skip2/go-qrcode` 本地生成、不调任何外部服务。
+内联为 data URI 而不是另开 `/qr?token=...` 端点——后者会让令牌值出现在
+几十上百条请求 URL 里，留在浏览器历史与访问日志中。
+
+打印样式此前**完全缺失**：`no-print`、`.sheet` 这些类在模板里用了但从未
+定义过，打印出来会连管理端导航、提示框、按钮一起印上，也不保证一人一张。
+现已补齐，并把 LLD 4.3 的三条硬要求写进 CSS：A4 纵向一人一张、二维码边长
+≥8cm、短码 ≥36pt。浏览器实测 8.0cm / 40.0pt，二维码用 jsQR 解码后与令牌单
+上印的 URL 逐字相符。
+
+### Excel 导出（FR-EXP-011 / FR-EXP-012 / FR-TKN-034）
+
+`excelize`，按 HLD 2.1 的选型。三个出口：
+
+| 导出 | 内容 |
+|---|---|
+| 明细 xlsx | 按题型分 Sheet：测评概况 / 等级题 / 打分题 / 选择题 / 评语汇总 |
+| 原始数据 xlsx | 与 CSV 同源同规则，导出前重排、编号现场生成 |
+| 令牌清单 xlsx | 只有短码与 AP 序号，**不含任何人员信息、也不含令牌值** |
+
+CSV 一并保留：政务机器上 Excel 版本参差，xlsx 偶尔打不开，而散会后取不出
+数据是不可接受的。两者数据同源，列序也逐列对齐（有用例守着）。
+
+### PDF 报告（ADR-009）
+
+`gopdf` + 内嵌完整中文字库，含口径说明页（FR-EXP-020）与每页页脚核验编号
+（FR-EXP-021）。**字体不入库**，放置方法见 `web/fonts/README.md`；缺字体时
+PDF 导出给出可照做的提示并拒绝出报告，HTML / xlsx / CSV 三个出口不受影响。
+
+两件在实现过程中查证出来、文档里没写的事：
+
+1. **gopdf 只认 glyf 轮廓，不支持 CFF。** 而思源宋体与 Noto Serif CJK 的
+   官方 `.otf` 都是 CFF 轮廓——照 ADR-009 的字面直接放思源宋体 `.otf`
+   会加载失败。`go run ./tools/checkfont <文件>` 可当场自查是哪一种。
+2. **gopdf 遇到字库里没有的字是直接丢掉**：不报错、不画方框，报告上只是
+   少几个字。实测用日文字库排中文报告，"测评项目"会印成"目"、"统计报告"
+   印成"告"，而拿到报告的人只会以为是打印机的问题。姓名少一个字的正式
+   报告会被原样上报，没有任何人能发现。
+
+   因此排版**之前**先做一次字形覆盖检查，缺字即拒绝出报告并列出缺了哪些字。
+   检查基于实际要打印的内容而不是常用字表——出问题的恰恰是姓名里的生僻字，
+   它们按定义不在常用表里。
 
 ### 超阈值时的算术验证（FR-ANS-032）
 

@@ -137,6 +137,7 @@ templ Project(c Chrome, v ProjectView) {
 					<a class="btn btn-sm" href={ templ.SafeURL(projURL(v.P.ID) + "/trial") }>试填验证</a>
 					<a class="btn btn-sm" href={ templ.SafeURL(projURL(v.P.ID) + "/paper") }>纸质密封补录</a>
 					<a class="btn btn-sm" href={ templ.SafeURL(projURL(v.P.ID) + "/stats") }>查看统计</a>
+					<a class="btn btn-sm" href={ templ.SafeURL(projURL(v.P.ID) + "/export?kind=tokens") }>令牌清单 xlsx</a>
 				</div>
 				<div class="flex gap-2 flex-wrap items-center">
 					if v.P.Status == "draft" {
@@ -163,9 +164,12 @@ templ Project(c Chrome, v ProjectView) {
 						</form>
 					}
 					if v.P.Status == "closed" {
-						<a class="btn btn-sm" href={ templ.SafeURL(projURL(v.P.ID) + "/export") }>统计报告</a>
+						<a class="btn btn-sm btn-primary" href={ templ.SafeURL(projURL(v.P.ID) + "/export?kind=pdf") }>统计报告 PDF</a>
+						<a class="btn btn-sm" href={ templ.SafeURL(projURL(v.P.ID) + "/export") }>统计报告 HTML</a>
+						<a class="btn btn-sm" href={ templ.SafeURL(projURL(v.P.ID) + "/export?kind=xlsx") }>明细 xlsx</a>
 						<a class="btn btn-sm" href={ templ.SafeURL(projURL(v.P.ID) + "/export?kind=csv") }>明细 CSV</a>
-						<a class="btn btn-sm" href={ templ.SafeURL(projURL(v.P.ID) + "/export?kind=raw") }>原始匿名数据</a>
+						<a class="btn btn-sm" href={ templ.SafeURL(projURL(v.P.ID) + "/export?kind=rawxlsx") }>原始数据 xlsx</a>
+						<a class="btn btn-sm" href={ templ.SafeURL(projURL(v.P.ID) + "/export?kind=raw") }>原始数据 CSV</a>
 					}
 				</div>
 			</div>

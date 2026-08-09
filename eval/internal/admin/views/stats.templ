@@ -48,14 +48,19 @@ templ Stats(c Chrome, v StatsView) {
 					<tr>
 						<th rowspan="2">测评对象 / 题目</th>
 						<th colspan="5" class="text-center">票数</th>
+						<th colspan="6" class="text-center">比率（分母为应参加人数）</th>
 						<th colspan="2" class="text-center">主要指标</th>
-						<th rowspan="2" class="text-center">加权得分</th>
 					</tr>
 					<tr>
 						<th class="text-center">优秀</th><th class="text-center">称职</th>
 						<th class="text-center">基本称职</th><th class="text-center">不称职</th>
 						<th class="text-center">弃权</th>
-						<th class="text-center">优秀率</th><th class="text-center">称职以上率</th>
+						<th class="text-center">优秀率</th><th class="text-center">称职率</th>
+						<th class="text-center">基本称职率</th><th class="text-center">不称职率</th>
+						<th class="text-center">弃权率</th>
+						<th class="text-center opacity-60">合计</th>
+						<th class="text-center">称职以上率</th>
+						<th class="text-center">加权得分</th>
 					</tr>
 				</thead>
 				<tbody>
@@ -67,7 +72,14 @@ templ Stats(c Chrome, v StatsView) {
 							<td class="text-center">{ itoa(cell.Counts[2]) }</td>
 							<td class="text-center text-error font-semibold">{ itoa(cell.Counts[3]) }</td>
 							<td class="text-center">{ itoa(cell.Abstain) }</td>
-							<td class="text-center font-bold">{ pct(cell.RateExcellent) }</td>
+							<td class="text-center font-bold">{ pct(cell.Rates[0]) }</td>
+							<td class="text-center">{ pct(cell.Rates[1]) }</td>
+							<td class="text-center">{ pct(cell.Rates[2]) }</td>
+							<td class="text-center text-error">{ pct(cell.Rates[3]) }</td>
+							<td class="text-center">{ pct(cell.RateAbst) }</td>
+							// 合计恒为 100.0%，写出来是为了让口径说明里那句承诺
+							// 在本页当场可核对，而不是只能到 CSV 里去验。
+							<td class="text-center opacity-60">{ pct(cell.RateTotal) }</td>
 							<td class="text-center">{ pct(cell.RateCompAbove) }</td>
 							<td class="text-center opacity-60">{ f1(cell.Weighted) }</td>
 						</tr>
@@ -76,6 +88,100 @@ templ Stats(c Chrome, v StatsView) {
 			</table>
 		</div>
 		<p class="text-xs opacity-60 mt-2">加权得分为<b>辅助排序指标</b>，不作为结论表述。</p>
+
+		if len(v.Matrix.Subjects) > 0 && len(v.Matrix.Questions) > 1 {
+			<h2 class="text-base font-semibold border-l-4 border-seal pl-2 mt-8 mb-2">优秀率汇总矩阵</h2>
+			<p class="text-xs opacity-60 mb-2">
+				行为测评对象、列为题目，取值为<b>优秀率</b>。主报表一行一个组合，
+				纵向比不出"谁在哪一项上明显偏低"；这张表是研判时真正用的那张。
+			</p>
+			<div class="overflow-x-auto">
+				<table class="table table-sm table-zebra bg-base-100">
+					<thead>
+						<tr>
+							<th>测评对象</th>
+							for _, q := range v.Matrix.Questions {
+								<th class="text-center">{ q }</th>
+							}
+						</tr>
+					</thead>
+					<tbody>
+						for i, s := range v.Matrix.Subjects {
+							<tr class="hover">
+								<td class="font-medium whitespace-nowrap">{ s }</td>
+								for _, cell := range v.Matrix.Rates[i] {
+									<td class="text-center">{ cell }</td>
+								}
+							</tr>
+						}
+					</tbody>
+				</table>
+			</div>
+		}
+
+		if len(v.ScoreCells) > 0 {
+			<h2 class="text-base font-semibold border-l-4 border-seal pl-2 mt-8 mb-2">打分题</h2>
+			<div class="overflow-x-auto">
+				<table class="table table-sm table-zebra bg-base-100">
+					<thead>
+						<tr>
+							<th>测评对象 / 题目</th>
+							<th class="text-center">平均分</th><th class="text-center">中位数</th>
+							<th class="text-center">最低</th><th class="text-center">最高</th>
+						</tr>
+					</thead>
+					<tbody>
+						for _, c := range v.ScoreCells {
+							<tr class="hover">
+								<td>{ c.SubjectName }<span class="mx-2 opacity-40">/</span>{ c.QuestionName }</td>
+								<td class="text-center font-bold">{ f1(c.ScoreAvg) }</td>
+								<td class="text-center">{ f1(c.ScoreMedian) }</td>
+								<td class="text-center">{ itoa(c.ScoreMin) }</td>
+								<td class="text-center">{ itoa(c.ScoreMax) }</td>
+							</tr>
+						}
+					</tbody>
+				</table>
+			</div>
+			<p class="text-xs opacity-60 mt-2">
+				打分题同时给出中位数与极值：只看平均分时，一两个极端分会把结论带偏。
+			</p>
+		}
+
+		if len(v.OptCells) > 0 {
+			<h2 class="text-base font-semibold border-l-4 border-seal pl-2 mt-8 mb-2">选择题</h2>
+			<div class="overflow-x-auto">
+				<table class="table table-sm table-zebra bg-base-100">
+					<thead>
+						<tr>
+							<th>测评对象 / 题目</th><th>选项</th>
+							<th class="text-center">票数</th><th class="text-center">占实提交</th>
+						</tr>
+					</thead>
+					<tbody>
+						for _, c := range v.OptCells {
+							for i, row := range optionRows(c, v.R.Submitted) {
+								<tr class="hover">
+									if i == 0 {
+										<td>{ c.SubjectName }<span class="mx-2 opacity-40">/</span>{ c.QuestionName }</td>
+									} else {
+										<td class="opacity-30">〃</td>
+									}
+									<td>{ row.Label }</td>
+									<td class="text-center">{ itoa(row.Count) }</td>
+									<td class="text-center">{ row.Rate }</td>
+								</tr>
+							}
+						}
+					</tbody>
+				</table>
+			</div>
+			<p class="text-xs opacity-60 mt-2">
+				选择题分母为<b>实提交份数</b>而非应参加人数：选择题多为选填，
+				未作答不等同于选了某一项，用应参加人数会把所有比例系统性压低。
+				多选题各项之和可超过 100%。
+			</p>
+		}
 
 		if len(v.Texts) > 0 {
 			<h2 class="text-base font-semibold border-l-4 border-seal pl-2 mt-8 mb-2">评语汇总</h2>
@@ -92,7 +198,9 @@ templ Stats(c Chrome, v StatsView) {
 		}
 
 		<div class="flex gap-2 mt-6 flex-wrap">
-			<a class="btn btn-sm btn-primary" href={ templ.SafeURL(projURL(v.P.ID) + "/export") }>正式统计报告</a>
+			<a class="btn btn-sm btn-primary" href={ templ.SafeURL(projURL(v.P.ID) + "/export?kind=pdf") }>正式统计报告 PDF</a>
+			<a class="btn btn-sm" href={ templ.SafeURL(projURL(v.P.ID) + "/export") }>报告 HTML</a>
+			<a class="btn btn-sm" href={ templ.SafeURL(projURL(v.P.ID) + "/export?kind=xlsx") }>明细 xlsx</a>
 			<a class="btn btn-sm" href={ templ.SafeURL(projURL(v.P.ID) + "/export?kind=csv") }>明细 CSV</a>
 			<a class="btn btn-sm" href={ templ.SafeURL(projURL(v.P.ID)) }>返回项目</a>
 		</div>

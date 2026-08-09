@@ -23,20 +23,21 @@ import (
 // "唯一可以开启事务的层"这条约束就没了着落，而提交事务的正确性
 // （ADR-004）正建立在它之上。
 var layer = map[string]int{
-	"anon":   0,
-	"crypto": 0,
-	"model":  0,
-	"config": 0,
-	"netsvc": 0,
-	"wipe":   1,
-	"store":  1,
-	"stats":  1,
-	"export": 2,
+	"anon":    0,
+	"crypto":  0,
+	"model":   0,
+	"config":  0,
+	"netsvc":  0,
+	"qr":      0, // 纯计算，无 I/O、不依赖任何内部包
+	"wipe":    1,
+	"store":   1,
+	"stats":   1,
+	"export":  2,
 	"service": 3,
-	"admin":  4,
-	"evalui": 4,
-	"httpd":  4,
-	"arch":   9, // 本包，只在测试里存在
+	"admin":   4,
+	"evalui":  4,
+	"httpd":   4,
+	"arch":    9, // 本包，只在测试里存在
 }
 
 func TestDependencyDirection(t *testing.T) {
