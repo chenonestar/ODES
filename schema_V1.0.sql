@@ -10,6 +10,13 @@
 -- ============================================================
 
 PRAGMA journal_mode = WAL;
+
+-- ⚠ foreign_keys 是**连接级**开关，不随数据库文件持久化。
+--   本行只对执行本脚本的这一条连接生效，应用侧每条新连接都必须重新打开，
+--   否则全部 ON DELETE CASCADE 静默失效——而安全擦除（LLD 10.3「按
+--   project_id 级联删除」）直接依赖它，失效后会留下孤儿作答记录。
+--   modernc.org/sqlite 的做法：DSN 中加 ?_pragma=foreign_keys(1)
+--   （或在 sql.DB 的连接初始化钩子里执行 PRAGMA foreign_keys = ON）。
 PRAGMA foreign_keys = ON;
 
 -- ── 元数据与密钥 ────────────────────────────────────────────
@@ -34,6 +41,11 @@ CREATE TABLE project (
     paper_entry_count  INTEGER NOT NULL DEFAULT 0,  -- 纸质补录份数（只记数量，不标记具体记录）
     ap_count           INTEGER NOT NULL DEFAULT 1 CHECK (ap_count BETWEEN 1 AND 6),
     grade_scores       TEXT    NOT NULL DEFAULT '[100,80,60,0]',  -- 档位赋分
+    -- 令牌单打印留痕：供发布前置校验 PC-06「令牌单已打印」判定
+    printed_at         TEXT,
+    -- 生成令牌时的 domain.primary 快照。令牌单一经打印其 URL 即固化，
+    -- 此后配置若与本列不符，启动自检须报错（LLD 12.3 二维码一致性约束）
+    token_domain       TEXT,
     created_at         TEXT    NOT NULL,
     published_at       TEXT,
     closed_at          TEXT,

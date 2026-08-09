@@ -24,7 +24,7 @@ type PortalStats struct {
 
 type Portal struct {
 	ServerIP  net.IP
-	CertHost  string // 192-168-66-1.nip.io
+	CertHost  string // 证书域名，来自 config.toml 的 domain.primary
 	HTTPSPort int
 	Stats     *PortalStats
 	Log       func(format string, a ...any)

@@ -253,8 +253,8 @@ func (s *DHCPServer) build(msgType byte, xid, flags []byte, mac net.HardwareAddr
 		b = appendOpt(b, optLeaseTime, lt)
 		b = appendOpt(b, optSubnetMask, []byte(s.Mask))
 		b = appendOpt(b, optRouter, s.ServerIP.To4())
-		// 关键：DNS 必须指向本机，否则手机会用运营商 DNS 解析
-		// nip.io 域名并拿到外网结果，导致离线场景下解析失败。
+		// 关键：DNS 必须指向本机。测评网络不通外网，只有本机内置 DNS
+		// 才能解析证书域名与各厂商探测域名；指向别处则解析必然失败。
 		b = appendOpt(b, optDNS, s.ServerIP.To4())
 	}
 	b = append(b, optEnd)
