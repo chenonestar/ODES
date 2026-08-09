@@ -322,3 +322,60 @@ func spearman(v []float64) float64 {
 	}
 	return 1 - 6*sumD2/(n*(n*n-1))
 }
+
+// S-2 回归：事务必须是 IMMEDIATE（LLD 5.1 的 BEGIN IMMEDIATE）。
+//
+// DEFERRED 下 BEGIN 不取写锁，写锁要到第一条写语句才去抢；并发提交时
+// 后到者拿到的是 SQLITE_BUSY 而不是被排队串行化。
+func TestTxIsImmediate(t *testing.T) {
+	db := openTest(t)
+	tx, err := db.BeginTx(context.Background(), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer tx.Rollback()
+
+	// 另一条连接尝试写。IMMEDIATE 下上面的 BEGIN 已持写锁，这里应失败。
+	done := make(chan error, 1)
+	go func() { _, e := db.Exec(`CREATE TABLE probe(x)`); done <- e }()
+	if err := <-done; err == nil {
+		t.Fatal("BEGIN 未持有写锁：当前是 DEFERRED，与 LLD 5.1 的 BEGIN IMMEDIATE 不符；" +
+			"请检查 Open() 的 DSN 是否带 _txlock=immediate")
+	}
+}
+
+// S-3 回归：擦除项目时操作日志必须一并删除（SRS 5.3）。
+//
+// op_log.project_id 没有外键，级联带不走它，必须显式删除。
+func TestPurgeAlsoRemovesOpLog(t *testing.T) {
+	db := openTest(t)
+	pid := anon.NewID()
+	if _, err := db.Exec(`INSERT INTO project
+		(id,name,status,start_at,end_at,result_open_at,expected_count,created_at)
+		VALUES(?,?,'closed','2026-01-01T00:00:00Z','2026-01-02T00:00:00Z',
+		       '2026-01-02T00:00:00Z',10,'2026-01-01T00:00:00Z')`,
+		pid.Bytes(), "擦除测试"); err != nil {
+		t.Fatal(err)
+	}
+	for i := 0; i < 3; i++ {
+		if err := db.Log(&pid, "test", "ok", "留痕"); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if logs, _ := db.OpLogs(pid, 10); len(logs) != 3 {
+		t.Fatalf("准备阶段应有 3 条日志，得到 %d", len(logs))
+	}
+
+	if err := db.Tx(context.Background(), func(tx *sql.Tx) error {
+		return db.PurgeProject(tx, pid)
+	}); err != nil {
+		t.Fatal(err)
+	}
+	logs, err := db.OpLogs(pid, 10)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(logs) != 0 {
+		t.Errorf("擦除后仍残留 %d 条操作日志：SRS 5.3 要求日志随项目擦除", len(logs))
+	}
+}

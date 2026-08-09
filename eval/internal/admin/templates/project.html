@@ -54,7 +54,7 @@
 <div class="card warn">
 <p>归档 = 导出加密包 + <b>本机数据擦除</b>。擦除不可逆，请先下载归档包并确认已保存至指定介质。</p>
 <div class="row">
-  <input id="apass" type="password" placeholder="归档口令（须与登录口令不同，≥8 位）" size="34">
+  <input id="apass" type="password" placeholder="归档口令（须与登录口令不同，≥10 位、含两类字符）" size="34">
   <button class="btn" onclick="dl()">下载加密归档包</button>
 </div>
 <form method="post" action="/admin/projects/{{hex .P.ID}}/archive" class="row"
@@ -69,7 +69,7 @@
 保留旧页面副本，应用层无法控制——更高密级要求须依靠介质级措施。</p>
 </div>
 <script>function dl(){var p=document.getElementById('apass').value;
-if(p.length<8){alert('归档口令至少 8 位');return;}
+if(p.length<10){alert("归档口令至少 10 位，且须含两类以上字符");return;}
 location.href='/admin/projects/{{hex .P.ID}}/export?kind=archive&pass='+encodeURIComponent(p);}</script>
 {{end}}
 

@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"odes/internal/anon"
+	"odes/internal/crypto"
 	"odes/internal/export"
 	"odes/internal/model"
 )
@@ -136,9 +137,11 @@ func (h *Handler) export(w http.ResponseWriter, r *http.Request) {
 
 	case "archive":
 		// 加密归档包（FR-EXP-013 / FR-SYS-030）
+		// 口令强度由 crypto 包单点判定，不在这里另写一套阈值——
+		// 两处不一致会让管理员填了个"看着合规"的口令却被底层拒绝。
 		pass := r.URL.Query().Get("pass")
-		if len(pass) < 8 {
-			h.fail(w, fmt.Errorf("归档口令至少 8 位，且须与登录口令不同"))
+		if err := crypto.CheckPasswordStrength(pass); err != nil {
+			h.fail(w, fmt.Errorf("归档口令不合要求：%w（归档口令须与登录口令不同，单独登记保管）", err))
 			return
 		}
 		blob, sum, err := h.Svc.BuildArchive(p.ID, pass)

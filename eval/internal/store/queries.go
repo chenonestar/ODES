@@ -616,7 +616,15 @@ func (db *DB) DeleteRoster(projectID anon.ID) error {
 // ── 归档与擦除 ──────────────────────────────────────────────────────
 
 func (db *DB) PurgeProject(tx *sql.Tx, projectID anon.ID) error {
-	// 外键的 ON DELETE CASCADE 会带走 question/subject/token/answer_record 等。
+	// op_log.project_id **没有**外键（archive_meta 同理），因为这两张表要在
+	// 项目行消失后仍可写入。级联带不走它们，必须显式删除——SRS 5.3 规定
+	// 操作日志随项目擦除。漏掉这一条，擦除后旧项目的全部操作记录仍留在库里。
+	if _, err := tx.Exec(`DELETE FROM op_log WHERE project_id=?`, projectID.Bytes()); err != nil {
+		return err
+	}
+	// 其余关联数据由外键的 ON DELETE CASCADE 带走：question / question_group /
+	// question_option / subject / question_subject / roster / token /
+	// answer_record / trial_token / trial_answer。
 	// 这依赖连接开启了 foreign_keys —— 见 Open() 中 DSN 的说明。
 	_, err := tx.Exec(`DELETE FROM project WHERE id=?`, projectID.Bytes())
 	return err

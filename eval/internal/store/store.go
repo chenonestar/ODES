@@ -41,7 +41,14 @@ type DB struct {
 // 连接生效，之后 database/sql 从池里取的新连接默认是关闭的。漏掉这个参数，
 // 全部 ON DELETE CASCADE 会静默失效，而安全擦除的级联删除直接依赖它。
 func Open(path string) (*DB, error) {
-	dsn := path + "?_pragma=foreign_keys(1)&_pragma=journal_mode(WAL)&_pragma=busy_timeout(5000)"
+	// _txlock=immediate 对应 LLD 5.1 的 BEGIN IMMEDIATE。
+	//
+	// database/sql 的 BeginTx 默认发的是 BEGIN DEFERRED，那样写锁要到第一条
+	// 写语句才去获取；并发提交时后到者不是被排队串行化，而是在升级锁的瞬间
+	// 拿到 SQLITE_BUSY。加上这个参数后 BEGIN 立刻取写锁，并发写按到达顺序
+	// 排队，这正是提交事务需要的语义。
+	dsn := path + "?_txlock=immediate" +
+		"&_pragma=foreign_keys(1)&_pragma=journal_mode(WAL)&_pragma=busy_timeout(5000)"
 	sdb, err := sql.Open("sqlite", dsn)
 	if err != nil {
 		return nil, err
@@ -162,10 +169,7 @@ func (db *DB) assertAnonymityInvariants() error {
 
 // ── 事务封装 ────────────────────────────────────────────────────────
 
-// Tx 在 BEGIN IMMEDIATE 下执行 fn。
-//
-// 用 IMMEDIATE 而非默认的 DEFERRED：写事务需要立即取得写锁，否则
-// 并发提交时会在升级锁的瞬间拿到 SQLITE_BUSY 而不是被排队串行化。
+// Tx 在 BEGIN IMMEDIATE 下执行 fn（锁模式由 Open 的 _txlock=immediate 决定）。
 func (db *DB) Tx(ctx context.Context, fn func(*sql.Tx) error) error {
 	tx, err := db.BeginTx(ctx, nil)
 	if err != nil {
