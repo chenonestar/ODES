@@ -183,6 +183,23 @@ async function statusBadge(page, projURL) {
   return page.locator('.badge').first().innerText();
 }
 
+// waitForBadge 轮询状态徽章直到变成期望值。
+//
+// 必须显式等，不能"刷一次看看"：published → running 由后台推进器驱动，
+// 30 秒一次（cmd/eval 的 statusTicker）。发布之后状态什么时候落到
+// running，取决于 tick 什么时候到，与测试跑多快无关——不等就是一个
+// 纯看机器快慢的 flaky 测试，本地绿、CI 红，而且每次红的位置还不一样。
+async function waitForBadge(page, projURL, want, timeoutMs = 45000) {
+  const deadline = Date.now() + timeoutMs;
+  let last = '';
+  while (Date.now() < deadline) {
+    last = await statusBadge(page, projURL);
+    if (last === want) return { ok: true, badge: last };
+    await page.waitForTimeout(1000);
+  }
+  return { ok: false, badge: last };
+}
+
 // ensureRunning 把项目推到可作答状态。
 //
 // 演示项目初始是草稿，草稿态下正式令牌一律 404——作答端的套件必须先
@@ -267,6 +284,6 @@ module.exports = {
   ADMIN, EVAL, PASS,
   requirePlaywright, launch, newPage, login, firstProjectURL,
   answerAllPages, submitAnswers, draftKeys,
-  statusBadge, ensureRunning, unexpectedConsoleErrors,
+  statusBadge, waitForBadge, ensureRunning, unexpectedConsoleErrors,
   check, skip, summary,
 };

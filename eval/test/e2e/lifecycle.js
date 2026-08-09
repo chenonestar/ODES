@@ -113,14 +113,19 @@ const check = L.check;
   await dup.close();
 
   // 截止
-  await page.goto(projURL, { waitUntil: 'networkidle' });
+  //
+  // 「手动截止」只在 running 下渲染（迁移表里没有 published → closed，
+  // 见 LLD 7.1）。而 published → running 由后台推进器驱动、30 秒一次，
+  // 所以这里必须先等状态落定，否则按钮压根不存在——这正是本套件在 CI 上
+  // 红过一次的原因：本地跑得慢，等到了；CI 跑得快，没等到。
+  const running = await L.waitForBadge(page, projURL, '进行中');
+  check('推进器已把项目推到进行中', running.ok, '徽章=' + running.badge);
 
-  for (let i = 0; i < 3 && (await badge()) !== '已截止'; i++) {
+  if (running.ok) {
     const close = page.locator('button:has-text("手动截止")').first();
-    if (!(await close.count())) break;
+    check('进行中状态下有「手动截止」按钮', (await close.count()) > 0);
     await close.click();
     await page.waitForLoadState('networkidle');
-    await page.goto(projURL, { waitUntil: 'networkidle' });
   }
   s = await badge();
   check('项目已截止', s === '已截止', '徽章=' + s);
