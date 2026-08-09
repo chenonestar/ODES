@@ -5,9 +5,12 @@ import "odes/internal/store"
 templ Home(c Chrome, rows []HomeRow, archives []store.ArchiveMeta) {
 	@Layout(c) {
 		<h1 class="text-xl font-bold">测评项目</h1>
-		<p class="text-sm opacity-60 mb-4">
+		<p class="text-sm opacity-60 mb-3">
 			单管理员模式。测评结束后请执行「导出加密归档包 + 本机安全擦除」。
 		</p>
+		<div class="mb-4">
+			<a class="btn btn-sm btn-primary" href="/admin/projects/new">新建测评项目</a>
+		</div>
 		<div class="overflow-x-auto">
 			<table class="table table-zebra bg-base-100">
 				<thead>
@@ -145,7 +148,16 @@ templ Project(c Chrome, v ProjectView) {
 							<input type="hidden" name="to" value="published"/>
 							<button class="btn btn-sm btn-primary">发布测评</button>
 						</form>
+						<form method="post" action={ templ.SafeURL(projURL(v.P.ID) + "/delete") }
+							onsubmit="return confirm('删除该项目及其全部结构？此操作不可撤销。')">
+							<button class="btn btn-sm btn-error btn-outline">删除项目</button>
+						</form>
 					}
+					// 复制在任何状态都可用（FR-PRJ-022）：只复制结构，
+					// 不复制作答数据、令牌与名单。
+					<form method="post" action={ templ.SafeURL(projURL(v.P.ID) + "/copy") }>
+						<button class="btn btn-sm btn-outline">复制为新项目</button>
+					</form>
 					if v.P.Status == "published" {
 						<form method="post" action={ templ.SafeURL(projURL(v.P.ID) + "/status") }
 							onsubmit="return confirm('尚未有任何提交时才能撤回。确认？')">

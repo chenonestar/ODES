@@ -12,6 +12,53 @@ import (
 	"odes/internal/anon"
 )
 
+const deleteOptions = `-- name: DeleteOptions :exec
+DELETE FROM question_option WHERE question_id = ?
+`
+
+func (q *Queries) DeleteOptions(ctx context.Context, questionID anon.ID) error {
+	_, err := q.db.ExecContext(ctx, deleteOptions, questionID)
+	return err
+}
+
+const deleteQuestion = `-- name: DeleteQuestion :exec
+DELETE FROM question WHERE id = ?
+`
+
+func (q *Queries) DeleteQuestion(ctx context.Context, id anon.ID) error {
+	_, err := q.db.ExecContext(ctx, deleteQuestion, id)
+	return err
+}
+
+const deleteQuestionGroup = `-- name: DeleteQuestionGroup :exec
+DELETE FROM question_group WHERE id = ?
+`
+
+func (q *Queries) DeleteQuestionGroup(ctx context.Context, id anon.ID) error {
+	_, err := q.db.ExecContext(ctx, deleteQuestionGroup, id)
+	return err
+}
+
+const deleteSubject = `-- name: DeleteSubject :exec
+DELETE FROM subject WHERE id = ?
+`
+
+func (q *Queries) DeleteSubject(ctx context.Context, id anon.ID) error {
+	_, err := q.db.ExecContext(ctx, deleteSubject, id)
+	return err
+}
+
+const groupProject = `-- name: GroupProject :one
+SELECT project_id FROM question_group WHERE id = ?
+`
+
+func (q *Queries) GroupProject(ctx context.Context, id anon.ID) (anon.ID, error) {
+	row := q.db.QueryRowContext(ctx, groupProject, id)
+	var project_id anon.ID
+	err := row.Scan(&project_id)
+	return project_id, err
+}
+
 const insertOption = `-- name: InsertOption :exec
 INSERT INTO question_option (id, question_id, label, sort_no) VALUES (?, ?, ?, ?)
 `
@@ -278,6 +325,38 @@ func (q *Queries) ListQuestionsByGroup(ctx context.Context, groupID anon.ID) ([]
 	return items, nil
 }
 
+const listRoster = `-- name: ListRoster :many
+SELECT id, label_enc FROM roster WHERE project_id = ?
+`
+
+type ListRosterRow struct {
+	ID       anon.ID
+	LabelEnc []byte
+}
+
+func (q *Queries) ListRoster(ctx context.Context, projectID anon.ID) ([]ListRosterRow, error) {
+	rows, err := q.db.QueryContext(ctx, listRoster, projectID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListRosterRow{}
+	for rows.Next() {
+		var i ListRosterRow
+		if err := rows.Scan(&i.ID, &i.LabelEnc); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listSubjects = `-- name: ListSubjects :many
 SELECT id, name_enc, duty_enc, COALESCE(tag, '') AS tag, sort_no
 FROM subject WHERE project_id = ? ORDER BY sort_no
@@ -318,4 +397,137 @@ func (q *Queries) ListSubjects(ctx context.Context, projectID anon.ID) ([]ListSu
 		return nil, err
 	}
 	return items, nil
+}
+
+const questionProject = `-- name: QuestionProject :one
+SELECT project_id FROM question WHERE id = ?
+`
+
+func (q *Queries) QuestionProject(ctx context.Context, id anon.ID) (anon.ID, error) {
+	row := q.db.QueryRowContext(ctx, questionProject, id)
+	var project_id anon.ID
+	err := row.Scan(&project_id)
+	return project_id, err
+}
+
+const setGroupSort = `-- name: SetGroupSort :exec
+UPDATE question_group SET sort_no = ? WHERE id = ?
+`
+
+type SetGroupSortParams struct {
+	SortNo int64
+	ID     anon.ID
+}
+
+func (q *Queries) SetGroupSort(ctx context.Context, arg SetGroupSortParams) error {
+	_, err := q.db.ExecContext(ctx, setGroupSort, arg.SortNo, arg.ID)
+	return err
+}
+
+const setQuestionSort = `-- name: SetQuestionSort :exec
+UPDATE question SET sort_no = ?, group_id = ? WHERE id = ?
+`
+
+type SetQuestionSortParams struct {
+	SortNo  int64
+	GroupID anon.ID
+	ID      anon.ID
+}
+
+func (q *Queries) SetQuestionSort(ctx context.Context, arg SetQuestionSortParams) error {
+	_, err := q.db.ExecContext(ctx, setQuestionSort, arg.SortNo, arg.GroupID, arg.ID)
+	return err
+}
+
+const setSubjectSort = `-- name: SetSubjectSort :exec
+UPDATE subject SET sort_no = ? WHERE id = ?
+`
+
+type SetSubjectSortParams struct {
+	SortNo int64
+	ID     anon.ID
+}
+
+func (q *Queries) SetSubjectSort(ctx context.Context, arg SetSubjectSortParams) error {
+	_, err := q.db.ExecContext(ctx, setSubjectSort, arg.SortNo, arg.ID)
+	return err
+}
+
+const subjectProject = `-- name: SubjectProject :one
+SELECT project_id FROM subject WHERE id = ?
+`
+
+func (q *Queries) SubjectProject(ctx context.Context, id anon.ID) (anon.ID, error) {
+	row := q.db.QueryRowContext(ctx, subjectProject, id)
+	var project_id anon.ID
+	err := row.Scan(&project_id)
+	return project_id, err
+}
+
+const unlinkQuestionSubjects = `-- name: UnlinkQuestionSubjects :exec
+DELETE FROM question_subject WHERE question_id = ?
+`
+
+func (q *Queries) UnlinkQuestionSubjects(ctx context.Context, questionID anon.ID) error {
+	_, err := q.db.ExecContext(ctx, unlinkQuestionSubjects, questionID)
+	return err
+}
+
+const updateQuestion = `-- name: UpdateQuestion :exec
+UPDATE question SET title = ?, hint = ?, required = ?, config = ? WHERE id = ?
+`
+
+type UpdateQuestionParams struct {
+	Title    string
+	Hint     sql.NullString
+	Required int64
+	Config   string
+	ID       anon.ID
+}
+
+func (q *Queries) UpdateQuestion(ctx context.Context, arg UpdateQuestionParams) error {
+	_, err := q.db.ExecContext(ctx, updateQuestion,
+		arg.Title,
+		arg.Hint,
+		arg.Required,
+		arg.Config,
+		arg.ID,
+	)
+	return err
+}
+
+const updateQuestionGroup = `-- name: UpdateQuestionGroup :exec
+UPDATE question_group SET title = ?, intro = ? WHERE id = ?
+`
+
+type UpdateQuestionGroupParams struct {
+	Title string
+	Intro sql.NullString
+	ID    anon.ID
+}
+
+func (q *Queries) UpdateQuestionGroup(ctx context.Context, arg UpdateQuestionGroupParams) error {
+	_, err := q.db.ExecContext(ctx, updateQuestionGroup, arg.Title, arg.Intro, arg.ID)
+	return err
+}
+
+const updateSubject = `-- name: UpdateSubject :exec
+UPDATE subject SET name_enc = ?, duty_enc = ?, tag = ? WHERE id = ?
+`
+
+type UpdateSubjectParams struct {
+	NameEnc []byte
+	DutyEnc []byte
+	Tag     sql.NullString
+	ID      anon.ID
+}
+
+func (q *Queries) UpdateSubject(ctx context.Context, arg UpdateSubjectParams) error {
+	_, err := q.db.ExecContext(ctx, updateSubject,
+		arg.NameEnc,
+		arg.DutyEnc,
+		arg.Tag,
+		arg.ID,
+	)
+	return err
 }

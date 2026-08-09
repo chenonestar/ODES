@@ -34,3 +34,8 @@ UPDATE project SET paper_entry_count = paper_entry_count + 1 WHERE id = ?;
 
 -- name: DeleteProject :exec
 DELETE FROM project WHERE id = ?;
+
+-- name: UpdateProject :exec
+UPDATE project SET name = ?, intro_enc = ?, start_at = ?, end_at = ?,
+       result_open_at = ?, expected_count = ?, ap_count = ?, grade_scores = ?
+WHERE id = ?;

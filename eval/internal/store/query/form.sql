@@ -36,3 +36,48 @@ INSERT INTO question_subject (question_id, subject_id) VALUES (?, ?);
 SELECT qs.subject_id FROM question_subject qs
 JOIN subject s ON s.id = qs.subject_id
 WHERE qs.question_id = ? ORDER BY s.sort_no;
+
+-- name: UpdateSubject :exec
+UPDATE subject SET name_enc = ?, duty_enc = ?, tag = ? WHERE id = ?;
+
+-- name: SetSubjectSort :exec
+UPDATE subject SET sort_no = ? WHERE id = ?;
+
+-- name: DeleteSubject :exec
+DELETE FROM subject WHERE id = ?;
+
+-- name: SubjectProject :one
+SELECT project_id FROM subject WHERE id = ?;
+
+-- name: UpdateQuestionGroup :exec
+UPDATE question_group SET title = ?, intro = ? WHERE id = ?;
+
+-- name: SetGroupSort :exec
+UPDATE question_group SET sort_no = ? WHERE id = ?;
+
+-- name: DeleteQuestionGroup :exec
+DELETE FROM question_group WHERE id = ?;
+
+-- name: GroupProject :one
+SELECT project_id FROM question_group WHERE id = ?;
+
+-- name: UpdateQuestion :exec
+UPDATE question SET title = ?, hint = ?, required = ?, config = ? WHERE id = ?;
+
+-- name: SetQuestionSort :exec
+UPDATE question SET sort_no = ?, group_id = ? WHERE id = ?;
+
+-- name: DeleteQuestion :exec
+DELETE FROM question WHERE id = ?;
+
+-- name: QuestionProject :one
+SELECT project_id FROM question WHERE id = ?;
+
+-- name: DeleteOptions :exec
+DELETE FROM question_option WHERE question_id = ?;
+
+-- name: UnlinkQuestionSubjects :exec
+DELETE FROM question_subject WHERE question_id = ?;
+
+-- name: ListRoster :many
+SELECT id, label_enc FROM roster WHERE project_id = ?;

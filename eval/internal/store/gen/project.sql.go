@@ -209,3 +209,36 @@ func (q *Queries) SetProjectStatus(ctx context.Context, arg SetProjectStatusPara
 	_, err := q.db.ExecContext(ctx, setProjectStatus, arg.Status, arg.ID)
 	return err
 }
+
+const updateProject = `-- name: UpdateProject :exec
+UPDATE project SET name = ?, intro_enc = ?, start_at = ?, end_at = ?,
+       result_open_at = ?, expected_count = ?, ap_count = ?, grade_scores = ?
+WHERE id = ?
+`
+
+type UpdateProjectParams struct {
+	Name          string
+	IntroEnc      []byte
+	StartAt       string
+	EndAt         string
+	ResultOpenAt  string
+	ExpectedCount int64
+	ApCount       int64
+	GradeScores   string
+	ID            anon.ID
+}
+
+func (q *Queries) UpdateProject(ctx context.Context, arg UpdateProjectParams) error {
+	_, err := q.db.ExecContext(ctx, updateProject,
+		arg.Name,
+		arg.IntroEnc,
+		arg.StartAt,
+		arg.EndAt,
+		arg.ResultOpenAt,
+		arg.ExpectedCount,
+		arg.ApCount,
+		arg.GradeScores,
+		arg.ID,
+	)
+	return err
+}

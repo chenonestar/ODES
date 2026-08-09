@@ -1,0 +1,480 @@
+package views
+
+import "odes/internal/model"
+
+// ── 项目新建 / 编辑（FR-PRJ-020~022）────────────────────────────────
+
+templ ProjectForm(c Chrome, v DesignView) {
+	@Layout(c) {
+		<h1 class="text-xl font-bold mb-1">{ v.FormTitle }</h1>
+		<p class="text-sm opacity-60 mb-4">
+			时间须满足 <b>开始 &lt; 截止 ≤ 结果开放</b>；应参加人数是<b>全部比率的分母</b>，
+			请与名单条数核对一致。
+		</p>
+		if v.Err != "" {
+			<div role="alert" class="alert alert-error mb-4"><span class="text-sm">{ v.Err }</span></div>
+		}
+		<form method="post" action={ templ.SafeURL(v.Action) } class="card bg-base-100 border border-base-300">
+			<div class="card-body gap-4">
+				<label class="form-control">
+					<div class="label"><span class="label-text">项目名称</span></div>
+					<input name="name" value={ v.P.Name } required class="input input-bordered"/>
+				</label>
+				<label class="form-control">
+					<div class="label"><span class="label-text">测评说明（作答页顶部展示）</span></div>
+					<textarea name="intro" rows="3" class="textarea textarea-bordered">{ v.P.Intro }</textarea>
+				</label>
+				<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+					<label class="form-control">
+						<div class="label"><span class="label-text">开始时间</span></div>
+						<input type="datetime-local" name="start_at" value={ dtLocal(v.P.StartAt) }
+							required class="input input-bordered"/>
+					</label>
+					<label class="form-control">
+						<div class="label"><span class="label-text">截止时间</span></div>
+						<input type="datetime-local" name="end_at" value={ dtLocal(v.P.EndAt) }
+							required class="input input-bordered"/>
+					</label>
+					<label class="form-control">
+						<div class="label"><span class="label-text">结果开放时间</span></div>
+						<input type="datetime-local" name="result_open_at" value={ dtLocal(v.P.ResultOpenAt) }
+							required class="input input-bordered"/>
+					</label>
+				</div>
+				<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+					<label class="form-control">
+						<div class="label"><span class="label-text">应参加人数（比率分母）</span></div>
+						<input type="number" name="expected_count" min="1" value={ itoa(v.P.ExpectedCount) }
+							required class="input input-bordered"/>
+					</label>
+					<label class="form-control">
+						<div class="label"><span class="label-text">AP 数量（1~6）</span></div>
+						<input type="number" name="ap_count" min="1" max="6" value={ itoa(v.P.APCount) }
+							required class="input input-bordered"/>
+					</label>
+					<label class="form-control">
+						<div class="label"><span class="label-text">档位赋分（逗号分隔）</span></div>
+						<input name="grade_scores" value={ joinInts(v.P.GradeScores) } class="input input-bordered"/>
+					</label>
+				</div>
+				<p class="text-xs opacity-60">
+					档位赋分只用于产出<b>辅助排序</b>用的加权得分，不作为结论表述（SRS 6.4）。
+				</p>
+				<div class="flex gap-2">
+					<button class="btn btn-primary btn-sm">保存</button>
+					<a class="btn btn-sm" href={ templ.SafeURL(v.Back) }>取消</a>
+				</div>
+			</div>
+		</form>
+	}
+}
+
+// ── 测评表设计器（FR-FRM-020~034）──────────────────────────────────
+
+templ Design(c Chrome, v DesignView) {
+	@Layout(c) {
+		<div class="flex items-center gap-3 flex-wrap">
+			<h1 class="text-xl font-bold">{ v.P.Name } · 测评表设计</h1>
+			@StatusBadge(string(v.P.Status))
+		</div>
+		if !v.Editable {
+			<div role="alert" class="alert alert-warning mt-3 items-start">
+				<div class="text-sm">
+					<b>当前状态不可编辑。</b>
+					已发布之后改题会让不同的人答到不同的表——先答的人看到 8 道题、
+					后答的人看到 9 道，统计分母对不上，而这件事事后从数据上看不出来。
+					如需修改请先「撤回发布」（仅在尚无任何提交时可用）。
+				</div>
+			</div>
+		}
+		if v.Err != "" {
+			<div role="alert" class="alert alert-error mt-3"><span class="text-sm">{ v.Err }</span></div>
+		}
+
+		<!-- FR-FRM-034：展开后作答项总数实时可见 -->
+		<div class="stats stats-horizontal bg-base-100 border border-base-300 w-full overflow-x-auto my-4">
+			<div class="stat">
+				<div class="stat-title">测评对象</div>
+				<div class="stat-value text-2xl">{ itoa(len(v.F.Subjects)) }</div>
+				<div class="stat-desc">上限 { itoa(v.MaxSubjects) }</div>
+			</div>
+			<div class="stat">
+				<div class="stat-title">题目</div>
+				<div class="stat-value text-2xl">{ itoa(v.QuestionCount) }</div>
+				<div class="stat-desc">上限 { itoa(v.MaxQuestions) }</div>
+			</div>
+			<div class="stat">
+				<div class="stat-title">展开后作答项</div>
+				if v.Items > v.MaxItems {
+					<div class="stat-value text-2xl text-error">{ itoa(v.Items) }</div>
+					<div class="stat-desc text-error">已超出上限 { itoa(v.MaxItems) }，无法发布</div>
+				} else {
+					<div class="stat-value text-2xl">{ itoa(v.Items) }</div>
+					<div class="stat-desc">上限 { itoa(v.MaxItems) }　= 题目数 × 关联对象数</div>
+				}
+			</div>
+			<div class="stat">
+				<div class="stat-title">名单条数</div>
+				<div class="stat-value text-2xl">{ itoa(v.RosterCount) }</div>
+				if v.RosterCount > 0 && v.RosterCount != v.P.ExpectedCount {
+					<div class="stat-desc text-warning">与应参加人数 { itoa(v.P.ExpectedCount) } 不一致</div>
+				} else {
+					<div class="stat-desc">仅用于确定令牌数量</div>
+				}
+			</div>
+		</div>
+
+		@subjectsSection(v)
+		@groupsSection(v)
+
+		<div class="flex gap-2 mt-6 flex-wrap">
+			<a class="btn btn-sm" href={ templ.SafeURL(projURL(v.P.ID)) }>返回项目</a>
+			if v.Editable {
+				<a class="btn btn-sm" href={ templ.SafeURL(projURL(v.P.ID) + "/edit") }>编辑基本信息</a>
+				<a class="btn btn-sm" href={ templ.SafeURL(projURL(v.P.ID) + "/roster") }>名单导入</a>
+			}
+		</div>
+	}
+}
+
+templ subjectsSection(v DesignView) {
+	<h2 class="text-base font-semibold border-l-4 border-seal pl-2 mb-2">测评对象</h2>
+	<div class="card bg-base-100 border border-base-300 mb-6">
+		<div class="card-body gap-3">
+			<div class="overflow-x-auto">
+				<table class="table table-sm" data-reorder={ projURL(v.P.ID) + "/subjects/reorder" }>
+					<thead>
+						<tr><th class="w-8"></th><th>姓名</th><th>职务</th><th>分组标签</th><th class="w-40">操作</th></tr>
+					</thead>
+					<tbody>
+						if len(v.F.Subjects) == 0 {
+							<tr><td colspan="5" class="text-sm opacity-60">尚未添加测评对象</td></tr>
+						}
+						for _, s := range v.F.Subjects {
+							<tr class="hover" draggable={ dragAttr(v.Editable) } data-id={ hex(s.ID) }>
+								<td class="cursor-move opacity-40 select-none" title="拖拽排序">⠿</td>
+								<td>
+									if v.Editable {
+										<form method="post" class="flex gap-2 items-center"
+											action={ templ.SafeURL(subjURL(s.ID) + "/update") }>
+											<input name="name" value={ s.Name } class="input input-bordered input-xs w-24"/>
+											<input name="duty" value={ s.Duty } class="input input-bordered input-xs w-28"/>
+											<input name="tag" value={ s.Tag } class="input input-bordered input-xs w-24"/>
+											<button class="btn btn-xs">保存</button>
+										</form>
+									} else {
+										{ s.Name }
+									}
+								</td>
+								if !v.Editable {
+									<td>{ s.Duty }</td>
+									<td>{ s.Tag }</td>
+									<td></td>
+								} else {
+									<td colspan="2" class="text-xs opacity-50">姓名 / 职务 / 分组标签</td>
+									<td>
+										<form method="post" action={ templ.SafeURL(subjURL(s.ID) + "/delete") }
+											onsubmit="return confirm('删除该测评对象？关联的题目会一并解除关联。')">
+											<button class="btn btn-xs btn-error btn-outline">删除</button>
+										</form>
+									</td>
+								}
+							</tr>
+						}
+					</tbody>
+				</table>
+			</div>
+			if v.Editable {
+				<form method="post" action={ templ.SafeURL(projURL(v.P.ID) + "/subjects") }
+					class="flex gap-2 items-center flex-wrap border-t border-base-300 pt-3">
+					<input name="name" placeholder="姓名" required class="input input-bordered input-sm w-28"/>
+					<input name="duty" placeholder="职务" class="input input-bordered input-sm w-32"/>
+					<input name="tag" placeholder="分组标签（可选）" class="input input-bordered input-sm w-40"/>
+					<button class="btn btn-sm btn-primary">添加对象</button>
+				</form>
+			}
+		</div>
+	</div>
+}
+
+templ groupsSection(v DesignView) {
+	<h2 class="text-base font-semibold border-l-4 border-seal pl-2 mb-2">题组与题目</h2>
+	for _, g := range v.F.Groups {
+		<div class="card bg-base-100 border border-base-300 mb-4">
+			<div class="card-body gap-3">
+				<div class="flex gap-2 items-center flex-wrap">
+					if v.Editable {
+						<form method="post" action={ templ.SafeURL(groupURL(g.ID) + "/update") }
+							class="flex gap-2 items-center flex-wrap grow">
+							<input name="title" value={ g.Title } class="input input-bordered input-sm w-40 font-semibold"/>
+							<input name="intro" value={ g.Intro } placeholder="题组说明（可选）"
+								class="input input-bordered input-sm grow"/>
+							<button class="btn btn-sm">保存</button>
+						</form>
+						<form method="post" action={ templ.SafeURL(groupURL(g.ID) + "/delete") }
+							onsubmit="return confirm('删除题组会一并删除组内全部题目，确认？')">
+							<button class="btn btn-sm btn-error btn-outline">删除题组</button>
+						</form>
+					} else {
+						<span class="font-semibold">{ g.Title }</span>
+						<span class="text-sm opacity-60">{ g.Intro }</span>
+					}
+				</div>
+
+				<div class="overflow-x-auto">
+					<table class="table table-sm" data-reorder={ groupURL(g.ID) + "/reorder" }>
+						<thead>
+							<tr>
+								<th class="w-8"></th><th>题干</th><th class="w-20">题型</th>
+								<th class="w-16">必填</th><th class="w-24">关联对象</th><th class="w-24">操作</th>
+							</tr>
+						</thead>
+						<tbody>
+							if len(g.Questions) == 0 {
+								<tr><td colspan="6" class="text-sm opacity-60">本组暂无题目</td></tr>
+							}
+							for _, q := range g.Questions {
+								<tr class="hover" draggable={ dragAttr(v.Editable) } data-id={ hex(q.ID) }>
+									<td class="cursor-move opacity-40 select-none" title="拖拽排序">⠿</td>
+									<td>
+										{ q.Title }
+										if q.Hint != "" {
+											<div class="text-xs opacity-50">{ q.Hint }</div>
+										}
+									</td>
+									<td><span class="badge badge-ghost badge-sm">{ kindLabel(q.Kind) }</span></td>
+									<td>
+										if q.Required {
+											<span class="text-error">必填</span>
+										} else {
+											<span class="opacity-50">选填</span>
+										}
+									</td>
+									<td>{ itoa(len(q.SubjectIDs)) } 位</td>
+									<td>
+										if v.Editable {
+											<div class="flex gap-1">
+												<a class="btn btn-xs" href={ templ.SafeURL(questionURL(q.ID) + "/edit") }>编辑</a>
+												<form method="post" action={ templ.SafeURL(questionURL(q.ID) + "/delete") }
+													onsubmit="return confirm('删除该题目？')">
+													<button class="btn btn-xs btn-error btn-outline">删</button>
+												</form>
+											</div>
+										}
+									</td>
+								</tr>
+							}
+						</tbody>
+					</table>
+				</div>
+
+				if v.Editable {
+					<a class="btn btn-sm btn-primary self-start"
+						href={ templ.SafeURL(projURL(v.P.ID) + "/questions/new?group=" + hex(g.ID)) }>
+						向本组添加题目
+					</a>
+				}
+			</div>
+		</div>
+	}
+	if v.Editable {
+		<form method="post" action={ templ.SafeURL(projURL(v.P.ID) + "/groups") }
+			class="flex gap-2 items-center flex-wrap mb-4">
+			<input name="title" placeholder="新题组名称（如：德）" required class="input input-bordered input-sm w-48"/>
+			<input name="intro" placeholder="题组说明（可选）" class="input input-bordered input-sm w-64"/>
+			<button class="btn btn-sm">添加题组</button>
+		</form>
+	}
+}
+
+// ── 题目编辑 ────────────────────────────────────────────────────────
+
+templ QuestionForm(c Chrome, v DesignView) {
+	@Layout(c) {
+		<h1 class="text-xl font-bold mb-4">{ v.FormTitle }</h1>
+		if v.Err != "" {
+			<div role="alert" class="alert alert-error mb-4"><span class="text-sm">{ v.Err }</span></div>
+		}
+		<form method="post" action={ templ.SafeURL(v.Action) } class="card bg-base-100 border border-base-300">
+			<div class="card-body gap-4">
+				<input type="hidden" name="group" value={ v.GroupID }/>
+				<label class="form-control">
+					<div class="label"><span class="label-text">题干</span></div>
+					<input name="title" value={ v.Q.Title } required class="input input-bordered"/>
+				</label>
+				<label class="form-control">
+					<div class="label"><span class="label-text">说明文字（可选，FR-FRM-022）</span></div>
+					<input name="hint" value={ v.Q.Hint } class="input input-bordered"/>
+				</label>
+
+				<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+					<label class="form-control">
+						<div class="label"><span class="label-text">题型</span></div>
+						<select name="kind" class="select select-bordered">
+							for _, k := range kindOptions() {
+								if string(v.Q.Kind) == k.Value {
+									<option value={ k.Value } selected>{ k.Label }</option>
+								} else {
+									<option value={ k.Value }>{ k.Label }</option>
+								}
+							}
+						</select>
+					</label>
+					<label class="form-control">
+						<div class="label"><span class="label-text">是否必填（FR-FRM-020）</span></div>
+						<select name="required" class="select select-bordered">
+							if v.Q.Required {
+								<option value="1" selected>必填</option>
+								<option value="0">选填</option>
+							} else {
+								<option value="1">必填</option>
+								<option value="0" selected>选填</option>
+							}
+						</select>
+					</label>
+				</div>
+
+				<label class="form-control">
+					<div class="label">
+						<span class="label-text">等级题档位（逗号分隔，3~5 档；留空用默认四档）</span>
+					</div>
+					<input name="grades" value={ joinStrs(v.Q.Config.Grades) }
+						placeholder="优秀,称职,基本称职,不称职" class="input input-bordered"/>
+				</label>
+				<label class="form-control">
+					<div class="label"><span class="label-text">选择题选项（逗号分隔，2~10 个）</span></div>
+					<input name="options" value={ v.OptionCSV } class="input input-bordered"/>
+				</label>
+				<p class="text-xs opacity-60">
+					等级题与单选题的「弃权」由系统自动提供，不需要在选项里写（FR-FRM-021）。
+					弃权是显式选择，与漏填相区分。
+				</p>
+
+				<div class="form-control">
+					<div class="label"><span class="label-text">关联测评对象（FR-FRM-031）</span></div>
+					<label class="label cursor-pointer justify-start gap-2">
+						if v.AllSubjects {
+							<input type="checkbox" name="all_subjects" value="1" checked class="checkbox checkbox-sm"/>
+						} else {
+							<input type="checkbox" name="all_subjects" value="1" class="checkbox checkbox-sm"/>
+						}
+						<span class="label-text">全部测评对象</span>
+					</label>
+					<div class="flex flex-wrap gap-3 mt-1">
+						for _, s := range v.F.Subjects {
+							<label class="label cursor-pointer justify-start gap-2">
+								if v.Linked[hex(s.ID)] {
+									<input type="checkbox" name="subjects" value={ hex(s.ID) } checked class="checkbox checkbox-sm"/>
+								} else {
+									<input type="checkbox" name="subjects" value={ hex(s.ID) } class="checkbox checkbox-sm"/>
+								}
+								<span class="label-text">{ s.Name }</span>
+							</label>
+						}
+					</div>
+					<p class="text-xs opacity-60 mt-1">
+						勾选「全部」时在保存的当下展开为具体名单并冻结；此后新增对象不会自动加进已有题目，
+						这样设计器上看到的作答项数就是最终值。
+					</p>
+				</div>
+
+				<div class="flex gap-2">
+					<button class="btn btn-primary btn-sm">保存</button>
+					<a class="btn btn-sm" href={ templ.SafeURL(projURL(v.P.ID) + "/design") }>取消</a>
+				</div>
+			</div>
+		</form>
+	}
+}
+
+// ── 名单导入（FR-TKN-010~012）──────────────────────────────────────
+
+templ Roster(c Chrome, v DesignView) {
+	@Layout(c) {
+		<h1 class="text-xl font-bold mb-1">{ v.P.Name } · 名单</h1>
+		<div role="alert" class="alert mb-4 items-start">
+			<div class="text-sm">
+				名单<b>只用于确定令牌数量与核对应参加人数</b>。名单表与令牌表之间
+				不存在任何字段关联（FR-TKN-011）——谁拿到哪个令牌，系统无从、也无需知道。<br/>
+				令牌打印分发完成后可以整表删除，不影响系统运行与统计（FR-TKN-012）。
+			</div>
+		</div>
+		if v.Err != "" {
+			<div role="alert" class="alert alert-error mb-4"><span class="text-sm">{ v.Err }</span></div>
+		}
+
+		if len(v.Preview) > 0 {
+			<h2 class="text-base font-semibold border-l-4 border-seal pl-2 mb-2">导入预览</h2>
+			<p class="text-sm mb-2">
+				共解析出 <b>{ itoa(len(v.Preview)) }</b> 条
+				if len(v.Preview) != v.P.ExpectedCount {
+					<span class="text-warning">（与应参加人数 { itoa(v.P.ExpectedCount) } 不一致，请核对）</span>
+				}
+				。确认无误后再写入——写入会<b>整表替换</b>现有名单。
+			</p>
+			<div class="card bg-base-100 border border-base-300 mb-4">
+				<div class="card-body py-3 max-h-80 overflow-y-auto">
+					<div class="flex flex-wrap gap-2">
+						for _, n := range v.Preview {
+							<span class="badge badge-ghost">{ n }</span>
+						}
+					</div>
+				</div>
+			</div>
+			<form method="post" action={ templ.SafeURL(projURL(v.P.ID) + "/roster/confirm") } class="flex gap-2">
+				for _, n := range v.Preview {
+					<input type="hidden" name="label" value={ n }/>
+				}
+				<button class="btn btn-sm btn-primary">确认写入</button>
+				<a class="btn btn-sm" href={ templ.SafeURL(projURL(v.P.ID) + "/roster") }>放弃</a>
+			</form>
+		} else {
+			<h2 class="text-base font-semibold border-l-4 border-seal pl-2 mb-2">
+				当前名单（{ itoa(v.RosterCount) } 条）
+			</h2>
+			if v.RosterCount == 0 {
+				<p class="text-sm opacity-60 mb-4">尚未导入名单。</p>
+			} else {
+				<div class="card bg-base-100 border border-base-300 mb-4">
+					<div class="card-body py-3 max-h-80 overflow-y-auto">
+						<div class="flex flex-wrap gap-2">
+							for _, n := range v.RosterList {
+								<span class="badge badge-ghost">{ n }</span>
+							}
+						</div>
+					</div>
+				</div>
+				<form method="post" action={ templ.SafeURL(projURL(v.P.ID) + "/roster/clear") } class="mb-4"
+					onsubmit="return confirm('删除名单？这是库里唯一一份参评人员记录，删掉可缩小失窃时的暴露面，且不影响令牌与统计。')">
+					<button class="btn btn-sm btn-error btn-outline">删除名单</button>
+				</form>
+			}
+
+			if v.Editable {
+				<h2 class="text-base font-semibold border-l-4 border-seal pl-2 mb-2">导入</h2>
+				<form method="post" enctype="multipart/form-data"
+					action={ templ.SafeURL(projURL(v.P.ID) + "/roster/upload") }
+					class="card bg-base-100 border border-base-300">
+					<div class="card-body gap-3">
+						<input type="file" name="file" accept=".xlsx,.xlsm,.csv,.txt" required
+							class="file-input file-input-bordered file-input-sm"/>
+						<p class="text-xs opacity-60">
+							支持 .xlsx / .csv / 纯文本。<b>只读第一列</b>，表头行会自动跳过。
+							CSV 请用 UTF-8 编码（Excel 里选「CSV UTF-8」），否则会提示编码错误。
+						</p>
+						<button class="btn btn-sm btn-primary self-start">上传并预览</button>
+					</div>
+				</form>
+			}
+		}
+		<div class="mt-4">
+			<a class="btn btn-sm" href={ templ.SafeURL(projURL(v.P.ID) + "/design") }>返回设计器</a>
+		</div>
+	}
+}
+
+// ── 新建项目入口 ────────────────────────────────────────────────────
+
+templ kindBadge(k model.QuestionKind) {
+	<span class="badge badge-ghost badge-sm">{ kindLabel(k) }</span>
+}

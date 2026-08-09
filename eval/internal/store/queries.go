@@ -273,8 +273,6 @@ func (db *DB) Form(v *crypto.Vault, p *model.Project) (*model.Form, error) {
 	return f, nil
 }
 
-
-
 // ── 令牌 ────────────────────────────────────────────────────────────
 
 func (db *DB) InsertTokens(ctx context.Context, toks []model.Token) error {
@@ -425,11 +423,6 @@ func (db *DB) InsertRoster(v *crypto.Vault, projectID anon.ID, label string) err
 		ID: anon.NewID(), ProjectID: projectID, LabelEnc: enc})
 }
 
-func (db *DB) CountRoster(projectID anon.ID) (int, error) {
-	n, err := db.q().CountRoster(context.Background(), projectID)
-	return int(n), err
-}
-
 func (db *DB) DeleteRoster(projectID anon.ID) error {
 	return db.q().DeleteRoster(context.Background(), projectID)
 }
@@ -483,4 +476,183 @@ func (db *DB) ArchiveMetas() ([]ArchiveMeta, error) {
 			VerifyCode: r.VerifyCode, ArchivedAt: r.ArchivedAt})
 	}
 	return out, nil
+}
+
+// ── 测评表编辑（FR-PRJ-022 / FR-FRM-020~034）────────────────────────
+//
+// 全部编辑操作只在草稿态开放，这条在服务层把关；这里只负责落库。
+// 归属校验（这个题目是不是属于这个项目）也在服务层做——处理器拿到的
+// 是 URL 里的 ID，不校验就等于让任何人凭 ID 改任何项目的题。
+
+func (db *DB) UpdateProject(v *crypto.Vault, p *model.Project) error {
+	intro, err := v.Seal([]byte(p.Intro), p.ID.Bytes())
+	if err != nil {
+		return err
+	}
+	scores, err := json.Marshal(p.GradeScores)
+	if err != nil {
+		return err
+	}
+	return db.q().UpdateProject(context.Background(), gen.UpdateProjectParams{
+		Name:          p.Name,
+		IntroEnc:      intro,
+		StartAt:       fmtTime(p.StartAt),
+		EndAt:         fmtTime(p.EndAt),
+		ResultOpenAt:  fmtTime(p.ResultOpenAt),
+		ExpectedCount: int64(p.ExpectedCount),
+		ApCount:       int64(p.APCount),
+		GradeScores:   string(scores),
+		ID:            p.ID,
+	})
+}
+
+func (db *DB) UpdateSubject(v *crypto.Vault, s *model.Subject) error {
+	name, err := v.Seal([]byte(s.Name), s.ProjectID.Bytes())
+	if err != nil {
+		return err
+	}
+	duty, err := v.Seal([]byte(s.Duty), s.ProjectID.Bytes())
+	if err != nil {
+		return err
+	}
+	return db.q().UpdateSubject(context.Background(), gen.UpdateSubjectParams{
+		NameEnc: name, DutyEnc: duty,
+		Tag: nullStr(s.Tag), ID: s.ID,
+	})
+}
+
+func (db *DB) SetSubjectSort(id anon.ID, sortNo int) error {
+	return db.q().SetSubjectSort(context.Background(),
+		gen.SetSubjectSortParams{SortNo: int64(sortNo), ID: id})
+}
+
+func (db *DB) DeleteSubject(id anon.ID) error {
+	return db.q().DeleteSubject(context.Background(), id)
+}
+
+func (db *DB) SubjectProject(id anon.ID) (anon.ID, error) {
+	return db.q().SubjectProject(context.Background(), id)
+}
+
+func (db *DB) UpdateGroup(g *model.QuestionGroup) error {
+	return db.q().UpdateQuestionGroup(context.Background(), gen.UpdateQuestionGroupParams{
+		Title: g.Title,
+		Intro: nullStr(g.Intro),
+		ID:    g.ID,
+	})
+}
+
+func (db *DB) SetGroupSort(id anon.ID, sortNo int) error {
+	return db.q().SetGroupSort(context.Background(),
+		gen.SetGroupSortParams{SortNo: int64(sortNo), ID: id})
+}
+
+func (db *DB) DeleteGroup(id anon.ID) error {
+	return db.q().DeleteQuestionGroup(context.Background(), id)
+}
+
+func (db *DB) GroupProject(id anon.ID) (anon.ID, error) {
+	return db.q().GroupProject(context.Background(), id)
+}
+
+// UpdateQuestion 改题干与配置，并整体重写选项与关联对象。
+//
+// 选项与关联走"先删后插"而不是逐条 diff：题目在草稿态可以随便改，
+// diff 的复杂度远高于重写，而重写的代价是几行 SQL。草稿态不存在
+// 作答数据，重写不会丢任何东西。
+func (db *DB) UpdateQuestion(tx *sql.Tx, q *model.Question) error {
+	x := db.q()
+	if tx != nil {
+		x = qtx(tx)
+	}
+	ctx := context.Background()
+	cfg, err := json.Marshal(q.Config)
+	if err != nil {
+		return err
+	}
+	if err := x.UpdateQuestion(ctx, gen.UpdateQuestionParams{
+		Title:    q.Title,
+		Hint:     nullStr(q.Hint),
+		Required: boolInt(q.Required),
+		Config:   string(cfg),
+		ID:       q.ID,
+	}); err != nil {
+		return err
+	}
+	if err := x.DeleteOptions(ctx, q.ID); err != nil {
+		return err
+	}
+	for i, o := range q.Options {
+		if err := x.InsertOption(ctx, gen.InsertOptionParams{
+			ID: anon.NewID(), QuestionID: q.ID, Label: o.Label, SortNo: int64(i),
+		}); err != nil {
+			return err
+		}
+	}
+	if err := x.UnlinkQuestionSubjects(ctx, q.ID); err != nil {
+		return err
+	}
+	for _, sid := range q.SubjectIDs {
+		if err := x.LinkQuestionSubject(ctx, gen.LinkQuestionSubjectParams{
+			QuestionID: q.ID, SubjectID: sid,
+		}); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (db *DB) SetQuestionSort(id anon.ID, sortNo int, groupID anon.ID) error {
+	return db.q().SetQuestionSort(context.Background(),
+		gen.SetQuestionSortParams{SortNo: int64(sortNo), GroupID: groupID, ID: id})
+}
+
+func (db *DB) DeleteQuestion(id anon.ID) error {
+	return db.q().DeleteQuestion(context.Background(), id)
+}
+
+func (db *DB) QuestionProject(id anon.ID) (anon.ID, error) {
+	return db.q().QuestionProject(context.Background(), id)
+}
+
+// ── 名单（FR-TKN-010~012）───────────────────────────────────────────
+//
+// 名单只用于确定令牌数量与核对应参加人数（FR-TKN-011）。
+// 名单表与令牌表之间**不存在任何字段关联**，这一点由 schema 保证：
+// roster 只有 id / project_id / label_enc 三列，没有任何指向 token 的列。
+
+func (db *DB) Roster(v *crypto.Vault, projectID anon.ID) ([]string, error) {
+	rows, err := db.q().ListRoster(context.Background(), projectID)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]string, 0, len(rows))
+	for _, r := range rows {
+		b, err := v.Open(r.LabelEnc, projectID.Bytes())
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, string(b))
+	}
+	return out, nil
+}
+
+func (db *DB) CountRoster(projectID anon.ID) (int, error) {
+	n, err := db.q().CountRoster(context.Background(), projectID)
+	return int(n), err
+}
+
+// InsertRosterTx / DeleteRosterTx 是事务版本。名单导入必须整表替换，
+// 中途失败留下半份名单会让应参加人数——也就是全部比率的分母——静默出错。
+func (db *DB) InsertRosterTx(tx *sql.Tx, v *crypto.Vault, projectID anon.ID, label string) error {
+	enc, err := v.SealString(label, projectID.Bytes())
+	if err != nil {
+		return err
+	}
+	return qtx(tx).InsertRoster(context.Background(), gen.InsertRosterParams{
+		ID: anon.NewID(), ProjectID: projectID, LabelEnc: enc})
+}
+
+func (db *DB) DeleteRosterTx(tx *sql.Tx, projectID anon.ID) error {
+	return qtx(tx).DeleteRoster(context.Background(), projectID)
 }

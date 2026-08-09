@@ -63,7 +63,26 @@ func (h *Handler) Routes() http.Handler {
 	// 逐条路由包一层 auth() 只要漏一次就是个洞。
 	r.Route("/admin/projects", func(r chi.Router) {
 		r.Use(h.requireLogin)
+		// 静态段要排在 /{id} 前面：chi 虽然优先匹配静态段，
+		// 但把它写在前面能让读路由表的人一眼看出 new 不是一个项目 ID。
+		r.Get("/new", h.newProjectPage)
+		r.Post("/new", h.createProject)
 		r.Get("/{id}", h.project)
+		r.Get("/{id}/design", h.design)
+		r.Get("/{id}/edit", h.editProjectPage)
+		r.Post("/{id}/edit", h.updateProject)
+		r.Post("/{id}/copy", h.copyProject)
+		r.Post("/{id}/delete", h.deleteProject)
+		r.Post("/{id}/subjects", h.addSubject)
+		r.Post("/{id}/subjects/reorder", h.reorderSubjects)
+		r.Post("/{id}/groups", h.addGroup)
+		r.Post("/{id}/groups/reorder", h.reorderGroups)
+		r.Get("/{id}/questions/new", h.newQuestionPage)
+		r.Post("/{id}/questions", h.createQuestion)
+		r.Get("/{id}/roster", h.rosterPage)
+		r.Post("/{id}/roster/upload", h.uploadRoster)
+		r.Post("/{id}/roster/confirm", h.confirmRoster)
+		r.Post("/{id}/roster/clear", h.clearRoster)
 		r.Post("/{id}/tokens", h.genTokens)
 		r.Get("/{id}/print", h.printSheets)
 		r.Post("/{id}/status", h.setStatus)
@@ -74,6 +93,27 @@ func (h *Handler) Routes() http.Handler {
 		r.Get("/{id}/export", h.export)
 		r.Get("/{id}/trial", h.trial)
 		r.Post("/{id}/archive", h.archive)
+	})
+
+	// 子对象用自己的 ID 定位，不必再带项目 ID：项目归属由服务层
+	// 从子对象回查（service/design.go），URL 里再带一个项目 ID
+	// 只会多出一条"两个 ID 对不上"的分支，而它并不增加安全性。
+	r.Route("/admin/subjects", func(r chi.Router) {
+		r.Use(h.requireLogin)
+		r.Post("/{id}/update", h.updateSubject)
+		r.Post("/{id}/delete", h.deleteSubject)
+	})
+	r.Route("/admin/groups", func(r chi.Router) {
+		r.Use(h.requireLogin)
+		r.Post("/{id}/update", h.updateGroup)
+		r.Post("/{id}/delete", h.deleteGroup)
+		r.Post("/{id}/reorder", h.reorderQuestions)
+	})
+	r.Route("/admin/questions", func(r chi.Router) {
+		r.Use(h.requireLogin)
+		r.Get("/{id}/edit", h.editQuestionPage)
+		r.Post("/{id}/update", h.updateQuestion)
+		r.Post("/{id}/delete", h.deleteQuestion)
 	})
 
 	r.Group(func(r chi.Router) {
