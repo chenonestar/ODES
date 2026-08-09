@@ -12,22 +12,28 @@ package store
 import (
 	"context"
 	"database/sql"
-	_ "embed"
 	"fmt"
+	"io/fs"
 	"regexp"
 	"strings"
 	"time"
 
+	"github.com/pressly/goose/v3"
+
 	"odes/internal/anon"
+	"odes/migrations"
 
 	_ "modernc.org/sqlite" // 纯 Go 实现，无 CGO（CON-07）
 )
 
-//go:embed schema.sql
-var schemaSQL string
-
-// Schema 供测试与 CI 断言读取。
-func Schema() string { return schemaSQL }
+// Schema 供测试与 CI 断言读取：返回迁移脚本里的建表语句原文。
+func Schema() string {
+	b, err := fs.ReadFile(migrations.FS, "00001_init.sql")
+	if err != nil {
+		return ""
+	}
+	return string(b)
+}
 
 type DB struct {
 	*sql.DB
@@ -71,20 +77,32 @@ func Open(path string) (*DB, error) {
 
 func (db *DB) Path() string { return db.path }
 
+// migrate 用 goose 执行内嵌的迁移脚本（HLD 技术选型表）。
+//
+// 脚本 embed 进二进制、启动时自动执行——现场不存在"先跑一遍迁移工具"
+// 这一步。goose 自己维护 goose_db_version 表记录已应用的版本，重复启动
+// 是幂等的。
 func (db *DB) migrate() error {
-	var n int
-	err := db.QueryRow(`SELECT count(*) FROM sqlite_master WHERE type='table' AND name='meta'`).Scan(&n)
-	if err != nil {
+	goose.SetBaseFS(migrations.FS)
+	goose.SetLogger(goose.NopLogger()) // 迁移细节不进控制台，失败会由 error 带出
+	if err := goose.SetDialect("sqlite3"); err != nil {
 		return err
 	}
-	if n > 0 {
-		return nil // 已初始化
+	if err := goose.Up(db.DB, "."); err != nil {
+		return fmt.Errorf("执行数据库迁移失败: %w", err)
 	}
-	if _, err := db.Exec(schemaSQL); err != nil {
-		return fmt.Errorf("建表失败: %w", err)
+	var n int
+	if err := db.QueryRow(
+		`SELECT count(*) FROM meta WHERE key='schema_version'`).Scan(&n); err != nil {
+		return err
 	}
-	_, err = db.Exec(`INSERT INTO meta(key,value) VALUES('schema_version',?)`, []byte("1"))
-	return err
+	if n == 0 {
+		if _, err := db.Exec(
+			`INSERT INTO meta(key,value) VALUES('schema_version',?)`, []byte("1")); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // ── 匿名性断言（LLD 2.5 / AT-02）────────────────────────────────────

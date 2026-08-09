@@ -5,379 +5,392 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="referrer" content="no-referrer">
 <title>{{.Title}}</title>
-<style>
-/* 作答端专用精简样式。不复用管理端样式表——作答页要下发到 200 部手机，
-   体积预算 <500KB（NFR-PER-014），管理端的完整样式带不进来。 */
-:root{--fs:1rem;--ink:#1b2434;--seal:#9e2b25;--line:#ddd7cb;--bg:#fbfaf7;--soft:#f3f1ec}
-*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html{font-size:17px}                        /* 默认档 ≥17px（FR-ANS-021） */
-body{margin:0;background:var(--bg);color:var(--ink);font-size:var(--fs);line-height:1.7;
- font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif}
-header{background:#fff;border-bottom:1px solid var(--line);padding:12px 16px;
- position:sticky;top:0;z-index:5}
-h1{font-size:1.05em;margin:0 0 4px;line-height:1.5}
-.intro{font-size:.82em;color:#5c6675;margin:0}
-.bar{display:flex;align-items:center;gap:10px;margin-top:8px;font-size:.8em;color:#5c6675}
-.bar .grow{flex:1}
-.track{height:4px;background:var(--soft);border-radius:2px;overflow:hidden;margin-top:6px}
-.track i{display:block;height:100%;background:var(--seal);transition:width .2s}
-.fs-btn{border:1px solid var(--line);background:#fff;border-radius:4px;padding:3px 9px;
- font-size:13px;color:var(--ink);cursor:pointer}
-.fs-btn[aria-pressed=true]{background:var(--seal);color:#fff;border-color:var(--seal)}
-main{padding:14px 16px 120px;max-width:640px;margin:0 auto}
-.subject{background:#fff;border:1px solid var(--line);border-left:3px solid var(--seal);
- padding:12px 14px;margin-bottom:14px}
-.subject b{font-size:1.1em}
-.subject span{color:#5c6675;font-size:.85em;margin-left:8px}
-.grp{margin:18px 0 8px;font-weight:600;color:var(--seal);font-size:.95em}
-.q{background:#fff;border:1px solid var(--line);padding:12px 14px;margin-bottom:12px}
-.q.miss{border-color:var(--seal);box-shadow:0 0 0 2px rgba(158,43,37,.12)}
-.qt{margin:0 0 10px;font-weight:600}
-.qt em{color:var(--seal);font-style:normal;margin-left:3px}
-.hint{font-size:.8em;color:#5c6675;margin:-6px 0 10px}
-/* 选项整行可点，触摸目标 ≥48px；已选用填充色块而非细边框——
-   老花眼下细线难以分辨（HLD 9.4） */
-label.opt{display:flex;align-items:center;gap:10px;min-height:48px;padding:6px 12px;
- border:1px solid var(--line);border-radius:3px;margin-bottom:7px;cursor:pointer;background:#fff}
-label.opt input{width:20px;height:20px;accent-color:var(--seal);flex:none}
-label.opt.on{background:var(--seal);border-color:var(--seal);color:#fff;font-weight:600}
-label.opt.abst{color:#5c6675}
-label.opt.abst.on{background:#5c6675;border-color:#5c6675;color:#fff}
-textarea{width:100%;min-height:88px;padding:10px;border:1px solid var(--line);
- border-radius:3px;font:inherit;font-size:.95em;resize:vertical}
-.cnt{text-align:right;font-size:.75em;color:#5c6675}
-nav{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px solid var(--line);
- padding:10px 16px calc(10px + env(safe-area-inset-bottom));display:flex;gap:10px;z-index:6}
-nav button{flex:1;min-height:50px;border-radius:4px;font:inherit;font-size:1em;
- font-weight:600;cursor:pointer;border:1px solid var(--line);background:#fff;color:var(--ink)}
-nav button.primary{background:var(--seal);border-color:var(--seal);color:#fff}
-nav button:disabled{opacity:.45}
-.banner{background:#b8860b;color:#fff;text-align:center;padding:7px;font-size:.85em;font-weight:600}
-.toast{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);background:rgba(27,36,52,.94);
- color:#fff;padding:16px 22px;border-radius:6px;z-index:20;max-width:80%;text-align:center;font-size:.95em}
-.offline{background:#5c6675;color:#fff;text-align:center;padding:6px;font-size:.82em}
-.done{text-align:center;padding:64px 24px}
-.done .tick{font-size:60px;color:#2f6f4f}
-.done h2{font-size:1.2em;margin:10px 0}
-.done p{color:#5c6675;font-size:.9em}
-[hidden]{display:none !important}
-</style>
+<style>{{.CSS}}</style>
 </head>
-<body>
+<body class="bg-paper text-ink antialiased">
 
-<!-- 题目数据一次性内嵌。此后翻页、校验、进度全部本地完成，
+<!-- 题目数据一次性内嵌。此后翻页、填写、校验全部本地完成，
      直到提交才再次接触网络（ADR-001）。 -->
 <script type="application/json" id="form-data">{{.FormJSON}}</script>
 
-<div id="app">
-  <div class="banner" id="trial" hidden>试填模式 · 数据不计入统计</div>
-  <div class="offline" id="offline" hidden>当前网络不可用，已填内容不会丢失</div>
+<div x-data="evalForm" x-cloak>
 
-  <header id="hd">
-    <h1 id="title"></h1>
-    <p class="intro" id="intro"></p>
-    <div class="bar">
-      <span id="pos"></span>
-      <span class="grow"></span>
-      <span>字号</span>
-      <button class="fs-btn" data-fs="0">小</button>
-      <button class="fs-btn" data-fs="1">中</button>
-      <button class="fs-btn" data-fs="2">大</button>
+  <!-- 完成页（提交成功后就地切换，不再发请求） -->
+  <template x-if="done">
+    <div class="min-h-screen grid place-items-center px-6 text-center">
+      <div>
+        <div class="text-6xl text-green-700">&#10003;</div>
+        <h2 class="text-xl font-semibold mt-3">提交成功，感谢参与</h2>
+        <p class="text-slate mt-2 leading-relaxed" x-text="doneNote"></p>
+      </div>
     </div>
-    <div class="track"><i id="prog"></i></div>
-  </header>
+  </template>
 
-  <main id="body"></main>
+  <template x-if="notDone">
+    <div>
+      <div x-show="trial" class="bg-amber-600 text-white text-center py-2 text-sm font-semibold">
+        试填模式 · 数据不计入统计
+      </div>
+      <div x-show="offline" class="bg-slate text-white text-center py-1.5 text-sm">
+        当前网络不可用，已填内容不会丢失
+      </div>
 
-  <nav id="nav">
-    <button id="prev">‹ 上一位</button>
-    <button id="next" class="primary">下一位 ›</button>
-  </nav>
-</div>
+      <header class="bg-white border-b border-rule px-4 py-3 sticky top-0 z-10">
+        <h1 class="font-semibold leading-snug" x-text="title"></h1>
+        <p class="text-sm text-slate mt-0.5" x-text="intro"></p>
+        <div class="flex items-center gap-2 mt-2 text-sm text-slate">
+          <span x-text="posLabel"></span>
+          <span class="flex-1"></span>
+          <span>字号</span>
+          <button type="button" class="border border-rule rounded px-2 py-0.5 text-sm"
+                  x-on:click="fsSmall">小</button>
+          <button type="button" class="border border-rule rounded px-2 py-0.5 text-sm"
+                  x-on:click="fsMedium">中</button>
+          <button type="button" class="border border-rule rounded px-2 py-0.5 text-sm"
+                  x-on:click="fsLarge">大</button>
+        </div>
+        <div class="h-1 bg-rule/40 rounded mt-2 overflow-hidden">
+          <div class="h-full bg-seal transition-all" x-bind:style="progressStyle"></div>
+        </div>
+      </header>
 
-<div id="finish" class="done" hidden>
-  <div class="tick">&#10003;</div>
-  <h2>提交成功，感谢参与</h2>
-  <p id="finish-note">您的作答已匿名记录，无法与您的身份关联。<br>请将令牌单投入会场出口回收箱。</p>
+      <main class="px-4 pb-32 pt-3 max-w-2xl mx-auto" x-on:click="pick" x-on:input="typeText">
+        <div class="bg-white border border-rule border-l-4 border-l-seal px-4 py-3 mb-3">
+          <b class="text-lg" x-text="subjectName"></b>
+          <span class="text-slate text-sm ml-2" x-text="subjectDuty"></span>
+        </div>
+
+        <template x-for="g in visibleGroups">
+          <div>
+            <div class="text-seal font-semibold mt-4 mb-2" x-text="g.title"></div>
+            <template x-for="q in g.questions">
+              <div class="bg-white border border-rule px-4 py-3 mb-3"
+                   x-bind:id="q.domId" x-bind:class="q.missClass">
+                <p class="font-semibold mb-2">
+                  <span x-text="q.title"></span>
+                  <span x-show="q.required" class="text-seal ml-0.5">*</span>
+                </p>
+                <p x-show="q.hint" class="text-sm text-slate -mt-1 mb-2" x-text="q.hint"></p>
+
+                <!-- 选项整行可点，触摸目标 ≥48px；已选用填充色块而非细边框，
+                     老花眼下细线难以分辨（HLD 9.4）。
+                     刻意**不用真实的 <input type="radio">**：label 会把点击再转发给
+                     内部控件，同一次点按会产生两个 click 事件，把刚选中的项立刻
+                     取消掉。这里用 role="radio" + 样式化指示点，一次点按一个事件。 -->
+                <div role="radiogroup">
+                  <template x-for="o in q.choices">
+                    <div role="radio" tabindex="0"
+                         class="flex items-center gap-2.5 min-h-12 px-3 mb-1.5 rounded border cursor-pointer select-none"
+                         x-bind:class="o.cls" x-bind:data-key="o.key"
+                         x-bind:aria-checked="o.aria">
+                      <span class="w-5 h-5 rounded-full border-2 grid place-items-center shrink-0"
+                            x-bind:class="o.dotCls">
+                        <span class="w-2.5 h-2.5 rounded-full bg-current" x-show="o.on"></span>
+                      </span>
+                      <span x-text="o.label"></span>
+                    </div>
+                  </template>
+                </div>
+
+                <template x-if="q.isText">
+                  <div>
+                    <textarea class="w-full min-h-24 p-2.5 border border-rule rounded text-base"
+                              x-bind:maxlength="q.maxChars" x-bind:placeholder="q.hint"
+                              x-bind:data-key="q.key"></textarea>
+                    <div class="text-right text-xs text-slate" x-text="q.counter"></div>
+                  </div>
+                </template>
+              </div>
+            </template>
+          </div>
+        </template>
+      </main>
+
+      <nav class="fixed inset-x-0 bottom-0 bg-white border-t border-rule flex gap-2 px-4 py-2.5 pb-[calc(0.625rem+env(safe-area-inset-bottom))]">
+        <button type="button" class="flex-1 min-h-12 rounded border border-rule font-semibold"
+                x-bind:disabled="atFirst" x-on:click="prev">‹ 上一位</button>
+        <button type="button" class="flex-1 min-h-12 rounded bg-seal text-white font-semibold"
+                x-bind:disabled="busy" x-on:click="next" x-text="nextLabel"></button>
+      </nav>
+
+      <div x-show="toast" class="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2
+                                 bg-ink/95 text-white px-6 py-4 rounded-md max-w-[80%] text-center z-50">
+        <span x-text="toast"></span>
+      </div>
+    </div>
+  </template>
 </div>
 
 <script>
-(function(){
-"use strict";
-var DATA = JSON.parse(document.getElementById("form-data").textContent);
-var TOKEN = DATA.token, TRIAL = DATA.trial;
-var DRAFT_KEY = "draft:" + TOKEN;      // 按令牌分 key，同设备多人先后作答不串档
-var FS_KEY = "fs";
-var A = {};                             // "qid:sid" -> 值
-var page = 0, missing = {};
+// 组件定义必须在 Alpine 之前注册。用的是 Alpine 的 **CSP 构建**，
+// 表达式只能是属性名或方法名——不需要 'unsafe-eval'，作答页因此可以
+// 保持 default-src 'none' 的严格 CSP。所有派生值都写成 getter。
+document.addEventListener("alpine:init", function () {
+  Alpine.data("evalForm", function () {
+    var D = JSON.parse(document.getElementById("form-data").textContent);
+    var DRAFT = "draft:" + D.token, FS = "fs";
+    var LS = (function () {
+      try { localStorage.setItem("__t", "1"); localStorage.removeItem("__t"); return localStorage; }
+      catch (e) { return null; }
+    })();
 
-var $ = function(id){ return document.getElementById(id); };
+    return {
+      d: D, trial: D.trial, title: D.title, intro: D.intro,
+      page: 0, ans: {}, miss: {}, done: false, busy: false, toast: "",
+      offline: false, fs: 1, _blob: 0, sealed: false,
 
-// ── 草稿（FR-ANS-015）────────────────────────────────────────────
-// LocalStorage 被禁用（无痕模式）时静默降级，不阻断作答。
-var LS = (function(){
-  try { localStorage.setItem("__t","1"); localStorage.removeItem("__t"); return localStorage; }
-  catch(e){ return null; }
-})();
+      init: function () {
+        var self = this;
+        // 草稿（FR-ANS-015）：按令牌分 key，同设备多人先后作答不串档
+        if (LS) {
+          try {
+            var raw = LS.getItem(DRAFT);
+            if (raw) { var o = JSON.parse(raw); if (o && o.a) this.ans = o.a; }
+            for (var i = LS.length - 1; i >= 0; i--) {
+              var k = LS.key(i);
+              if (k && k.indexOf("draft:") === 0) {
+                try {
+                  var d = JSON.parse(LS.getItem(k));
+                  if (!d || !d.t || Date.now() - d.t > 864e5) LS.removeItem(k);
+                } catch (e) { LS.removeItem(k); }
+              }
+            }
+            var f = LS.getItem(FS);
+            if (f !== null) this.fs = +f;
+          } catch (e) {}
+        }
+        this.applyFS();
+        window.addEventListener("offline", function () { self.offline = true; });
+        window.addEventListener("online", function () { self.offline = false; });
+      },
 
-function saveDraft(){
-  if(!LS) return;
-  try { LS.setItem(DRAFT_KEY, JSON.stringify({t:Date.now(), a:A})); } catch(e){}
-}
-function loadDraft(){
-  if(!LS) return;
-  try {
-    var raw = LS.getItem(DRAFT_KEY);
-    if(raw){ var d = JSON.parse(raw); if(d && d.a) A = d.a; }
-    // 清理 24 小时前的其它草稿，避免内容长期残留在他人手机上
-    for(var i=LS.length-1;i>=0;i--){
-      var k = LS.key(i);
-      if(k && k.indexOf("draft:")===0){
-        try{ var o=JSON.parse(LS.getItem(k));
-             if(!o || !o.t || Date.now()-o.t > 864e5) LS.removeItem(k); }catch(e){ LS.removeItem(k); }
+      // ── 派生值（CSP 构建下模板里只能引用这些）──
+      get notDone() { return !this.done; },
+      get subject() { return this.d.subjects[this.page]; },
+      get subjectName() { return this.subject.name; },
+      get subjectDuty() { return this.subject.duty || ""; },
+      get atFirst() { return this.page === 0; },
+      get atLast() { return this.page === this.d.subjects.length - 1; },
+      get nextLabel() { return this.atLast ? "提交测评" : "下一位 ›"; },
+      get posLabel() {
+        return "第 " + (this.page + 1) + " / " + this.d.subjects.length +
+               " 位　已完成 " + this.answered + "/" + this.total;
+      },
+      get progressStyle() {
+        return "width:" + (this.total ? this.answered * 100 / this.total : 0) + "%";
+      },
+      get doneNote() {
+        return this.trial ? "这是试填模式，本次数据不计入统计。"
+                          : "您的作答已匿名记录，无法与您的身份关联。请将令牌单投入会场出口回收箱。";
+      },
+      get total() {
+        var n = 0;
+        this.d.groups.forEach(function (g) {
+          g.questions.forEach(function (q) { n += q.subjects.length; });
+        });
+        return n;
+      },
+      get answered() {
+        var n = 0, a = this.ans;
+        for (var k in a) {
+          var v = a[k];
+          if (v !== undefined && v !== null && v !== "" && !(Array.isArray(v) && !v.length)) n++;
+        }
+        return n;
+      },
+
+      // 当前页要渲染的题目，已展开成模板可直接消费的形状——
+      // CSP 构建不允许在模板里做运算，因此全部预先算好。
+      get visibleGroups() {
+        var self = this, sid = this.subject.id, out = [];
+        this._blob;
+        this.d.groups.forEach(function (g) {
+          var qs = [];
+          g.questions.forEach(function (q) {
+            if (q.subjects.indexOf(sid) < 0) return;
+            var key = q.id + ":" + sid, v = self.ans[key];
+            var item = {
+              key: key, domId: "q-" + key.replace(/[^A-Za-z0-9_-]/g, "_"),
+              title: q.title, hint: q.hint || "", required: !!q.required,
+              isText: q.kind === "text", maxChars: q.maxChars || 500,
+              missClass: self.miss[key] ? "border-seal ring-2 ring-seal/15" : "",
+              counter: (v ? String(v).length : 0) + "/" + (q.maxChars || 500),
+              choices: []
+            };
+            var add = function (val, label, muted) {
+              var on = Array.isArray(v) ? v.indexOf(val) >= 0 : v === val;
+              item.choices.push({
+                key: key + "|" + q.kind + "|" + val, label: label, on: on,
+                aria: on ? "true" : "false",
+                cls: on ? (muted ? "bg-slate text-white border-slate font-semibold"
+                                 : "bg-seal text-white border-seal font-semibold")
+                        : "bg-white border-rule" + (muted ? " text-slate" : ""),
+                dotCls: on ? "border-white text-white" : "border-rule text-transparent"
+              });
+            };
+            if (q.kind === "grade") {
+              self.d.grades.forEach(function (g2, i) { add(i, g2, false); });
+              add(-1, "弃权", true);
+            } else if (q.kind === "single") {
+              q.options.forEach(function (o) { add(o.id, o.label, false); });
+              add("__abstain", "弃权", true);
+            } else if (q.kind === "multi") {
+              q.options.forEach(function (o) { add(o.id, o.label, false); });
+            } else if (q.kind === "score") {
+              var lo = q.scoreMin || 1, hi = q.scoreMax || 10;
+              for (var n = lo; n <= hi; n++) add(n, n + " 分", false);
+            }
+            qs.push(item);
+          });
+          if (qs.length) out.push({ title: g.title, questions: qs });
+        });
+        return out;
+      },
+
+      // ── 动作 ──
+      // 事件委托：监听挂在 <main> 上，而不是每个 label 上。
+      //
+      // 必须这样做——Alpine 的 CSP 构建在嵌套 <template x-for> 内部的元素上
+      // 绑定 x-on 不生效（同样的 x-on:click 写在 x-for 外的按钮上正常）。
+      // 委托到 x-for 之外的容器既绕开了这个限制，也少了几百个监听器。
+      pick: function (e) {
+        var lab = e.target.closest ? e.target.closest("[data-key][role=radio]") : null;
+        if (!lab) return;
+        var parts = lab.dataset.key.split("|");
+        var key = parts[0], kind = parts[1], raw = parts.slice(2).join("|");
+        var val = (kind === "grade" || kind === "score") ? +raw : raw;
+        if (kind === "multi") {
+          var arr = this.ans[key] || [];
+          var i = arr.indexOf(val);
+          if (i >= 0) arr.splice(i, 1); else arr.push(val);
+          this.ans[key] = arr.length ? arr : undefined;
+        } else {
+          this.ans[key] = this.ans[key] === val ? undefined : val;
+        }
+        delete this.miss[key];
+        this._blob++;
+        this.save();
+      },
+
+      typeText: function (e) {
+        if (e.target.tagName !== "TEXTAREA" || !e.target.dataset.key) return;
+        this.ans[e.target.dataset.key] = e.target.value || undefined;
+        this._blob++;
+        this.save();
+      },
+
+      prev: function () { if (this.page > 0) { this.page--; this.save(); window.scrollTo(0, 0); } },
+
+      next: function () {
+        var missing = this.missingOnPage();
+        if (missing.length) {
+          var self = this;
+          missing.forEach(function (k) { self.miss[k] = 1; });
+          this._blob++;
+          this.flash("本页有必填项未完成，已为您定位到第一处");
+          var el = document.getElementById("q-" + missing[0].replace(/[^A-Za-z0-9_-]/g, "_"));
+          if (el) el.scrollIntoView({ block: "center", behavior: "smooth" });
+          return;
+        }
+        if (!this.atLast) { this.page++; this.save(); window.scrollTo(0, 0); return; }
+        if (!confirm("提交后将无法修改，确定提交？")) return;   // FR-ANS-017
+        this.submit();
+      },
+
+      missingOnPage: function () {
+        var sid = this.subject.id, self = this, out = [];
+        this.d.groups.forEach(function (g) {
+          g.questions.forEach(function (q) {
+            if (!q.required || q.subjects.indexOf(sid) < 0) return;
+            var k = q.id + ":" + sid, v = self.ans[k];
+            if (v === undefined || v === null || v === "" ||
+                (Array.isArray(v) && !v.length)) out.push(k);
+          });
+        });
+        return out;
+      },
+
+      submit: function () {
+        var self = this, items = [];
+        this.d.groups.forEach(function (g) {
+          g.questions.forEach(function (q) {
+            q.subjects.forEach(function (sid) {
+              var v = self.ans[q.id + ":" + sid];
+              if (v === undefined || v === null || v === "") return;
+              var it = { q: q.id, s: sid };
+              if (q.kind === "grade") it.grade = v;
+              else if (q.kind === "score") it.score = v;
+              else if (q.kind === "multi") it.opts = v;
+              else if (q.kind === "single") it.opt = v;
+              else it.text = v;
+              items.push(it);
+            });
+          });
+        });
+        this.busy = true;
+        this.flash("正在提交…");
+        fetch(this.d.submitURL, {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ v: 1, items: items })
+        }).then(function (r) {
+          return r.json().then(function (j) { return j; });
+        }).then(function (j) {
+          self.busy = false; self.toast = "";
+          if (j && j.ok) {
+            // 提交成功立即清除草稿（FR-ANS-016）。
+            // 必须先取消待触发的防抖保存——否则那个 500ms 的定时器会在
+            // removeItem 之后把草稿原样写回去，内容就留在了别人的手机上。
+            self.sealed = true;
+            clearTimeout(self._t);
+            if (LS) { try { LS.removeItem(DRAFT); } catch (e) {} }
+            self.done = true;
+            window.scrollTo(0, 0);
+            return;
+          }
+          if (j && j.missing && j.missing.length) {
+            j.missing.forEach(function (k) { self.miss[k] = 1; });
+            var sid = j.missing[0].split(":")[1];
+            for (var i = 0; i < self.d.subjects.length; i++) {
+              if (self.d.subjects[i].id === sid) { self.page = i; break; }
+            }
+            self._blob++;
+          }
+          self.flash((j && j.msg) || "提交失败，请重试", 3000);
+        }).catch(function () {
+          // 提交失败保留草稿并支持重试（FR-ANS-020）
+          self.busy = false;
+          self.flash("提交失败，请检查是否已连上测评 WiFi，然后重试。已填内容已保留。", 4000);
+        });
+      },
+
+      save: function () {
+        if (!LS || this.sealed) return;
+        var self = this;
+        clearTimeout(this._t);
+        this._t = setTimeout(function () {           // 防抖 500ms
+          try { LS.setItem(DRAFT, JSON.stringify({ t: Date.now(), a: self.ans })); } catch (e) {}
+        }, 500);
+      },
+
+      flash: function (m, ms) {
+        var self = this;
+        this.toast = m;
+        clearTimeout(this._ft);
+        if (ms) this._ft = setTimeout(function () { self.toast = ""; }, ms);
+      },
+
+      // 字号三档，默认档 ≥17px（FR-ANS-021）
+      fsSmall: function () { this.fs = 0; this.applyFS(); },
+      fsMedium: function () { this.fs = 1; this.applyFS(); },
+      fsLarge: function () { this.fs = 2; this.applyFS(); },
+      applyFS: function () {
+        document.documentElement.style.fontSize = ["16px", "19px", "22px"][this.fs];
+        if (LS) { try { LS.setItem(FS, this.fs); } catch (e) {} }
       }
-    }
-  } catch(e){}
-}
-function clearDraft(){ if(LS){ try{ LS.removeItem(DRAFT_KEY); }catch(e){} } }
-
-// ── 字号三档（FR-ANS-021）───────────────────────────────────────
-var SIZES = ["16px","19px","22px"];
-function setFS(i){
-  document.documentElement.style.fontSize = SIZES[i];
-  if(LS){ try{ LS.setItem(FS_KEY, i); }catch(e){} }
-  [].forEach.call(document.querySelectorAll(".fs-btn"), function(b){
-    b.setAttribute("aria-pressed", b.dataset.fs === String(i));
+    };
   });
-}
-
-// ── 渲染：按测评对象逐页（FR-FRM-033）───────────────────────────
-// 禁止把矩阵展开后的全部作答项排在单一长页上：5 位对象 × 15 题 = 75 项，
-// 手机上无法使用。
-function render(){
-  var subs = DATA.subjects, s = subs[page];
-  $("pos").textContent = "第 " + (page+1) + " / " + subs.length + " 位　已完成 " + answered() + "/" + total();
-  $("prog").style.width = (total() ? answered()*100/total() : 0) + "%";
-
-  var h = '<div class="subject"><b>' + esc(s.name) + '</b>';
-  if(s.duty) h += '<span>' + esc(s.duty) + '</span>';
-  h += '</div>';
-
-  DATA.groups.forEach(function(g){
-    var qs = g.questions.filter(function(q){ return q.subjects.indexOf(s.id) >= 0; });
-    if(!qs.length) return;
-    h += '<div class="grp">' + esc(g.title) + '</div>';
-    qs.forEach(function(q){ h += renderQ(q, s.id); });
-  });
-  $("body").innerHTML = h;
-  window.scrollTo(0,0);
-
-  $("prev").disabled = page === 0;
-  $("next").textContent = page === subs.length-1 ? "提交测评" : "下一位 ›";
-  $("next").className = "primary";
-}
-
-function renderQ(q, sid){
-  var k = q.id + ":" + sid, v = A[k];
-  var h = '<div class="q' + (missing[k] ? ' miss' : '') + '" id="q-' + cssid(k) + '">';
-  h += '<p class="qt">' + esc(q.title) + (q.required ? '<em>*</em>' : '') + '</p>';
-  if(q.hint) h += '<p class="hint">' + esc(q.hint) + '</p>';
-
-  if(q.kind === "grade"){
-    (DATA.grades).forEach(function(g,i){
-      h += optRow(k, "grade", i, g, v === i, "");
-    });
-    // 弃权是显式选择，与"漏填"区分：它是有效表达，单列统计并计入分母
-    h += optRow(k, "grade", -1, "弃权", v === -1, " abst");
-  } else if(q.kind === "single"){
-    q.options.forEach(function(o){ h += optRow(k, "opt", o.id, o.label, v === o.id, ""); });
-    h += optRow(k, "opt", "__abstain", "弃权", v === "__abstain", " abst");
-  } else if(q.kind === "multi"){
-    var arr = v || [];
-    q.options.forEach(function(o){
-      h += optRow(k, "multi", o.id, o.label, arr.indexOf(o.id) >= 0, "");
-    });
-  } else if(q.kind === "score"){
-    var lo = q.scoreMin || 1, hi = q.scoreMax || 10;
-    for(var n = lo; n <= hi; n++) h += optRow(k, "score", n, n + " 分", v === n, "");
-  } else if(q.kind === "text"){
-    var max = q.maxChars || 500, cur = v || "";
-    h += '<textarea data-k="' + k + '" maxlength="' + max + '" placeholder="' +
-         esc(q.hint || "请写下具体意见（选填）") + '">' + esc(cur) + '</textarea>';
-    h += '<div class="cnt"><span>' + cur.length + '</span>/' + max + '</div>';
-  }
-  return h + '</div>';
-}
-
-function optRow(k, type, val, label, on, extra){
-  var input = type === "multi" ? "checkbox" : "radio";
-  return '<label class="opt' + extra + (on ? ' on' : '') + '" data-k="' + k +
-    '" data-t="' + type + '" data-v="' + String(val) + '">' +
-    '<input type="' + input + '" name="' + cssid(k) + '"' + (on ? ' checked' : '') + '>' +
-    '<span>' + esc(label) + '</span></label>';
-}
-
-// ── 交互 ────────────────────────────────────────────────────────
-document.addEventListener("click", function(e){
-  var fs = e.target.closest && e.target.closest(".fs-btn");
-  if(fs){ setFS(+fs.dataset.fs); return; }
-
-  var lab = e.target.closest && e.target.closest("label.opt");
-  if(!lab) return;
-  e.preventDefault();
-  var k = lab.dataset.k, t = lab.dataset.t, raw = lab.dataset.v;
-
-  if(t === "multi"){
-    var arr = A[k] || [];
-    var i = arr.indexOf(raw);
-    if(i >= 0) arr.splice(i,1); else arr.push(raw);
-    A[k] = arr.length ? arr : undefined;
-  } else if(t === "grade" || t === "score"){
-    A[k] = (A[k] === +raw) ? undefined : +raw;   // 再点一次可取消
-  } else {
-    A[k] = (A[k] === raw) ? undefined : raw;
-  }
-  delete missing[k];
-  saveDraft();
-  render();
 });
-
-document.addEventListener("input", function(e){
-  if(e.target.tagName !== "TEXTAREA") return;
-  var k = e.target.dataset.k;
-  A[k] = e.target.value || undefined;
-  var c = e.target.parentNode.querySelector(".cnt span");
-  if(c) c.textContent = e.target.value.length;
-  clearTimeout(window.__dt);
-  window.__dt = setTimeout(saveDraft, 500);       // 防抖 500ms
-});
-
-$("prev").onclick = function(){ if(page > 0){ page--; saveDraft(); render(); } };
-
-$("next").onclick = function(){
-  var miss = missOn(page);
-  if(miss.length){
-    miss.forEach(function(k){ missing[k] = 1; });
-    render();
-    var el = document.getElementById("q-" + cssid(miss[0]));
-    if(el) el.scrollIntoView({block:"center", behavior:"smooth"});
-    toast("本页有必填项未完成，已为您定位到第一处");
-    return;
-  }
-  if(page < DATA.subjects.length - 1){ page++; saveDraft(); render(); return; }
-  if(!confirm("提交后将无法修改，确定提交？")) return;   // FR-ANS-017
-  submit();
-};
-
-// ── 提交 ────────────────────────────────────────────────────────
-function submit(){
-  var items = [];
-  DATA.groups.forEach(function(g){
-    g.questions.forEach(function(q){
-      q.subjects.forEach(function(sid){
-        var k = q.id + ":" + sid, v = A[k];
-        if(v === undefined || v === null || v === "") return;
-        var it = {q:q.id, s:sid};
-        if(q.kind === "grade") it.grade = v;
-        else if(q.kind === "score") it.score = v;
-        else if(q.kind === "multi") it.opts = v;
-        else if(q.kind === "single") it.opt = v;
-        else it.text = v;
-        items.push(it);
-      });
-    });
-  });
-
-  $("next").disabled = true;
-  toast("正在提交…");
-  fetch(DATA.submitURL, {
-    method:"POST", headers:{"Content-Type":"application/json"},
-    body: JSON.stringify({v:1, items:items})
-  }).then(function(r){ return r.json().then(function(j){ return {s:r.status, j:j}; }); })
-    .then(function(o){
-      untoast();
-      $("next").disabled = false;
-      if(o.j && o.j.ok){
-        clearDraft();                              // 提交成功立即清除（FR-ANS-016）
-        $("app").hidden = true;
-        $("finish").hidden = false;
-        if(TRIAL) $("finish-note").innerHTML = "这是<b>试填模式</b>，本次数据不计入统计。";
-        window.scrollTo(0,0);
-        return;
-      }
-      if(o.j && o.j.missing && o.j.missing.length){
-        o.j.missing.forEach(function(k){ missing[k] = 1; });
-        jumpTo(o.j.missing[0]);
-      }
-      toast((o.j && o.j.msg) || "提交失败，请重试", 3000);
-    })
-    .catch(function(){
-      untoast();
-      $("next").disabled = false;
-      // 提交失败保留草稿并支持重试（FR-ANS-020）
-      toast("提交失败，请检查是否已连上测评 WiFi，然后重试。已填内容已保留。", 4000);
-    });
-}
-
-function jumpTo(k){
-  for(var i=0;i<DATA.subjects.length;i++){
-    if(k.split(":")[1] === DATA.subjects[i].id){ page = i; break; }
-  }
-  render();
-  var el = document.getElementById("q-" + cssid(k));
-  if(el) el.scrollIntoView({block:"center"});
-}
-
-// ── 校验与进度 ──────────────────────────────────────────────────
-function missOn(pi){
-  var sid = DATA.subjects[pi].id, out = [];
-  DATA.groups.forEach(function(g){
-    g.questions.forEach(function(q){
-      if(!q.required || q.subjects.indexOf(sid) < 0) return;
-      var k = q.id + ":" + sid, v = A[k];
-      if(v === undefined || v === null || v === "" || (Array.isArray(v) && !v.length)) out.push(k);
-    });
-  });
-  return out;
-}
-function total(){
-  var n = 0;
-  DATA.groups.forEach(function(g){ g.questions.forEach(function(q){ n += q.subjects.length; }); });
-  return n;
-}
-function answered(){
-  var n = 0;
-  for(var k in A){ var v = A[k];
-    if(v !== undefined && v !== null && v !== "" && !(Array.isArray(v) && !v.length)) n++; }
-  return n;
-}
-
-// ── 工具 ────────────────────────────────────────────────────────
-function esc(s){ return String(s == null ? "" : s).replace(/[&<>"']/g, function(c){
-  return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }); }
-function cssid(s){ return s.replace(/[^A-Za-z0-9_-]/g, "_"); }
-function toast(m, ms){
-  untoast();
-  var d = document.createElement("div");
-  d.className = "toast"; d.id = "toast"; d.textContent = m;
-  document.body.appendChild(d);
-  if(ms) setTimeout(untoast, ms);
-}
-function untoast(){ var t = $("toast"); if(t) t.remove(); }
-
-// 网络中断提示条，不影响已填内容，恢复后自动消失（NFR-USA-015）
-window.addEventListener("offline", function(){ $("offline").hidden = false; });
-window.addEventListener("online",  function(){ $("offline").hidden = true; });
-
-// ── 启动 ────────────────────────────────────────────────────────
-$("title").textContent = DATA.title;
-$("intro").textContent = DATA.intro || "";
-if(TRIAL) $("trial").hidden = false;
-loadDraft();
-var savedFS = LS && LS.getItem(FS_KEY);
-setFS(savedFS === null || savedFS === undefined ? 1 : +savedFS);
-render();
-})();
 </script>
+<script>{{.Alpine}}</script>
 </body>
 </html>

@@ -4,23 +4,27 @@
 // 零延迟，用户只有 1 人且熟悉系统，失败可重试；作答端在无线环境下面对
 // 最多 200 名首次使用者，失败即不可补测。两种失败代价决定了两种形态。
 //
-// 此处用 html/template 服务端渲染，未引入 templ / htmx / Tailwind——
-// 见 README「与文档的偏差」一节。
+// 交互用 htmx（HLD 技术选型表）：管理端在本机回环上，网络绝对可靠，
+// htmx 的服务端驱动模型完全适用。作答端则相反，必须自包含（ADR-001）。
 package admin
 
 import (
 	"embed"
 	"fmt"
 	"html/template"
+	"io"
 	"net/http"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/go-chi/chi/v5"
+
 	"odes/internal/anon"
 	"odes/internal/model"
 	"odes/internal/service"
 	"odes/internal/stats"
+	"odes/web"
 )
 
 //go:embed templates/*.html
@@ -51,39 +55,68 @@ type Handler struct {
 }
 
 func (h *Handler) Routes() http.Handler {
-	mux := http.NewServeMux()
+	r := chi.NewRouter()
 
-	mux.HandleFunc("GET /admin/login", h.loginPage)
-	mux.HandleFunc("POST /admin/login", h.doLogin)
-	mux.HandleFunc("POST /admin/logout", h.logout)
+	// 静态资源：样式与 htmx。都是 embed 进二进制的本地文件，
+	// 不存在任何外部请求（CON-02 全程离线）。
+	r.Get("/static/admin.css", serveAsset("text/css; charset=utf-8", web.AdminCSS))
+	r.Get("/static/htmx.min.js", serveAsset("text/javascript; charset=utf-8", web.HTMX))
 
-	auth := func(f http.HandlerFunc) http.HandlerFunc {
-		return func(w http.ResponseWriter, r *http.Request) {
-			if !h.SessionMgr.Valid(r) {
-				http.Redirect(w, r, "/admin/login", http.StatusSeeOther)
-				return
-			}
-			h.SessionMgr.Touch(w, r)
-			f(w, r)
-		}
-	}
+	r.Get("/admin/login", h.loginPage)
+	r.Post("/admin/login", h.doLogin)
+	r.Post("/admin/logout", h.logout)
 
-	mux.HandleFunc("GET /admin/", auth(h.home))
-	mux.HandleFunc("GET /admin/projects/{id}", auth(h.project))
-	mux.HandleFunc("POST /admin/projects/{id}/tokens", auth(h.genTokens))
-	mux.HandleFunc("GET /admin/projects/{id}/print", auth(h.printSheets))
-	mux.HandleFunc("POST /admin/projects/{id}/status", auth(h.setStatus))
-	mux.HandleFunc("GET /admin/projects/{id}/stats", auth(h.stats))
-	mux.HandleFunc("GET /admin/projects/{id}/paper", auth(h.paperForm))
-	mux.HandleFunc("POST /admin/projects/{id}/paper", auth(h.paperSubmit))
-	mux.HandleFunc("GET /admin/projects/{id}/export", auth(h.export))
-	mux.HandleFunc("GET /admin/projects/{id}/trial", auth(h.trial))
-	mux.HandleFunc("POST /admin/projects/{id}/archive", auth(h.archive))
-
-	mux.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
-		http.Redirect(w, r, "/admin/", http.StatusSeeOther)
+	// 需要登录的部分挂在一个子路由组上：认证是中间件语义，
+	// 逐条路由包一层 auth() 只要漏一次就是个洞。
+	r.Route("/admin/projects", func(r chi.Router) {
+		r.Use(h.requireLogin)
+		r.Get("/{id}", h.project)
+		r.Post("/{id}/tokens", h.genTokens)
+		r.Get("/{id}/print", h.printSheets)
+		r.Post("/{id}/status", h.setStatus)
+		r.Get("/{id}/stats", h.stats)
+		r.Get("/{id}/progress", h.progress)
+		r.Get("/{id}/paper", h.paperForm)
+		r.Post("/{id}/paper", h.paperSubmit)
+		r.Get("/{id}/export", h.export)
+		r.Get("/{id}/trial", h.trial)
+		r.Post("/{id}/archive", h.archive)
 	})
-	return mux
+
+	r.Group(func(r chi.Router) {
+		r.Use(h.requireLogin)
+		r.Get("/admin/", h.home)
+	})
+
+	r.Get("/", func(w http.ResponseWriter, req *http.Request) {
+		http.Redirect(w, req, "/admin/", http.StatusSeeOther)
+	})
+	return r
+}
+
+// serveAsset 下发内嵌的静态资源。资源随二进制走、内容不变，
+// 因此可以放心长缓存。
+func serveAsset(ctype, body string) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", ctype)
+		w.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
+		_, _ = io.WriteString(w, body)
+	}
+}
+
+// requireLogin 是管理端的认证中间件。
+//
+// 注意它不负责网络隔离——管理端根本不在测评网络上监听（httpd.Server
+// 用两个独立监听器），这里挡的是本机上的未登录访问与会话超时。
+func (h *Handler) requireLogin(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if !h.SessionMgr.Valid(r) {
+			http.Redirect(w, r, "/admin/login", http.StatusSeeOther)
+			return
+		}
+		h.SessionMgr.Touch(w, r)
+		next.ServeHTTP(w, r)
+	})
 }
 
 func (h *Handler) render(w http.ResponseWriter, name string, data map[string]any) {
@@ -131,6 +164,26 @@ func (h *Handler) home(w http.ResponseWriter, r *http.Request) {
 	h.render(w, "home.html", map[string]any{"Rows": rows, "Archives": archives})
 }
 
+// progress 是 htmx 轮询的提交进度片段（FR-STA-010）。
+//
+// 这正是 htmx 服务端驱动模型合适的地方：管理端在本机回环上，往返几乎零
+// 成本，返回一个数字片段比让前端自己拼 JSON 再渲染简单得多。作答端则
+// 相反——那边网络不可靠，必须自包含（ADR-001）。
+func (h *Handler) progress(w http.ResponseWriter, r *http.Request) {
+	id, err := anon.MustIDFromHex(chi.URLParam(r, "id"))
+	if err != nil {
+		http.Error(w, "bad id", http.StatusBadRequest)
+		return
+	}
+	n, err := h.Svc.DB.CountAnswers(id)
+	if err != nil {
+		http.Error(w, "读取失败", http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	fmt.Fprintf(w, "%d", n)
+}
+
 // ── 项目详情 ────────────────────────────────────────────────────────
 
 func (h *Handler) project(w http.ResponseWriter, r *http.Request) {
@@ -154,7 +207,7 @@ func (h *Handler) project(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) load(r *http.Request) (*model.Project, *model.Form, error) {
-	id, err := anon.MustIDFromHex(r.PathValue("id"))
+	id, err := anon.MustIDFromHex(chi.URLParam(r, "id"))
 	if err != nil {
 		return nil, nil, err
 	}

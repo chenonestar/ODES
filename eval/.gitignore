@@ -5,3 +5,4 @@ cert/
 config.toml
 eval
 eval.exe
+tools/.tailwindcss

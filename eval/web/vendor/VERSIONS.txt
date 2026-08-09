@@ -1,0 +1,8 @@
+本目录的第三方资源全部随仓库提交，构建与运行全程不联网、不依赖 npm。
+升级时更新此文件并重新执行 tools/build-css.sh。
+
+daisyui.css / themes.css   daisyUI 5.7.16      来源 npm registry: daisyui
+htmx.min.js                htmx 2.0.10         来源 npm registry: htmx.org
+alpine.min.js              Alpine.js 3.15.12   来源 npm registry: alpinejs
+tools/tailwindcss.xz       Tailwind CSS 4.3.3  standalone CLI（linux-x64）
+                           来源 github.com/tailwindlabs/tailwindcss/releases

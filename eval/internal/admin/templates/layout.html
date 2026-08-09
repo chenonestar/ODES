@@ -1,56 +1,44 @@
-{{define "head"}}<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1"><title>线上民主测评系统 · 管理端</title>
-<style>
-:root{--ink:#1b2434;--seal:#9e2b25;--line:#ddd7cb;--bg:#fbfaf7;--soft:#f3f1ec;--slate:#5c6675;
---ok:#2f6f4f;--warn:#b8860b}
-*{box-sizing:border-box}
-body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
-background:var(--bg);color:var(--ink);margin:0;line-height:1.7;font-size:15px}
-header{background:#fff;border-bottom:1px solid var(--line);padding:12px 22px;display:flex;
-align-items:center;gap:14px;position:sticky;top:0;z-index:5}
-header b{color:var(--seal)}
-header .grow{flex:1}
-header a{color:var(--slate);text-decoration:none;font-size:14px}
-header a:hover{color:var(--seal)}
-main{max-width:1080px;margin:0 auto;padding:22px}
-h1{font-size:20px;margin:0 0 4px}
-h2{font-size:16px;border-left:3px solid var(--seal);padding-left:9px;margin:28px 0 10px}
-.muted{color:var(--slate);font-size:13px}
-table{border-collapse:collapse;width:100%;font-size:14px;background:#fff;margin-top:8px}
-th,td{border:1px solid var(--line);padding:7px 9px;text-align:left}
-th{background:var(--soft);font-weight:600}
-td.c,th.c{text-align:center}
-.card{background:#fff;border:1px solid var(--line);padding:14px 16px;margin-bottom:14px}
-.card.warn{border-left:3px solid var(--warn);background:#fdf9ee}
-.card.bad{border-left:3px solid var(--seal);background:#fdf1f0}
-.card.ok{border-left:3px solid var(--ok)}
-.btn{display:inline-block;padding:7px 14px;border:1px solid var(--line);background:#fff;
-border-radius:3px;cursor:pointer;font:inherit;font-size:14px;color:var(--ink);text-decoration:none}
-.btn.primary{background:var(--seal);border-color:var(--seal);color:#fff}
-.btn.danger{border-color:var(--seal);color:var(--seal)}
-.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px}
-input,select,textarea{padding:7px 9px;border:1px solid var(--line);border-radius:3px;
-font:inherit;font-size:14px}
-.tag{display:inline-block;padding:1px 8px;border-radius:9px;font-size:12px;color:#fff}
-.t-draft{background:var(--slate)}.t-published{background:var(--warn)}
-.t-running{background:var(--ok)}.t-closed{background:var(--ink)}.t-archived{background:#999}
-.chk{margin:3px 0}.chk .y{color:var(--ok)}.chk .n{color:var(--seal);font-weight:600}
-.kpi{display:flex;gap:22px;flex-wrap:wrap}
-.kpi div{background:#fff;border:1px solid var(--line);padding:10px 18px;min-width:120px}
-.kpi b{display:block;font-size:22px}
-code{background:var(--soft);padding:1px 5px;border-radius:2px;font-size:13px}
-</style></head><body>
-<header><b>线上民主测评系统</b><span class="muted">管理端 · 仅本机可访问</span>
-<span class="grow"></span>
-{{if .Leases}}<span class="muted">接入终端 {{.Leases}}</span>{{end}}
-<a href="/admin/">项目列表</a>
-<form method="post" action="/admin/logout" style="display:inline"><button class="btn">退出</button></form>
-</header><main>
-{{if .SelfSigned}}<div class="card bad"><b>当前为自签名证书</b>
-参评人员手机将出现安全告警，<b>禁止用于正式测评</b>。开发调试可忽略此条。</div>{{end}}
-{{if not .CertOK}}<div class="card bad"><b>证书自检未通过</b> {{.CertMsg}}</div>{{end}}
-{{range .PreflightWarn}}<div class="card warn">{{.}}</div>{{end}}
-{{range .DomainWarns}}<div class="card bad">{{.}}</div>{{end}}
+{{define "head"}}<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>线上民主测评系统 · 管理端</title>
+<link rel="stylesheet" href="/static/admin.css">
+<script src="/static/htmx.min.js" defer></script>
+</head>
+<body class="bg-base-200 text-base-content min-h-screen">
+
+<div class="navbar bg-base-100 border-b border-base-300 sticky top-0 z-30 px-6">
+  <div class="flex-1 gap-3 items-baseline">
+    <a href="/admin/" class="text-lg font-bold text-seal">线上民主测评系统</a>
+    <span class="text-xs opacity-60">管理端 · 仅本机可访问</span>
+  </div>
+  <div class="flex-none gap-2 items-center">
+    {{if .Leases}}<span class="badge badge-ghost badge-sm">接入终端 {{.Leases}}</span>{{end}}
+    <a href="/admin/" class="btn btn-ghost btn-sm">项目列表</a>
+    <form method="post" action="/admin/logout"><button class="btn btn-ghost btn-sm">退出</button></form>
+  </div>
+</div>
+
+<main class="max-w-5xl mx-auto p-6">
+{{if .SelfSigned}}
+<div role="alert" class="alert alert-error mb-4">
+  <div><b>当前为自签名证书</b><div class="text-sm">参评人员手机将出现安全告警，<b>禁止用于正式测评</b>。开发调试可忽略此条。</div></div>
+</div>
+{{end}}
+{{if not .CertOK}}
+<div role="alert" class="alert alert-error mb-4"><div><b>证书自检未通过</b><div class="text-sm">{{.CertMsg}}</div></div></div>
+{{end}}
+{{range .PreflightWarn}}
+<div role="alert" class="alert alert-warning mb-4"><span class="text-sm">{{.}}</span></div>
+{{end}}
+{{range .DomainWarns}}
+<div role="alert" class="alert alert-error mb-4"><span class="text-sm">{{.}}</span></div>
+{{end}}
 {{end}}
 
-{{define "foot"}}</main></body></html>{{end}}
+{{define "foot"}}
+</main>
+</body></html>
+{{end}}

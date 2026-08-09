@@ -1,0 +1,7 @@
+{{define "statusbadge"}}
+{{- if eq (printf "%s" .) "draft"}}<span class="badge badge-ghost badge-sm">草稿</span>
+{{- else if eq (printf "%s" .) "published"}}<span class="badge badge-warning badge-sm">已发布</span>
+{{- else if eq (printf "%s" .) "running"}}<span class="badge badge-success badge-sm">进行中</span>
+{{- else if eq (printf "%s" .) "closed"}}<span class="badge badge-neutral badge-sm">已截止</span>
+{{- else}}<span class="badge badge-sm">已归档</span>{{end}}
+{{end}}

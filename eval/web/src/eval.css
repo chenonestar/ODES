@@ -1,0 +1,21 @@
+/* 作答端样式入口。
+ *
+ * 体积预算 <20KB（HLD 9.3）——这份 CSS 要下发到 200 部手机，
+ * 因此**不引 daisyUI**，只用 Tailwind 工具类。HLD 技术选型表本就写明
+ * "作答端另出一份精简 CSS 控制体积"，这就是那一份。
+ *
+ * 管理端跑在回环上、单用户、无体积压力，那边用完整的 Tailwind + daisyUI。 */
+@import "tailwindcss";
+
+@source "../../internal/evalui/page.html";
+
+@theme {
+  --color-seal: #9e2b25;
+  --color-ink: #1b2434;
+  --color-paper: #fbfaf7;
+  --color-rule: #ddd7cb;
+  --color-slate: #5c6675;
+}
+
+/* Alpine 初始化完成前隐藏组件，避免闪现未渲染的模板 */
+[x-cloak] { display: none !important; }

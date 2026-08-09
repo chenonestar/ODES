@@ -1,48 +1,57 @@
 {{template "head" .}}
-<h1>{{.P.Name}} · 纸质密封补录</h1>
-<div class="card warn">
-<b>本环节的双人约束由工作程序与纸质签字保障，系统不做技术验证。</b>
-按规程：密封件须由考察组两人当场拆封，一人念、一人录入；录完后纸质原件
-由两人签字、装回密封袋，随考察材料归档。<br>
-系统只把份数与复核人姓名记入操作日志，<b>不在作答记录上打任何标记</b>——
-补录记录与在线提交完全同构、不可区分，否则补录者会构成一个可识别的小群体，
-而不在场者名单是管理员知道的。
-</div>
+<h1 class="text-xl font-bold mb-3">{{.P.Name}} · 纸质密封补录</h1>
+<div role="alert" class="alert alert-warning mb-4 items-start"><div class="text-sm">
+  <b>本环节的双人约束由工作程序与纸质签字保障，系统不做技术验证。</b><br>
+  按规程：密封件须由考察组两人当场拆封，一人念、一人录入；录完后纸质原件由两人签字、
+  装回密封袋，随考察材料归档。<br>
+  系统只把份数与复核人姓名记入操作日志，<b>不在作答记录上打任何标记</b>——补录记录与
+  在线提交完全同构、不可区分，否则补录者会构成一个可识别的小群体，而不在场者名单是
+  管理员知道的。</div></div>
+
 <form method="post" action="/admin/projects/{{hex .P.ID}}/paper">
-{{$grades := .F.Grades}}
-{{$groups := .F.Groups}}
+{{$grades := .F.Grades}}{{$groups := .F.Groups}}
 {{range .F.Subjects}}
   {{$sid := hex .ID}}
-  <h2>{{.Name}}{{if .Duty}}　<span class="muted">{{.Duty}}</span>{{end}}</h2>
-  {{range $groups}}
-    {{range .Questions}}
-      {{$key := printf "%s:%s" (hex .ID) $sid}}
-      <div class="card">
-        <b>{{.Title}}</b>{{if .Required}} <span style="color:#9e2b25">*</span>{{end}}
-        <div class="row">
-        {{if eq (printf "%s" .Kind) "grade"}}
-          {{range $i, $g := $grades}}
-            <label><input type="radio" name="{{$key}}" value="{{$i}}"> {{$g}}</label>
-          {{end}}
-          <label><input type="radio" name="{{$key}}" value="-1"> 弃权</label>
-        {{else if eq (printf "%s" .Kind) "text"}}
-          <textarea name="{{$key}}" rows="2" style="width:100%"></textarea>
-        {{else}}
-          {{range .Options}}
-            <label><input type="radio" name="{{$key}}" value="{{hex .ID}}"> {{.Label}}</label>
-          {{end}}
+  <h2 class="text-base font-semibold border-l-4 border-seal pl-2 mt-6 mb-2">
+    {{.Name}}{{if .Duty}}　<span class="opacity-60 font-normal text-sm">{{.Duty}}</span>{{end}}</h2>
+  {{range $groups}}{{range .Questions}}
+    {{$key := printf "%s:%s" (hex .ID) $sid}}
+    <div class="card bg-base-100 border border-base-300 mb-2"><div class="card-body py-3 gap-2">
+      <div class="font-medium text-sm">{{.Title}}{{if .Required}} <span class="text-error">*</span>{{end}}</div>
+      <div class="flex gap-3 flex-wrap">
+      {{if eq (printf "%s" .Kind) "grade"}}
+        {{range $i, $g := $grades}}
+        <label class="label cursor-pointer gap-1.5 py-0">
+          <input type="radio" name="{{$key}}" value="{{$i}}" class="radio radio-sm">
+          <span class="label-text text-sm">{{$g}}</span></label>
         {{end}}
-        </div>
+        <label class="label cursor-pointer gap-1.5 py-0">
+          <input type="radio" name="{{$key}}" value="-1" class="radio radio-sm">
+          <span class="label-text text-sm opacity-60">弃权</span></label>
+      {{else if eq (printf "%s" .Kind) "text"}}
+        <textarea name="{{$key}}" rows="2" class="textarea textarea-bordered w-full text-sm"></textarea>
+      {{else}}
+        {{range .Options}}
+        <label class="label cursor-pointer gap-1.5 py-0">
+          <input type="radio" name="{{$key}}" value="{{hex .ID}}" class="radio radio-sm">
+          <span class="label-text text-sm">{{.Label}}</span></label>
+        {{end}}
+      {{end}}
       </div>
-    {{end}}
-  {{end}}
+    </div></div>
+  {{end}}{{end}}
 {{end}}
-<div class="card">
-  <div class="row"><label><input type="checkbox" name="confirm">
-    <b>确认：密封件由双人当场拆封、内容已双人核对</b></label></div>
-  <div class="row"><span>复核人姓名</span><input name="reviewer" placeholder="必填" size="20"></div>
-  <div class="row"><button class="btn primary">提交补录</button>
-    <a class="btn" href="/admin/projects/{{hex .P.ID}}">取消</a></div>
-</div>
+
+<div class="card bg-base-100 border border-base-300 mt-4"><div class="card-body gap-3">
+  <label class="label cursor-pointer justify-start gap-2">
+    <input type="checkbox" name="confirm" class="checkbox checkbox-sm">
+    <span class="label-text font-medium">确认：密封件由双人当场拆封、内容已双人核对</span></label>
+  <div class="flex gap-2 items-center">
+    <span class="text-sm">复核人姓名</span>
+    <input name="reviewer" placeholder="必填" class="input input-bordered input-sm w-48"></div>
+  <div class="flex gap-2">
+    <button class="btn btn-sm btn-primary">提交补录</button>
+    <a class="btn btn-sm" href="/admin/projects/{{hex .P.ID}}">取消</a></div>
+</div></div>
 </form>
 {{template "foot" .}}

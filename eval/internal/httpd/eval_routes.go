@@ -8,6 +8,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/go-chi/chi/v5"
+
 	"odes/internal/evalui"
 	"odes/internal/model"
 	"odes/internal/service"
@@ -15,53 +17,66 @@ import (
 )
 
 // EvalRoutes 装配作答端路由（LLD 8.1）。
+//
+// 用 chi：限流是中间件语义，挂在路由组上比在每个处理器里手写一行清楚，
+// 也不容易漏。/e 与 /j 两组的阈值不同，正好各挂各的。
 func EvalRoutes(s *service.Service, shortEntry string) http.Handler {
-	mux := http.NewServeMux()
+	r := chi.NewRouter()
 	rl := newRateLimiter()
 
-	// GET /e/{token} —— 扫码直达作答页
-	mux.HandleFunc("GET /e/{token}", func(w http.ResponseWriter, r *http.Request) {
-		serveEvalPage(w, r, s, r.PathValue("token"))
+	// 扫码直达作答页。GET 不限流：页面本身可重复打开，
+	// 而限流会误伤"信号不好刷新了几次"的正常行为。
+	r.Get("/e/{token}", func(w http.ResponseWriter, req *http.Request) {
+		serveEvalPage(w, req, s, chi.URLParam(req, "token"))
 	})
 
-	// POST /e/{token}/submit
-	mux.HandleFunc("POST /e/{token}/submit", func(w http.ResponseWriter, r *http.Request) {
-		if !rl.allow(clientIP(r), rateMaxSubmit) {
+	r.Group(func(r chi.Router) {
+		r.Use(rl.middleware(rateMaxSubmit, func(w http.ResponseWriter, _ *http.Request) {
 			writeErr(w, http.StatusTooManyRequests, "RATE_LIMITED", "请稍后重试", nil)
-			return
-		}
-		submit(w, r, s, r.PathValue("token"))
+		}))
+		r.Post("/e/{token}/submit", func(w http.ResponseWriter, req *http.Request) {
+			submit(w, req, s, chi.URLParam(req, "token"))
+		})
 	})
 
-	// GET/POST /j —— 短码入口（FR-ANS-010）
-	mux.HandleFunc("GET /j", func(w http.ResponseWriter, r *http.Request) {
+	// 短码入口（FR-ANS-010）。这是唯一可枚举的面，限得紧一些。
+	r.Get("/j", func(w http.ResponseWriter, req *http.Request) {
 		shortCodePage(w, "", shortEntry)
 	})
-	mux.HandleFunc("POST /j", func(w http.ResponseWriter, r *http.Request) {
-		if !rl.allow(clientIP(r), rateMaxEntry) {
+	r.Group(func(r chi.Router) {
+		r.Use(rl.middleware(rateMaxEntry, func(w http.ResponseWriter, _ *http.Request) {
 			shortCodePage(w, "请求过于频繁，请稍后重试", shortEntry)
-			return
-		}
-		code := strings.ToUpper(strings.TrimSpace(r.FormValue("code")))
-		code = strings.ReplaceAll(code, "-", "")
-		code = strings.ReplaceAll(code, " ", "")
-		// 校验位先在本地判，输错即时提示而非提交后报错（FR-TKN-023）
-		if !anonVerify(code) {
-			shortCodePage(w, "编号有误，请核对令牌单上的 8 位编号", shortEntry)
-			return
-		}
-		tk, err := s.DB.AnyTokenByShortCode(code)
-		if err != nil {
-			shortCodePage(w, "编号无效", shortEntry)
-			return
-		}
-		http.Redirect(w, r, "/e/"+tk.Value, http.StatusSeeOther)
+		}))
+		r.Post("/j", func(w http.ResponseWriter, req *http.Request) {
+			code := strings.ToUpper(strings.TrimSpace(req.FormValue("code")))
+			code = strings.ReplaceAll(code, "-", "")
+			code = strings.ReplaceAll(code, " ", "")
+			// 校验位先在本地判，输错即时提示而非提交后报错（FR-TKN-023）
+			if !anonVerify(code) {
+				shortCodePage(w, "编号有误，请核对令牌单上的 8 位编号", shortEntry)
+				return
+			}
+			tk, err := s.DB.AnyTokenByShortCode(code)
+			if err != nil {
+				shortCodePage(w, "编号无效", shortEntry)
+				return
+			}
+			http.Redirect(w, req, "/e/"+tk.Value, http.StatusSeeOther)
+		})
 	})
 
-	mux.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
-		http.Redirect(w, r, "/j", http.StatusSeeOther)
+	// 完成页（LLD 8.1）。作答端单页提交成功后就地切换到完成态，
+	// 这个路由供"提交后误刷新"与外部跳转使用。
+	r.Get("/done", func(w http.ResponseWriter, req *http.Request) {
+		evalui.DonePage(w, "您已完成测评，感谢参与")
 	})
-	return mux
+
+	// 其余一律引导到短码入口。不 404：参评人员手打错网址时，
+	// 给一个能自己走下去的页面比一句 404 有用。
+	r.NotFound(func(w http.ResponseWriter, req *http.Request) {
+		http.Redirect(w, req, "/j", http.StatusSeeOther)
+	})
+	return r
 }
 
 func serveEvalPage(w http.ResponseWriter, r *http.Request, s *service.Service, tokenValue string) {
@@ -253,3 +268,16 @@ func clientIP(r *http.Request) string {
 }
 
 var _ = store.ErrNotFound
+
+// middleware 把限流包成 chi 中间件。挂在路由组上，避免逐个处理器手写。
+func (rl *rateLimiter) middleware(max int, deny http.HandlerFunc) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if !rl.allow(clientIP(r), max) {
+				deny(w, r)
+				return
+			}
+			next.ServeHTTP(w, r)
+		})
+	}
+}

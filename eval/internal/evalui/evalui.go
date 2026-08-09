@@ -19,6 +19,7 @@ import (
 
 	"odes/internal/anon"
 	"odes/internal/model"
+	"odes/web"
 )
 
 //go:embed page.html
@@ -114,6 +115,9 @@ func Render(w http.ResponseWriter, p *model.Project, f *model.Form,
 	w.Header().Set("Cache-Control", "no-store")
 	// 作答页不加载任何外部资源，用 CSP 把这一点固化下来：
 	// 即便将来有人不慎引入了 CDN 链接，浏览器也会拒绝加载。
+	// 用的是 Alpine 的 CSP 构建，表达式只能是属性名/方法名，因此**不需要**
+	// 'unsafe-eval'。作答页得以保持 default-src 'none' 的严格 CSP：
+	// 页面不加载任何外部资源，即便将来有人不慎引入 CDN 链接也会被浏览器拒绝。
 	w.Header().Set("Content-Security-Policy",
 		"default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; "+
 			"connect-src 'self'; img-src 'self' data:; base-uri 'none'; form-action 'none'")
@@ -123,6 +127,8 @@ func Render(w http.ResponseWriter, p *model.Project, f *model.Form,
 	return tmpl.Execute(w, map[string]any{
 		"Title":    p.Name,
 		"FormJSON": template.JS(safe),
+		"CSS":      template.CSS(web.EvalCSS),
+		"Alpine":   template.JS(web.Alpine),
 	})
 }
 

@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"sort"
+	"strings"
 	"testing"
 
 	"odes/internal/anon"
@@ -291,8 +292,16 @@ func TestSchemaMatchesDesignDoc(t *testing.T) {
 	if err != nil {
 		t.Skipf("未找到设计稿 %s，跳过同步检查", root)
 	}
-	if string(want) != schemaSQL {
-		t.Error("internal/store/schema.sql 与仓库根目录的 schema_V1.0.sql 不一致，" +
+	// 迁移脚本比设计稿多了 goose 的 Up/Down 标记，比对前先剥掉。
+	got := Schema()
+	if i := strings.Index(got, "-- +goose StatementBegin"); i >= 0 {
+		got = got[i+len("-- +goose StatementBegin\n"):]
+	}
+	if j := strings.Index(got, "-- +goose StatementEnd"); j >= 0 {
+		got = got[:j]
+	}
+	if string(want) != got {
+		t.Error("migrations/00001_init.sql 与仓库根目录的 schema_V1.0.sql 不一致，" +
 			"两者须保持同步（设计稿是权威）")
 	}
 }

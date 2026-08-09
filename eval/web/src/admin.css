@@ -1,0 +1,19 @@
+/* 管理端样式入口：Tailwind v4 + daisyUI 5（HLD 技术选型表）。
+ *
+ * 管理端跑在本机回环上、只有 1 个用户、零丢包零延迟，体积不构成约束，
+ * 因此引入完整的 daisyUI 组件库。作答端是另一份（见 eval.css）。
+ *
+ * daisyUI 5 以纯 CSS 分发，此处直接 @import 仓库内 vendored 的那一份，
+ * 不经 npm 插件解析——构建全程零 Node。 */
+@import "tailwindcss";
+@import "../vendor/daisyui.css";
+
+@source "../../internal/admin/templates";
+
+@theme {
+  --color-seal: #9e2b25;
+  --color-ink: #1b2434;
+  --color-paper: #fbfaf7;
+  --color-rule: #ddd7cb;
+  --color-slate: #5c6675;
+}

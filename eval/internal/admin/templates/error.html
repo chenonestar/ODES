@@ -1,6 +1,10 @@
 {{template "head" .}}
-<h1>操作未完成</h1>
-<div class="card bad" style="white-space:pre-wrap">{{.Err}}</div>
-<div class="row"><a class="btn" href="javascript:history.back()">返回</a>
-<a class="btn" href="/admin/">回到项目列表</a></div>
+<h1 class="text-xl font-bold mb-3">操作未完成</h1>
+<div role="alert" class="alert alert-error mb-4">
+  <pre class="whitespace-pre-wrap text-sm font-sans">{{.Err}}</pre>
+</div>
+<div class="flex gap-2">
+  <a class="btn btn-sm" href="javascript:history.back()">返回</a>
+  <a class="btn btn-sm btn-primary" href="/admin/">回到项目列表</a>
+</div>
 {{template "foot" .}}
