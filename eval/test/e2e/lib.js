@@ -10,27 +10,67 @@ const ADMIN = process.env.ODES_ADMIN || 'https://127.0.0.1:8444';
 const EVAL = process.env.ODES_EVAL || 'https://127.0.0.1:8443';
 const PASS = process.env.ODES_PASSWORD || 'Test-Passw0rd';
 
-// Chromium 路径：CI 与开发机上位置不同，按常见路径探测。
-function chromiumPath() {
-  if (process.env.CHROMIUM_PATH) return process.env.CHROMIUM_PATH;
-  const candidates = [
+// systemChromium 列出可能的系统 Chromium，仅作**回退**。
+//
+// 优先用 Playwright 自带的那份（launch 时不指定 executablePath）：
+// CI 镜像里往往自带 Google Chrome，若优先挑系统的那个，就会拿一个
+// 与 Playwright 版本不匹配的浏览器去驱动，症状是启动即失败或行为诡异。
+// 自带的那份与 Playwright 同版本发布，才是默认应该用的。
+function systemChromium() {
+  const out = [];
+  if (process.env.CHROMIUM_PATH) out.push(process.env.CHROMIUM_PATH);
+  for (const p of [
     '/opt/pw-browsers/chromium-1194/chrome-linux/chrome',
     '/usr/bin/chromium',
     '/usr/bin/chromium-browser',
     '/usr/bin/google-chrome',
     '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
-  ];
-  for (const p of candidates) {
-    try { if (fs.existsSync(p)) return p; } catch (e) { /* 忽略 */ }
+  ]) {
+    try { if (fs.existsSync(p)) out.push(p); } catch (e) { /* 忽略 */ }
   }
-  return undefined; // 交给 Playwright 自带的那份
+  return out;
 }
 
 function requirePlaywright() {
-  for (const p of ['playwright', '/opt/node22/lib/node_modules/playwright']) {
-    try { return require(p); } catch (e) { /* 换下一个 */ }
+  const tried = [];
+  const attempt = (p) => {
+    if (!p) return null;
+    tried.push(p);
+    try { return require(p); } catch (e) { return null; }
+  };
+
+  let m = attempt('playwright');
+  if (m) return m;
+
+  // npm root -g：全局安装的真实位置，各发行版与 CI 上都不一样
+  try {
+    const root = require('child_process')
+      .execSync('npm root -g', { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] })
+      .trim();
+    if (root) {
+      m = attempt(require('path').join(root, 'playwright'));
+      if (m) return m;
+    }
+  } catch (e) { /* 没有 npm 也不算错，继续往下试 */ }
+
+  for (const dir of (process.env.NODE_PATH || '').split(require('path').delimiter)) {
+    if (!dir) continue;
+    m = attempt(require('path').join(dir, 'playwright'));
+    if (m) return m;
   }
-  console.error('未找到 playwright：npm i -g playwright');
+
+  for (const p of [
+    '/usr/local/lib/node_modules/playwright',
+    '/usr/lib/node_modules/playwright',
+    '/opt/node22/lib/node_modules/playwright',
+  ]) {
+    m = attempt(p);
+    if (m) return m;
+  }
+
+  console.error('未找到 playwright，请先安装：npm i -g playwright');
+  console.error('已尝试以下位置：');
+  for (const p of tried) console.error('  ' + p);
   process.exit(2);
 }
 
@@ -58,10 +98,32 @@ function summary(suite) {
 // ── 浏览器 ──────────────────────────────────────────────────────────
 
 async function launch(playwright) {
-  const browser = await playwright.chromium.launch({
-    executablePath: chromiumPath(),
-    args: ['--no-sandbox'],
-  });
+  const args = ['--no-sandbox'];
+  let browser = null;
+  let lastErr = null;
+
+  // ① 先试 Playwright 自带的浏览器
+  try {
+    browser = await playwright.chromium.launch({ args });
+  } catch (e) {
+    lastErr = e;
+  }
+  // ② 自带的没装（比如只 npm i 了 playwright 而没 install 浏览器），
+  //    再回退到系统里现成的
+  if (!browser) {
+    for (const p of systemChromium()) {
+      try {
+        browser = await playwright.chromium.launch({ executablePath: p, args });
+        break;
+      } catch (e) { lastErr = e; }
+    }
+  }
+  if (!browser) {
+    console.error('无法启动 Chromium。请先执行：npx playwright install chromium');
+    console.error(String(lastErr).split('\n')[0]);
+    process.exit(2);
+  }
+
   // 自签名证书：开发与 CI 下都是自签的，必须忽略，否则第一步就走不下去
   const ctx = await browser.newContext({ ignoreHTTPSErrors: true, acceptDownloads: true });
   return { browser, ctx };

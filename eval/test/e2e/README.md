@@ -27,8 +27,30 @@ node test/e2e/run.js
 
 `run.js` 会依次跑完四个套件，任一失败即以非零码退出。
 
-需要 Node 18+ 与 Playwright（`npm i -g playwright`）。浏览器用系统里已有的
-Chromium，通过 `CHROMIUM_PATH` 指定，未指定时按常见路径探测。
+需要 Node 18+ 与 Playwright：
+
+```bash
+npm i -g playwright
+playwright install chromium
+```
+
+**浏览器优先用 Playwright 自带的那份**（`launch` 时不指定 `executablePath`）。
+CI 镜像里往往自带 Google Chrome，若优先挑系统的那个，就会拿一个与
+Playwright 版本不匹配的浏览器去驱动，症状是启动即失败或行为诡异。
+自带的没装时才回退到系统路径，也可用 `CHROMIUM_PATH` 指定。
+
+**模块解析**：全局装的 playwright，Node 默认查不到——因为它不搜全局
+`node_modules`。`lib.js` 按「局部 → `npm root -g` → `NODE_PATH` → 常见路径」
+依次尝试，全找不到时会把找过的位置逐条列出来。
+
+## 环境变量
+
+| 变量 | 用途 |
+|---|---|
+| `ODES_ADMIN` / `ODES_EVAL` | 管理端 / 作答端地址，`run.js` 自动注入 |
+| `ODES_PASSWORD` | 管理员口令，默认 `Test-Passw0rd` |
+| `ODES_BIN` | 用现成的可执行文件，跳过编译 |
+| `CHROMIUM_PATH` | 指定浏览器（仅在自带的不可用时生效） |
 
 ## 与 Go 测试的分工
 

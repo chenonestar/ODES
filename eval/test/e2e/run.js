@@ -25,6 +25,19 @@ const PASSWORD = 'Test-Passw0rd';
 
 function log(...a) { console.log(...a); }
 
+// globalNodeModules 返回 npm 的全局安装根，取不到就返回空串。
+let cachedGlobalRoot;
+function globalNodeModules() {
+  if (cachedGlobalRoot !== undefined) return cachedGlobalRoot;
+  try {
+    cachedGlobalRoot = spawnSync('npm', ['root', '-g'], { encoding: 'utf8' })
+      .stdout.trim();
+  } catch (e) {
+    cachedGlobalRoot = '';
+  }
+  return cachedGlobalRoot;
+}
+
 // buildBinary 编译一份用于测试的可执行文件。
 // 不用 `go run`：那样每次启动都要重新编译，四个套件就是四次，
 // 而且 go run 的子进程树在 kill 时容易留下孤儿进程。
@@ -91,6 +104,10 @@ async function runSuite(bin, suite) {
       stdio: 'inherit',
       env: {
         ...process.env,
+        // 把全局 node_modules 显式传下去。CI 上 playwright 是全局装的，
+        // 而 Node 默认不查全局目录——不带这个，子进程一 require 就炸。
+        NODE_PATH: [process.env.NODE_PATH, globalNodeModules()]
+          .filter(Boolean).join(path.delimiter),
         ODES_ADMIN: `https://127.0.0.1:${adminPort}`,
         ODES_EVAL: `https://127.0.0.1:${evalPort}`,
         ODES_PASSWORD: PASSWORD,

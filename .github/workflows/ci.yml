@@ -160,8 +160,17 @@ jobs:
 
       # 只装 chromium：管理端与作答端的断言都只针对 Chromium 内核，
       # 多装 firefox/webkit 要多花几分钟而没有对应用例。
+      #
+      # 用全局装好的 playwright 命令而不是 npx：npx 在本地找不到时会自己
+      # 再下载一份，装出来的位置与全局那份未必一致，排查起来很费劲。
       - name: 安装 Playwright 与 Chromium
-        run: npm i -g playwright && npx playwright install --with-deps chromium
+        run: |
+          npm i -g playwright
+          playwright install --with-deps chromium
 
+      # 套件是 run.js 派生的子进程。Node 默认不查全局 node_modules，
+      # 所以显式把全局根传下去；lib.js 里另有 `npm root -g` 兜底。
       - name: 跑端到端套件
         run: node test/e2e/run.js
+        env:
+          NODE_PATH: /usr/local/lib/node_modules
