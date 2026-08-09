@@ -75,7 +75,7 @@ go run ./cmd/eval -dev -seed -password 'Test-Passw0rd'
 7. **看统计** — 四档票数、优秀率、称职以上率、加权得分。分母是**应参加人数**。
 8. **导出** — 统计报告 PDF / HTML、明细 xlsx / CSV、原始匿名数据 xlsx / CSV。
    连点两次原始数据导出，你会看到记录顺序和编号都变了——这是刻意设计。
-   PDF 需要先按 `web/fonts/README.md` 放字体，未放置时会给出提示。
+
 9. **归档擦除** — 先下载加密归档包（记下 SHA 前 8 位），勾选确认、填入校验值，
    执行擦除。之后项目数据全部消失，只剩 `archive_meta` 里的核验编号。
 
@@ -167,7 +167,7 @@ web/
   src/             Tailwind 入口（admin.css / eval.css）
   vendor/          daisyUI / htmx / Alpine，随仓库提交，不经 npm
   dist/            构建产物，已提交并 embed
-  fonts/           PDF 报告字体（不入库，见该目录 README）
+  fonts/           PDF 报告字体 + OFL 许可（随仓库提交）
 tools/buildcss/    CSS 构建器（Go 程序，三平台通用）
 tools/checkfont/   报告字体自查：glyf 还是 CFF
 tools/otf2ttf/     一次性把思源宋体转成 gopdf 能用的 glyf 轮廓
@@ -281,8 +281,10 @@ CSV 一并保留：政务机器上 Excel 版本参差，xlsx 偶尔打不开，�
 ### PDF 报告（ADR-009）
 
 `gopdf` + 内嵌完整中文字库，含口径说明页（FR-EXP-020）与每页页脚核验编号
-（FR-EXP-021）。**字体不入库**，放置方法见 `web/fonts/README.md`；缺字体时
-PDF 导出给出可照做的提示并拒绝出报告，HTML / xlsx / CSV 三个出口不受影响。
+（FR-EXP-021）。字体 `web/fonts/report.ttf` **已随仓库提交**（Noto Serif CJK SC
+转 glyf，SIL OFL 1.1，许可全文在同目录），克隆下来直接能出 PDF。
+若换成不合格的字体，导出会给出可照做的提示并拒绝出报告，
+HTML / xlsx / CSV 三个出口不受影响。
 
 两件在实现过程中查证出来、文档里没写的事：
 

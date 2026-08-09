@@ -13,7 +13,7 @@
 
 # sqlc / templ 的生成物是**提交**进仓库的（见 README），此处不忽略。
 
-# 报告字体约 20MB，不入库；用 web/fonts/README.md 里的说明放置
-/web/fonts/*.ttf
-/web/fonts/*.otf
-/web/fonts/*.ttc
+# 报告字体 web/fonts/report.ttf **入库**（约 30MB，zlib 后约 15MB）：
+# 它是 PDF 报告的必需件，不入库则 CI 里三条排版用例永远跳过、
+# 换台机器编译就少一个功能，而这类"编译的人忘了放字体"的错误
+# 恰好会拖到散会要交材料时才暴露。许可见同目录 LICENSE-OFL.txt。
