@@ -656,7 +656,7 @@ pre.code code{background:none;color:inherit;padding:0;font-family:var(--mono)}
     <tr><td class="id">FR-ANS-019</td><td>超过截止时间访问显示"测评已结束"</td><td class="c"><span class="tag must">必做</span></td></tr>
     <tr><td class="id">FR-ANS-020</td><td>页面资源全部本地内嵌，加载后可离线填写；仅提交需要网络。提交失败明确提示并支持重试</td><td class="c"><span class="tag must">必做</span></td></tr>
     <tr><td class="id">FR-ANS-021</td><td><strong>字号调节</strong>：作答页提供三档字号切换，默认档不小于 17px。参评群体中年长者比例较高</td><td class="c"><span class="tag must">必做</span></td></tr>
-    <tr><td class="id">FR-ANS-090</td><td><strong>纸质补录</strong>：管理员可代录纸质密封表。录入界面须由两人操作确认，录入记录在统计中单独标注份数，但作答内容与在线记录合并统计、不可区分</td><td class="c"><span class="tag must">必做</span></td></tr>
+    <tr><td class="id">FR-ANS-090</td><td><strong>纸质补录</strong>：管理员可代录纸质密封表。密封件须由考察组双人当场拆封、双人核对；录入界面强制勾选确认并填写复核人姓名，操作写入 <code>op_log</code>（份数、复核人、时间，不含作答内容）；纸质原件双人签字后装回密封袋归档。录入记录在统计中单独标注份数，但作答内容与在线记录合并统计、不可区分。<strong>双人在场由工作程序与纸质签字保障，系统不做技术验证</strong>（不设第二口令，理由见 LLD 5.3）</td><td class="c"><span class="tag must">必做</span></td></tr>
   </tbody>
 </table>
 
@@ -755,7 +755,7 @@ pre.code code{background:none;color:inherit;padding:0;font-family:var(--mono)}
     <tr><td class="id">FR-SYS-032</td><td>擦除前强制二次确认，并要求管理员勾选"已确认加密归档包已保存至指定介质"</td><td class="c"><span class="tag must">必做</span></td></tr>
     <tr><td class="id">FR-SYS-033</td><td>归档包导入：可将归档包导入本机查看统计（只读），查看结束后同样执行擦除</td><td class="c"><span class="tag opt">可选</span></td></tr>
     <tr><td class="id">FR-SYS-040</td><td>过程备份：测评进行中每 5 分钟自动将数据文件快照至指定目录（可指向 U 盘），用于主机故障时冷备接管</td><td class="c"><span class="tag must">必做</span></td></tr>
-    <tr><td class="id">FR-SYS-050</td><td><strong>操作日志</strong>：记录管理员关键操作（创建、发布、关闭、导出、归档、擦除）的时间、类型、结果。<strong>日志不得记录任何令牌值、IP 地址、作答内容</strong></td><td class="c"><span class="tag must">必做</span></td></tr>
+    <tr><td class="id">FR-SYS-050</td><td><strong>操作日志</strong>：记录管理员关键操作（创建、发布、关闭、导出、归档、擦除、纸质补录）的时间、类型、结果。纸质补录一条额外记录份数与复核人姓名（FR-ANS-090）。<strong>日志不得记录任何令牌值、IP 地址、作答内容</strong></td><td class="c"><span class="tag must">必做</span></td></tr>
   </tbody>
 </table>
 
@@ -1010,7 +1010,7 @@ pre.code code{background:none;color:inherit;padding:0;font-family:var(--mono)}
 <ul>
   <li>纸质补录记录与在线记录<strong>合并统计，在数据中不可区分</strong>（否则补录者群体本身构成一个可识别的小样本）；</li>
   <li>补录<strong>份数</strong>在统计概要与 PDF 口径说明页中单独标注，如"共 187 份，其中纸质补录 6 份"；</li>
-  <li>补录操作须双人在场确认（FR-ANS-090）。</li>
+  <li>补录操作须双人在场：双人拆封、双人核对、界面填写复核人姓名、纸质原件双人签字归档，操作写入 <code>op_log</code>（FR-ANS-090）。该约束由工作程序与纸质签字保障，系统不设第二口令、不做技术验证——理由见 LLD 5.3。</li>
 </ul>
 
 <h3>6.6 留痕与备查</h3>
@@ -1019,6 +1019,7 @@ pre.code code{background:none;color:inherit;padding:0;font-family:var(--mono)}
   <li>导出<strong>原始匿名数据</strong>（FR-EXP-012）并打印；</li>
   <li>导出<strong>正式统计报告 PDF</strong>（FR-EXP-010）并打印；</li>
   <li>两份材料由考察组两名以上成员签字，装入密封袋封存，按考察材料管理规定归档；</li>
+  <li>若有<strong>纸质补录</strong>：补录用的纸质原件由双人签字后装回密封袋，与上述材料一并封存归档（FR-ANS-090）；</li>
   <li>加密归档包（FR-EXP-013）另存于指定介质，与纸质材料分别保管；</li>
   <li>本机执行安全擦除（FR-SYS-031）。</li>
 </ol>

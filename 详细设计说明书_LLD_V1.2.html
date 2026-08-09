@@ -490,7 +490,27 @@ func Verify(code string) bool {
 </div>
 
 <h3>5.3 纸质补录</h3>
-<p>补录复用同一 <code>Submit</code> 路径，但：不消耗令牌（另起 <code>SubmitPaper</code>，直接写 <code>answer_record</code>），并对 <code>project.paper_entry_count</code> 加一。<strong>记录本身与在线提交完全同构</strong>。界面要求两人分别输入各自口令确认后方可提交。</p>
+<p>补录复用同一 <code>Submit</code> 路径，但：不消耗令牌（另起 <code>SubmitPaper</code>，直接写 <code>answer_record</code>），并对 <code>project.paper_entry_count</code> 加一。<strong>记录本身与在线提交完全同构</strong>。</p>
+
+<div class="box">
+  <span class="bt">双人约束由工作程序承担，不由第二口令承担 <span class="tag chg">修订</span></span>
+  <p>本节原写"界面要求两人分别输入各自口令确认后方可提交"。系统中并不存在第二个口令——<code>meta</code> 表只有一个 <code>admin_pwd_hash</code>，接口清单（8.2）也只有一个 <code>/admin/login</code>，该表述无法实现。</p>
+  <p>补口令不是正确的修法。补录是<strong>唯一一条不消耗令牌、由管理员直接写入 <code>answer_record</code> 的路径</strong>，它要防的是管理员单人凭空造票。而第二口令只有在"复核人从不把口令告诉管理员、且每次亲自到场输入"的前提下才成立，这两条系统一条也验证不了：口令一旦告知过一次即被永久持有，系统也无从判断敲键盘的是谁。它最终仍是工作程序保证，只是套了一层技术外壳——这正是 SRS 4.1 把匿名性承诺降级为"非取证条件下不可关联"时所拒绝的做法。</p>
+  <p>另有三处直接冲突：① 引入第二口令实质是引入第二个账号，与 <code>CON-03</code> 单管理员模式及 1.4 非目标「多管理员与权限分级」冲突；② HLD 10.2 冷备接管要求管理口令由考察组两人分别知悉，两人都知道则第二口令无约束力、只有一人知道则其不在场时补录卡死；③ 多一个仅在少数场次用一次的口令，遗忘概率高（参见 <code>RSK-12</code>）。</p>
+</div>
+
+<p>改为<strong>纸质签字 + 电子留痕</strong>，约束强度与口令方案相同（都依赖人到场），但承诺诚实、可验收：</p>
+<table>
+  <thead><tr><th style="width:120px">环节</th><th>要求</th></tr></thead>
+  <tbody>
+    <tr><td>进入</td><td>管理员口令登录，无第二口令</td></tr>
+    <tr><td>界面</td><td>提交前强制勾选确认「密封件由双人当场拆封、内容已双人核对」，并填写<strong>复核人姓名</strong>；未填写则拒绝提交</td></tr>
+    <tr><td>留痕</td><td><code>op_log</code> 写一条 <code>paper_entry</code>：份数、复核人姓名、时间、结果。<strong>不含任何作答内容</strong></td></tr>
+    <tr><td>物证</td><td>纸质原件由双人签字、装回密封袋，随考察材料按规定归档（并入 SRS 6.6 留痕流程）</td></tr>
+    <tr><td>边界</td><td><strong>系统无法在技术上验证补录时是否真有两人在场</strong>，该约束由工作程序与纸质签字承担。须在评审中明确说明</td></tr>
+  </tbody>
+</table>
+<p><code>op_log</code> 记录补录时间与份数<strong>不构成匿名性泄露</strong>：按 1.2 修正二，补录记录在 <code>answer_record</code> 中与在线提交完全同构、不可区分，审计者从日志可知"有 6 份是补录的"，但无从知道是哪 6 份。份数本就要印在 PDF 口径说明页上（<code>FR-EXP-020</code>），并非新增暴露面。复核人是考察组成员而非参评人员，记录其姓名不涉及参评人员匿名性，且 <code>op_log</code> 随项目擦除。</p>
 
 <h2 class="sec" id="s6"><span class="num">06</span>统计聚合与口径</h2>
 
@@ -918,6 +938,7 @@ interval_min  = 5</code></pre>
     <tr><td><code>/admin/projects/{id}/tokens</code></td><td>生成、随机重排、AP 分配、打印页、备用令牌、短码清单导出</td></tr>
     <tr><td><code>/admin/projects/{id}/trial</code></td><td>测试令牌获取与试填数据清空</td></tr>
     <tr><td><code>/admin/projects/{id}/monitor</code></td><td>提交进度、分批进度、接入终端数</td></tr>
+    <tr><td><code>/admin/projects/{id}/paper</code></td><td>纸质密封补录：录入表单、双人核对勾选、复核人姓名、份数计数（5.3）</td></tr>
     <tr><td><code>/admin/projects/{id}/stats</code></td><td>统计主表、汇总矩阵、评语、分组筛选</td></tr>
     <tr><td><code>/admin/projects/{id}/export</code></td><td>PDF / Excel / 原始数据 / 加密归档包</td></tr>
     <tr><td><code>/admin/projects/{id}/archive</code></td><td>归档与安全擦除（二次确认 + 勾选）</td></tr>
