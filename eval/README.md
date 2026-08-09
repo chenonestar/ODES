@@ -126,6 +126,12 @@ internal/
   evalui/          作答端自包含单页
   netsvc/          DHCP / DNS / 门户探测应答（由技术尖刺①移入）
   config/          config.toml 解析、证书装载与 CK-01~05
+migrations/        goose 迁移脚本，embed 打包
+web/
+  src/             Tailwind 入口（admin.css / eval.css）
+  vendor/          daisyUI / htmx / Alpine，随仓库提交，不经 npm
+  dist/            构建产物，已提交并 embed
+tools/buildcss/    CSS 构建器（Go 程序，三平台通用）
 ```
 
 依赖方向：`admin / evalui → service → store / crypto / stats / anon`，反向依赖禁止。
@@ -134,20 +140,28 @@ internal/
 
 ## 与设计文档的偏差
 
-以下是有意的取舍，都是为了让代码在开发机上 `go run` 就能跑起来，不需要额外工具链。
-每条都不影响文档所述的架构约束。
+早期实现曾自行替换过六项技术选型，现已按评审意见回滚。当前状态：
 
-| 文档选型 | 实际实现 | 原因 |
-|---|---|---|
-| chi | 标准库 `http.ServeMux` | Go 1.22+ 已支持方法与路径通配，路由语义相同，少一个依赖 |
-| sqlc | 手写 SQL + `database/sql` | ADR-006 的真实意图是"不用 ORM、表结构显式定义"，手写 SQL 同样满足，且省掉代码生成步骤 |
-| goose | 启动时执行内嵌 `schema.sql` | 目前只有一个版本，引入迁移框架为时尚早 |
-| templ | `html/template` | 免去 templ 代码生成，`go run` 直接可跑 |
-| htmx + Alpine.js | 原生 JS | 作答端本就要求零外部资源；管理端在回环上，交互简单 |
-| Tailwind + daisyUI | 手写 CSS 并内嵌 | 免去 Node 工具链——这是"开发机上直接跑"影响最大的一条 |
+| 文档选型 | 状态 |
+|---|---|
+| chi | ✅ 已回滚，限流与登录校验改为中间件 |
+| goose | ✅ 已回滚，迁移脚本 embed 打包、启动自动执行 |
+| Tailwind v4 + daisyUI 5 | ✅ 已回滚，见「构建 CSS」 |
+| htmx | ✅ 已回滚，管理端进度轮询用 `hx-get` |
+| Alpine.js | ✅ 已回滚，作答端内联 **CSP 构建**（无需 `unsafe-eval`） |
+| sqlc | ⏳ 待回滚，目前是手写 SQL + `database/sql` |
+| templ | ⏳ 待回滚，目前是 `html/template` |
 
-第三方依赖只有两个：`modernc.org/sqlite`（CON-07 要求的纯 Go 驱动）和
-`golang.org/x/crypto`（Argon2id）。加上 `golang.org/x/term` 用于口令输入不回显。
+最后两项待回滚是有代价的，值得写明：sqlc 提供的**编译期类型安全**、templ
+提供的**编译期模板检查**，手写 SQL 与 `html/template` 都没有。开发过程中就
+撞上过一次——模板变量作用域写错，`html/template` 直到程序启动才 panic，
+用 templ 的话那是编译错误。
+
+第三方依赖：`modernc.org/sqlite`（CON-07 要求的纯 Go 驱动）、
+`golang.org/x/crypto`（Argon2id）、`github.com/go-chi/chi/v5`、
+`github.com/pressly/goose/v3`，以及 `golang.org/x/term`（口令输入不回显）。
+前端资源 daisyUI / htmx / Alpine 以文件形式 vendored 在 `web/vendor/`，
+不经 npm。
 
 ### 尚未实现
 
