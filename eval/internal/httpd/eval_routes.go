@@ -23,6 +23,7 @@ import (
 func EvalRoutes(s *service.Service, shortEntry string) http.Handler {
 	r := chi.NewRouter()
 	rl := newRateLimiter()
+	cs := newChallengeStore()
 
 	// 扫码直达作答页。GET 不限流：页面本身可重复打开，
 	// 而限流会误伤"信号不好刷新了几次"的正常行为。
@@ -31,9 +32,8 @@ func EvalRoutes(s *service.Service, shortEntry string) http.Handler {
 	})
 
 	r.Group(func(r chi.Router) {
-		r.Use(rl.middleware(rateMaxSubmit, func(w http.ResponseWriter, _ *http.Request) {
-			writeErr(w, http.StatusTooManyRequests, "RATE_LIMITED", "请稍后重试", nil)
-		}))
+		// 超过阈值时要求完成简易算术验证，而不是直接拒绝（FR-ANS-032）。
+		r.Use(rl.challengeMiddleware(cs, rateMaxSubmit))
 		r.Post("/e/{token}/submit", func(w http.ResponseWriter, req *http.Request) {
 			submit(w, req, s, chi.URLParam(req, "token"))
 		})

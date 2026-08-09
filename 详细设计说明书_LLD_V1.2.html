@@ -416,10 +416,23 @@ func (v *Vault) Close()                            // 显式清零内存中的�
 <h2 class="sec" id="s4"><span class="num">04</span>令牌与短码</h2>
 
 <h3>4.1 令牌值</h3>
-<pre class="code"><code>b := make([]byte, 20)
-crypto/rand.Read(b)                              // 160 位熵
-value := base32Custom.EncodeToString(b)          // 32 字符
-// 字符表去除易混字符 0 O 1 I L：ABCDEFGHJKMNPQRSTUVWXYZ23456789 (31 字符)</code></pre>
+<pre class="code"><code>// 字符表去除易混字符 0 O 1 I L：ABCDEFGHJKMNPQRSTUVWXYZ23456789（31 字符）
+charset := "ABCDEFGHJKMNPQRSTUVWXYZ23456789"
+value := make([]byte, 32)
+for i := range value {
+    value[i] = charset[cryptoRandIndex(len(charset))]   // 逐字符取值
+}
+// 32 字符 × log2(31) ≈ 158 位熵，超过 FR-TKN-020 要求的 128 位</code></pre>
+<div class="box">
+  <span class="bt">为什么不是 Base32 <span class="tag chg">修订</span></span>
+  <p>本节原写"<code>base32Custom.EncodeToString</code>，字符表 31 字符"。这两者自相矛盾：
+  <strong>Base32 编码需要 32 个字符</strong>，去除 0 O 1 I L 之后只剩 31 个，做不了标准 Base32。</p>
+  <p>改为<strong>逐字符从 31 字符表随机取值</strong>。同时不用"随机字节取模"——字节值域 256
+  不是 31 的整数倍，取模会产生偏置，使前若干个字符出现概率偏高，实际熵低于标称值；
+  改用 <code>crypto/rand.Int</code> 逐字符取值，无偏置。</p>
+  <p>熵不降反升：32 字符 × log2(31) ≈ 158 位，原方案 20 字节 = 160 位，两者都远超
+  FR-TKN-020 要求的 128 位。</p>
+</div>
 
 <h3>4.2 短码与校验位</h3>
 <p>8 位：7 位随机 + 1 位校验位。校验位用于<strong>输入时即时提示</strong>，避免参评人员输错后提交才报错。</p>
@@ -1062,7 +1075,7 @@ Content-Type: application/json
 <table>
   <thead><tr><th style="width:100px">用例</th><th style="width:170px">目标</th><th>方法与判据</th></tr></thead>
   <tbody>
-    <tr><td class="id">AT-01</td><td>时序不可还原</td><td>构造 200 份提交并记录真实顺序 → 截止并 VACUUM → 按物理顺序读回 → 计算与真实顺序的斯皮尔曼相关系数。<strong>判据 &#124;ρ&#124; &lt; 0.15</strong>（对照组自增主键为 1.000）</td></tr>
+    <tr><td class="id">AT-01</td><td>时序不可还原</td><td>构造 200 份提交并记录真实顺序 → 截止并 VACUUM → 按物理顺序读回 → 计算与真实顺序的斯皮尔曼相关系数。<strong>跑 7 轮独立试验，判据为 &#124;ρ&#124; 的中位数 &lt; 0.15</strong>，另设单轮 5σ 上限（对照组自增主键为 1.000）</td></tr>
     <tr><td class="id">AT-02</td><td>无关联字段</td><td><code>PRAGMA table_info</code> 与 <code>foreign_key_list</code> 断言两表无时间列、无互相引用。<strong>CI 常驻</strong></td></tr>
     <tr><td class="id">AT-03</td><td>输出顺序随机</td><td>同一数据集连续导出 10 次，比较记录顺序，两两之间相关系数均 &lt; 0.15</td></tr>
     <tr><td class="id">AT-04</td><td>日志洁净</td><td>跑完整流程后扫描 <code>op_log</code> 与日志文件，不得出现令牌值、IP、MAC、作答内容</td></tr>
@@ -1072,6 +1085,17 @@ Content-Type: application/json
   </tbody>
 </table>
 <p>AT-01 至 AT-06 全部自动化，纳入 CI；AT-07 为人工验收，在 M5 里程碑执行。</p>
+<div class="box">
+  <span class="bt">AT-01 判据由单次试验改为多轮中位数 <span class="tag chg">修订</span></span>
+  <p>原判据是"单次试验，&#124;ρ&#124; &lt; 0.15"。这个判据<strong>统计功效不足</strong>：
+  n = 200 时随机排列下 ρ 的标准差为 1/√199 ≈ 0.0709，0.15 仅相当于 2.12 个标准差。
+  蒙特卡洛实测，<strong>单次试验有约 3.2% 的概率自然超过 0.15</strong>——放进 CI 就是一个
+  每 30 次构建红一次的 flaky 测试，而它红的时候并不代表匿名性出了问题。</p>
+  <p>改为跑 7 轮独立试验、取 &#124;ρ&#124; 的中位数与阈值比较：随机排列下中位数约为
+  0.674σ ≈ 0.048，7 轮同时偏高的概率可忽略；而一旦物理顺序真的反映了提交顺序
+  （如误用自增主键），每一轮都会接近 1.0，中位数判据同样立刻触发。另保留单轮 5σ
+  上限检查，用于捕捉极端异常。</p>
+</div>
 
 <h3>11.2 其它关键用例</h3>
 <table>

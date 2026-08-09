@@ -28,6 +28,32 @@ type Check struct {
 	OK              bool
 }
 
+// Status 汇总证书自检结果。
+//
+// DaysLeft 单独给出，是因为两处判据不同：启动自检的 CK-04 用 21 天
+// （出发前的提醒），发布前置校验 PC-09 用 1 天（发布的硬门槛，LLD 7.3）。
+// 把两者混作一个布尔，就会出现"证书剩 10 天，文档允许发布而实现拦住"。
+type Status struct {
+	SelfSigned bool
+	Checks     []Check
+	DaysLeft   int
+	Loaded     bool // 证书文件可读、可解析且 SAN 覆盖配置域名
+}
+
+// Usable 是 PC-09 的判据：证书可用且剩余有效期 ≥1 天。
+func (s Status) Usable() (bool, string) {
+	if s.SelfSigned {
+		return false, "当前为自签名证书，参评人员手机将出现安全告警"
+	}
+	if !s.Loaded {
+		return false, "证书未通过启动自检，见管理端首页告警"
+	}
+	if s.DaysLeft < 1 {
+		return false, fmt.Sprintf("证书已过期或今日到期（剩余 %d 天）", s.DaysLeft)
+	}
+	return true, fmt.Sprintf("证书剩余有效期 %d 天", s.DaysLeft)
+}
+
 func (c Check) String() string {
 	mark := "✓"
 	if !c.OK {
@@ -38,25 +64,33 @@ func (c Check) String() string {
 
 // LoadTLS 装载证书并执行 CK-01~05。
 // 第二个返回值表示是否为自签名（自签名时手机会告警，禁止用于正式测评）。
-func LoadTLS(t TLS, domain, alternate string) (*tls.Config, bool, []Check, error) {
+func LoadTLS(t TLS, domain, alternate string) (*tls.Config, Status, error) {
 	if t.Mode == "selfsigned" || t.Cert == "" || t.Key == "" {
 		cert, err := selfSigned(domain)
 		if err != nil {
-			return nil, true, nil, err
+			return nil, Status{SelfSigned: true}, err
 		}
 		return &tls.Config{Certificates: []tls.Certificate{cert},
-			MinVersion: tls.VersionTLS12}, true, nil, nil
+			MinVersion: tls.VersionTLS12}, Status{SelfSigned: true}, nil
 	}
 
-	pair, checks := inspect(t.Cert, t.Key, domain, alternate)
+	pair, checks, days := inspect(t.Cert, t.Key, domain, alternate)
+	st := Status{Checks: checks, DaysLeft: days}
 	if len(pair.Certificate) == 0 {
-		return nil, false, checks, fmt.Errorf("证书装载失败，见 CK-01")
+		return nil, st, fmt.Errorf("证书装载失败，见 CK-01")
+	}
+	st.Loaded = true
+	for _, c := range checks {
+		// CK-04（≥21 天）是提醒，不影响是否可用；其余任一不过即视为未装载成功
+		if !c.OK && c.Code != "CK-04" {
+			st.Loaded = false
+		}
 	}
 	return &tls.Config{Certificates: []tls.Certificate{pair},
-		MinVersion: tls.VersionTLS12}, false, checks, nil
+		MinVersion: tls.VersionTLS12}, st, nil
 }
 
-func inspect(certFile, keyFile, domain, alternate string) (tls.Certificate, []Check) {
+func inspect(certFile, keyFile, domain, alternate string) (tls.Certificate, []Check, int) {
 	var out []Check
 	add := func(code, name string, ok bool, msg string) {
 		out = append(out, Check{Code: code, Name: name, OK: ok, Msg: msg})
@@ -65,14 +99,14 @@ func inspect(certFile, keyFile, domain, alternate string) (tls.Certificate, []Ch
 	pair, err := tls.LoadX509KeyPair(certFile, keyFile)
 	if err != nil {
 		add("CK-01", "证书文件可读、可解析", false, err.Error())
-		return tls.Certificate{}, out
+		return tls.Certificate{}, out, 0
 	}
 	add("CK-01", "证书文件可读、可解析", true, certFile)
 
 	leaf, err := x509.ParseCertificate(pair.Certificate[0])
 	if err != nil {
 		add("CK-02", "SAN 覆盖配置域名", false, "证书解析失败")
-		return pair, out
+		return pair, out, 0
 	}
 	pair.Leaf = leaf
 
@@ -119,7 +153,7 @@ func inspect(certFile, keyFile, domain, alternate string) (tls.Certificate, []Ch
 
 	// LoadX509KeyPair 已校验配对，此处显式记录以对齐 LLD 检查表
 	add("CK-05", "私钥与证书匹配", true, "")
-	return pair, out
+	return pair, out, days
 }
 
 // selfSigned 仅用于开发与连通性验证。

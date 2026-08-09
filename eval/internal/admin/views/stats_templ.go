@@ -48,7 +48,7 @@ func Stats(c Chrome, v StatsView) templ.Component {
 			var templ_7745c5c3_Var3 string
 			templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(v.R.ProjectName)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/views/stats.templ`, Line: 5, Col: 54}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `stats.templ`, Line: 5, Col: 54}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 			if templ_7745c5c3_Err != nil {
@@ -61,7 +61,7 @@ func Stats(c Chrome, v StatsView) templ.Component {
 			var templ_7745c5c3_Var4 string
 			templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(itoa(v.R.ExpectedCount))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/views/stats.templ`, Line: 9, Col: 62}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `stats.templ`, Line: 9, Col: 62}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 			if templ_7745c5c3_Err != nil {
@@ -74,7 +74,7 @@ func Stats(c Chrome, v StatsView) templ.Component {
 			var templ_7745c5c3_Var5 string
 			templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(itoa(v.R.Submitted))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/views/stats.templ`, Line: 13, Col: 58}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `stats.templ`, Line: 13, Col: 58}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 			if templ_7745c5c3_Err != nil {
@@ -87,7 +87,7 @@ func Stats(c Chrome, v StatsView) templ.Component {
 			var templ_7745c5c3_Var6 string
 			templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(pct(v.R.SubmitRate))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/views/stats.templ`, Line: 17, Col: 58}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `stats.templ`, Line: 17, Col: 58}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 			if templ_7745c5c3_Err != nil {
@@ -100,7 +100,7 @@ func Stats(c Chrome, v StatsView) templ.Component {
 			var templ_7745c5c3_Var7 string
 			templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(itoa(v.R.PaperEntry))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/views/stats.templ`, Line: 21, Col: 59}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `stats.templ`, Line: 21, Col: 59}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 			if templ_7745c5c3_Err != nil {
@@ -113,7 +113,7 @@ func Stats(c Chrome, v StatsView) templ.Component {
 			var templ_7745c5c3_Var8 string
 			templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(itoa(v.R.Submitted))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/views/stats.templ`, Line: 29, Col: 49}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `stats.templ`, Line: 29, Col: 49}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 			if templ_7745c5c3_Err != nil {
@@ -136,7 +136,7 @@ func Stats(c Chrome, v StatsView) templ.Component {
 					var templ_7745c5c3_Var9 templ.SafeURL
 					templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL("?tag=" + t))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/views/stats.templ`, Line: 38, Col: 60}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `stats.templ`, Line: 38, Col: 60}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 					if templ_7745c5c3_Err != nil {
@@ -149,7 +149,7 @@ func Stats(c Chrome, v StatsView) templ.Component {
 					var templ_7745c5c3_Var10 string
 					templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(t)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/views/stats.templ`, Line: 38, Col: 66}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `stats.templ`, Line: 38, Col: 66}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 					if templ_7745c5c3_Err != nil {
@@ -177,7 +177,7 @@ func Stats(c Chrome, v StatsView) templ.Component {
 				var templ_7745c5c3_Var11 string
 				templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(cell.SubjectName)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/views/stats.templ`, Line: 64, Col: 29}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `stats.templ`, Line: 64, Col: 29}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 				if templ_7745c5c3_Err != nil {
@@ -190,7 +190,7 @@ func Stats(c Chrome, v StatsView) templ.Component {
 				var templ_7745c5c3_Var12 string
 				templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(cell.QuestionName)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/views/stats.templ`, Line: 64, Col: 88}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `stats.templ`, Line: 64, Col: 88}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
 				if templ_7745c5c3_Err != nil {
@@ -203,7 +203,7 @@ func Stats(c Chrome, v StatsView) templ.Component {
 				var templ_7745c5c3_Var13 string
 				templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(itoa(cell.Counts[0]))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/views/stats.templ`, Line: 65, Col: 53}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `stats.templ`, Line: 65, Col: 53}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
 				if templ_7745c5c3_Err != nil {
@@ -216,7 +216,7 @@ func Stats(c Chrome, v StatsView) templ.Component {
 				var templ_7745c5c3_Var14 string
 				templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs(itoa(cell.Counts[1]))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/views/stats.templ`, Line: 66, Col: 53}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `stats.templ`, Line: 66, Col: 53}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
 				if templ_7745c5c3_Err != nil {
@@ -229,7 +229,7 @@ func Stats(c Chrome, v StatsView) templ.Component {
 				var templ_7745c5c3_Var15 string
 				templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs(itoa(cell.Counts[2]))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/views/stats.templ`, Line: 67, Col: 53}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `stats.templ`, Line: 67, Col: 53}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
 				if templ_7745c5c3_Err != nil {
@@ -242,7 +242,7 @@ func Stats(c Chrome, v StatsView) templ.Component {
 				var templ_7745c5c3_Var16 string
 				templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinStringErrs(itoa(cell.Counts[3]))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/views/stats.templ`, Line: 68, Col: 78}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `stats.templ`, Line: 68, Col: 78}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var16))
 				if templ_7745c5c3_Err != nil {
@@ -255,7 +255,7 @@ func Stats(c Chrome, v StatsView) templ.Component {
 				var templ_7745c5c3_Var17 string
 				templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinStringErrs(itoa(cell.Abstain))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/views/stats.templ`, Line: 69, Col: 51}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `stats.templ`, Line: 69, Col: 51}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
 				if templ_7745c5c3_Err != nil {
@@ -268,7 +268,7 @@ func Stats(c Chrome, v StatsView) templ.Component {
 				var templ_7745c5c3_Var18 string
 				templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinStringErrs(pct(cell.RateExcellent))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/views/stats.templ`, Line: 70, Col: 66}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `stats.templ`, Line: 70, Col: 66}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var18))
 				if templ_7745c5c3_Err != nil {
@@ -281,7 +281,7 @@ func Stats(c Chrome, v StatsView) templ.Component {
 				var templ_7745c5c3_Var19 string
 				templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.JoinStringErrs(pct(cell.RateCompAbove))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/views/stats.templ`, Line: 71, Col: 56}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `stats.templ`, Line: 71, Col: 56}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var19))
 				if templ_7745c5c3_Err != nil {
@@ -294,7 +294,7 @@ func Stats(c Chrome, v StatsView) templ.Component {
 				var templ_7745c5c3_Var20 string
 				templ_7745c5c3_Var20, templ_7745c5c3_Err = templ.JoinStringErrs(f1(cell.Weighted))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/views/stats.templ`, Line: 72, Col: 61}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `stats.templ`, Line: 72, Col: 61}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var20))
 				if templ_7745c5c3_Err != nil {
@@ -322,7 +322,7 @@ func Stats(c Chrome, v StatsView) templ.Component {
 					var templ_7745c5c3_Var21 string
 					templ_7745c5c3_Var21, templ_7745c5c3_Err = templ.JoinStringErrs(t)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/views/stats.templ`, Line: 87, Col: 34}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `stats.templ`, Line: 87, Col: 34}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var21))
 					if templ_7745c5c3_Err != nil {
@@ -345,7 +345,7 @@ func Stats(c Chrome, v StatsView) templ.Component {
 			var templ_7745c5c3_Var22 templ.SafeURL
 			templ_7745c5c3_Var22, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(projURL(v.P.ID) + "/export"))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/views/stats.templ`, Line: 95, Col: 86}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `stats.templ`, Line: 95, Col: 86}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var22))
 			if templ_7745c5c3_Err != nil {
@@ -358,7 +358,7 @@ func Stats(c Chrome, v StatsView) templ.Component {
 			var templ_7745c5c3_Var23 templ.SafeURL
 			templ_7745c5c3_Var23, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(projURL(v.P.ID) + "/export?kind=csv"))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/views/stats.templ`, Line: 96, Col: 83}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `stats.templ`, Line: 96, Col: 83}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var23))
 			if templ_7745c5c3_Err != nil {
@@ -371,7 +371,7 @@ func Stats(c Chrome, v StatsView) templ.Component {
 			var templ_7745c5c3_Var24 templ.SafeURL
 			templ_7745c5c3_Var24, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(projURL(v.P.ID)))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/views/stats.templ`, Line: 97, Col: 62}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `stats.templ`, Line: 97, Col: 62}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var24))
 			if templ_7745c5c3_Err != nil {
@@ -431,7 +431,7 @@ func StatsLocked(c Chrome, v StatsView) templ.Component {
 			var templ_7745c5c3_Var27 string
 			templ_7745c5c3_Var27, templ_7745c5c3_Err = templ.JoinStringErrs(v.P.Name)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/views/stats.templ`, Line: 104, Col: 47}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `stats.templ`, Line: 104, Col: 47}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var27))
 			if templ_7745c5c3_Err != nil {
@@ -444,7 +444,7 @@ func StatsLocked(c Chrome, v StatsView) templ.Component {
 			var templ_7745c5c3_Var28 string
 			templ_7745c5c3_Var28, templ_7745c5c3_Err = templ.JoinStringErrs(date(v.P.ResultOpenAt))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/views/stats.templ`, Line: 110, Col: 50}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `stats.templ`, Line: 110, Col: 50}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var28))
 			if templ_7745c5c3_Err != nil {
@@ -457,7 +457,7 @@ func StatsLocked(c Chrome, v StatsView) templ.Component {
 			var templ_7745c5c3_Var29 string
 			templ_7745c5c3_Var29, templ_7745c5c3_Err = templ.ResolveAttributeValue(projURL(v.P.ID) + "/progress")
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/views/stats.templ`, Line: 118, Col: 43}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `stats.templ`, Line: 118, Col: 43}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var29)
 			if templ_7745c5c3_Err != nil {
@@ -470,7 +470,7 @@ func StatsLocked(c Chrome, v StatsView) templ.Component {
 			var templ_7745c5c3_Var30 string
 			templ_7745c5c3_Var30, templ_7745c5c3_Err = templ.JoinStringErrs(itoa(v.Submitted))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/views/stats.templ`, Line: 119, Col: 24}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `stats.templ`, Line: 119, Col: 24}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var30))
 			if templ_7745c5c3_Err != nil {
@@ -483,7 +483,7 @@ func StatsLocked(c Chrome, v StatsView) templ.Component {
 			var templ_7745c5c3_Var31 string
 			templ_7745c5c3_Var31, templ_7745c5c3_Err = templ.JoinStringErrs(itoa(v.P.ExpectedCount))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/views/stats.templ`, Line: 124, Col: 62}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `stats.templ`, Line: 124, Col: 62}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var31))
 			if templ_7745c5c3_Err != nil {
@@ -496,7 +496,7 @@ func StatsLocked(c Chrome, v StatsView) templ.Component {
 			var templ_7745c5c3_Var32 templ.SafeURL
 			templ_7745c5c3_Var32, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(projURL(v.P.ID)))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/views/stats.templ`, Line: 127, Col: 79}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `stats.templ`, Line: 127, Col: 79}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var32))
 			if templ_7745c5c3_Err != nil {
@@ -556,7 +556,7 @@ func Trial(c Chrome, v ProjectView, domain string) templ.Component {
 			var templ_7745c5c3_Var35 string
 			templ_7745c5c3_Var35, templ_7745c5c3_Err = templ.JoinStringErrs(v.P.Name)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/views/stats.templ`, Line: 133, Col: 47}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `stats.templ`, Line: 133, Col: 47}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var35))
 			if templ_7745c5c3_Err != nil {
@@ -569,7 +569,7 @@ func Trial(c Chrome, v ProjectView, domain string) templ.Component {
 			var templ_7745c5c3_Var36 string
 			templ_7745c5c3_Var36, templ_7745c5c3_Err = templ.JoinStringErrs(itoa(v.Submitted))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/views/stats.templ`, Line: 141, Col: 35}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `stats.templ`, Line: 141, Col: 35}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var36))
 			if templ_7745c5c3_Err != nil {
@@ -587,7 +587,7 @@ func Trial(c Chrome, v ProjectView, domain string) templ.Component {
 				var templ_7745c5c3_Var37 string
 				templ_7745c5c3_Var37, templ_7745c5c3_Err = templ.JoinStringErrs(itoa(i + 1))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/views/stats.templ`, Line: 150, Col: 24}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `stats.templ`, Line: 150, Col: 24}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var37))
 				if templ_7745c5c3_Err != nil {
@@ -600,7 +600,7 @@ func Trial(c Chrome, v ProjectView, domain string) templ.Component {
 				var templ_7745c5c3_Var38 templ.SafeURL
 				templ_7745c5c3_Var38, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL("/e/" + t))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/views/stats.templ`, Line: 153, Col: 40}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `stats.templ`, Line: 153, Col: 40}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var38))
 				if templ_7745c5c3_Err != nil {
@@ -613,7 +613,7 @@ func Trial(c Chrome, v ProjectView, domain string) templ.Component {
 				var templ_7745c5c3_Var39 string
 				templ_7745c5c3_Var39, templ_7745c5c3_Err = templ.JoinStringErrs(t)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/views/stats.templ`, Line: 153, Col: 49}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `stats.templ`, Line: 153, Col: 49}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var39))
 				if templ_7745c5c3_Err != nil {
@@ -631,7 +631,7 @@ func Trial(c Chrome, v ProjectView, domain string) templ.Component {
 			var templ_7745c5c3_Var40 string
 			templ_7745c5c3_Var40, templ_7745c5c3_Err = templ.JoinStringErrs(domain)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/views/stats.templ`, Line: 162, Col: 44}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `stats.templ`, Line: 162, Col: 44}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var40))
 			if templ_7745c5c3_Err != nil {
@@ -644,7 +644,7 @@ func Trial(c Chrome, v ProjectView, domain string) templ.Component {
 			var templ_7745c5c3_Var41 templ.SafeURL
 			templ_7745c5c3_Var41, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(projURL(v.P.ID)))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/views/stats.templ`, Line: 164, Col: 79}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `stats.templ`, Line: 164, Col: 79}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var41))
 			if templ_7745c5c3_Err != nil {

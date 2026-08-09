@@ -50,7 +50,7 @@ func Paper(c Chrome, v ProjectView) templ.Component {
 			var templ_7745c5c3_Var3 string
 			templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(v.P.Name)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/views/paper.templ`, Line: 7, Col: 47}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `paper.templ`, Line: 7, Col: 47}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 			if templ_7745c5c3_Err != nil {
@@ -63,7 +63,7 @@ func Paper(c Chrome, v ProjectView) templ.Component {
 			var templ_7745c5c3_Var4 templ.SafeURL
 			templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(projURL(v.P.ID) + "/paper"))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/views/paper.templ`, Line: 18, Col: 72}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `paper.templ`, Line: 18, Col: 72}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 			if templ_7745c5c3_Err != nil {
@@ -81,7 +81,7 @@ func Paper(c Chrome, v ProjectView) templ.Component {
 				var templ_7745c5c3_Var5 string
 				templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(s.Name)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/views/paper.templ`, Line: 21, Col: 13}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `paper.templ`, Line: 21, Col: 13}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 				if templ_7745c5c3_Err != nil {
@@ -99,7 +99,7 @@ func Paper(c Chrome, v ProjectView) templ.Component {
 					var templ_7745c5c3_Var6 string
 					templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(s.Duty)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/views/paper.templ`, Line: 23, Col: 64}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `paper.templ`, Line: 23, Col: 64}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 					if templ_7745c5c3_Err != nil {
@@ -130,7 +130,7 @@ func Paper(c Chrome, v ProjectView) templ.Component {
 			var templ_7745c5c3_Var7 templ.SafeURL
 			templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(projURL(v.P.ID)))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/views/paper.templ`, Line: 44, Col: 65}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `paper.templ`, Line: 44, Col: 65}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 			if templ_7745c5c3_Err != nil {
@@ -179,7 +179,7 @@ func paperQuestion(v ProjectView, q model.Question, sid string) templ.Component 
 		var templ_7745c5c3_Var9 string
 		templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(q.Title)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/views/paper.templ`, Line: 57, Col: 13}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `paper.templ`, Line: 57, Col: 13}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 		if templ_7745c5c3_Err != nil {
@@ -209,7 +209,7 @@ func paperQuestion(v ProjectView, q model.Question, sid string) templ.Component 
 				var templ_7745c5c3_Var10 string
 				templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.ResolveAttributeValue(key)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/views/paper.templ`, Line: 67, Col: 38}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `paper.templ`, Line: 67, Col: 38}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var10)
 				if templ_7745c5c3_Err != nil {
@@ -222,7 +222,7 @@ func paperQuestion(v ProjectView, q model.Question, sid string) templ.Component 
 				var templ_7745c5c3_Var11 string
 				templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.ResolveAttributeValue(itoa(i))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/views/paper.templ`, Line: 67, Col: 56}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `paper.templ`, Line: 67, Col: 56}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var11)
 				if templ_7745c5c3_Err != nil {
@@ -235,7 +235,7 @@ func paperQuestion(v ProjectView, q model.Question, sid string) templ.Component 
 				var templ_7745c5c3_Var12 string
 				templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(g)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/views/paper.templ`, Line: 68, Col: 44}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `paper.templ`, Line: 68, Col: 44}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
 				if templ_7745c5c3_Err != nil {
@@ -253,7 +253,7 @@ func paperQuestion(v ProjectView, q model.Question, sid string) templ.Component 
 			var templ_7745c5c3_Var13 string
 			templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.ResolveAttributeValue(key)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/views/paper.templ`, Line: 72, Col: 37}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `paper.templ`, Line: 72, Col: 37}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var13)
 			if templ_7745c5c3_Err != nil {
@@ -271,7 +271,7 @@ func paperQuestion(v ProjectView, q model.Question, sid string) templ.Component 
 			var templ_7745c5c3_Var14 string
 			templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.ResolveAttributeValue(key)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/views/paper.templ`, Line: 76, Col: 26}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `paper.templ`, Line: 76, Col: 26}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var14)
 			if templ_7745c5c3_Err != nil {
@@ -290,7 +290,7 @@ func paperQuestion(v ProjectView, q model.Question, sid string) templ.Component 
 				var templ_7745c5c3_Var15 string
 				templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.ResolveAttributeValue(key)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/views/paper.templ`, Line: 81, Col: 38}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `paper.templ`, Line: 81, Col: 38}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var15)
 				if templ_7745c5c3_Err != nil {
@@ -303,7 +303,7 @@ func paperQuestion(v ProjectView, q model.Question, sid string) templ.Component 
 				var templ_7745c5c3_Var16 string
 				templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.ResolveAttributeValue(hex(o.ID))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/views/paper.templ`, Line: 81, Col: 58}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `paper.templ`, Line: 81, Col: 58}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var16)
 				if templ_7745c5c3_Err != nil {
@@ -316,7 +316,7 @@ func paperQuestion(v ProjectView, q model.Question, sid string) templ.Component 
 				var templ_7745c5c3_Var17 string
 				templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinStringErrs(o.Label)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/views/paper.templ`, Line: 82, Col: 50}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `paper.templ`, Line: 82, Col: 50}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
 				if templ_7745c5c3_Err != nil {
@@ -376,7 +376,7 @@ func Print(c Chrome, v ProjectView, sheets []PrintSheet, entry string) templ.Com
 			var templ_7745c5c3_Var20 string
 			templ_7745c5c3_Var20, templ_7745c5c3_Err = templ.JoinStringErrs(v.P.Name)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/views/paper.templ`, Line: 93, Col: 56}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `paper.templ`, Line: 93, Col: 56}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var20))
 			if templ_7745c5c3_Err != nil {
@@ -389,7 +389,7 @@ func Print(c Chrome, v ProjectView, sheets []PrintSheet, entry string) templ.Com
 			var templ_7745c5c3_Var21 string
 			templ_7745c5c3_Var21, templ_7745c5c3_Err = templ.JoinStringErrs(itoa(len(sheets)))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/views/paper.templ`, Line: 96, Col: 30}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `paper.templ`, Line: 96, Col: 30}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var21))
 			if templ_7745c5c3_Err != nil {
@@ -402,7 +402,7 @@ func Print(c Chrome, v ProjectView, sheets []PrintSheet, entry string) templ.Com
 			var templ_7745c5c3_Var22 templ.SafeURL
 			templ_7745c5c3_Var22, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(projURL(v.P.ID)))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/views/paper.templ`, Line: 103, Col: 62}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `paper.templ`, Line: 103, Col: 62}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var22))
 			if templ_7745c5c3_Err != nil {
@@ -420,7 +420,7 @@ func Print(c Chrome, v ProjectView, sheets []PrintSheet, entry string) templ.Com
 				var templ_7745c5c3_Var23 string
 				templ_7745c5c3_Var23, templ_7745c5c3_Err = templ.JoinStringErrs(v.P.Name)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/views/paper.templ`, Line: 108, Col: 52}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `paper.templ`, Line: 108, Col: 52}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var23))
 				if templ_7745c5c3_Err != nil {
@@ -433,7 +433,7 @@ func Print(c Chrome, v ProjectView, sheets []PrintSheet, entry string) templ.Com
 				var templ_7745c5c3_Var24 string
 				templ_7745c5c3_Var24, templ_7745c5c3_Err = templ.JoinStringErrs(s.SSID)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/views/paper.templ`, Line: 111, Col: 60}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `paper.templ`, Line: 111, Col: 60}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var24))
 				if templ_7745c5c3_Err != nil {
@@ -446,7 +446,7 @@ func Print(c Chrome, v ProjectView, sheets []PrintSheet, entry string) templ.Com
 				var templ_7745c5c3_Var25 string
 				templ_7745c5c3_Var25, templ_7745c5c3_Err = templ.JoinStringErrs(s.Code)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/views/paper.templ`, Line: 118, Col: 14}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `paper.templ`, Line: 118, Col: 14}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var25))
 				if templ_7745c5c3_Err != nil {
@@ -459,7 +459,7 @@ func Print(c Chrome, v ProjectView, sheets []PrintSheet, entry string) templ.Com
 				var templ_7745c5c3_Var26 string
 				templ_7745c5c3_Var26, templ_7745c5c3_Err = templ.JoinStringErrs(s.URL)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/views/paper.templ`, Line: 120, Col: 67}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `paper.templ`, Line: 120, Col: 67}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var26))
 				if templ_7745c5c3_Err != nil {
@@ -472,7 +472,7 @@ func Print(c Chrome, v ProjectView, sheets []PrintSheet, entry string) templ.Com
 				var templ_7745c5c3_Var27 string
 				templ_7745c5c3_Var27, templ_7745c5c3_Err = templ.JoinStringErrs(entry)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/views/paper.templ`, Line: 125, Col: 50}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `paper.templ`, Line: 125, Col: 50}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var27))
 				if templ_7745c5c3_Err != nil {

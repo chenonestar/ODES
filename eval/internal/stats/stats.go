@@ -228,28 +228,36 @@ func finalize(p *model.Project, f *model.Form, q *model.Question, sid anon.ID,
 				q.Title, answered, denom)
 		}
 
-		// 比率一律保留一位小数，四舍五入；差额调平到当前最大项。
-		raw := make([]float64, NumGrades+1)
-		for i, n := range c.Grades {
-			raw[i] = float64(n) * 100 / float64(denom)
-		}
-		raw[NumGrades] = float64(cell.Abstain) * 100 / float64(denom)
+		// 比率保留一位小数，四舍五入；差额调平到当前最大项（LLD 6.3）。
+		//
+		// 全程用**整数定点**（千分之一为单位）而非 float64：文档写的是
+		// "十进制定点，避免二进制浮点误差"。0.1 在二进制里不可精确表示，
+		// 用浮点做 .05 边界的四舍五入与求和调平，迟早会在某组数据上
+		// 差出 0.1 个百分点，而报表上的 99.9% 是会摧毁可信度的。
+		counts := make([]int, NumGrades+1)
+		copy(counts, c.Grades[:])
+		counts[NumGrades] = cell.Abstain
 
-		r := make([]float64, len(raw))
-		for i := range raw {
-			r[i] = round1(raw[i])
+		r := make([]int, len(counts)) // 单位：0.1%
+		for i, n := range counts {
+			r[i] = roundTenth(n, denom)
 		}
 		// 调平到最大项而非首项：最大项的相对误差最小，视觉上最不易察觉。
-		diff := round1(100.0 - sum(r))
-		if diff != 0 {
-			r[argmax(r)] = round1(r[argmax(r)] + diff)
+		total := 0
+		for _, v := range r {
+			total += v
+		}
+		if diff := 1000 - total; diff != 0 {
+			r[argmaxInt(r)] += diff
 		}
 
-		copy(cell.Rates[:], r[:NumGrades])
-		cell.RateAbst = r[NumGrades]
+		for i := 0; i < NumGrades; i++ {
+			cell.Rates[i] = tenthToFloat(r[i])
+		}
+		cell.RateAbst = tenthToFloat(r[NumGrades])
 		cell.RateExcellent = cell.Rates[GradeExcellent]
-		cell.RateCompAbove = round1(
-			float64(c.Grades[GradeExcellent]+c.Grades[GradeCompetent]) * 100 / float64(denom))
+		cell.RateCompAbove = tenthToFloat(
+			roundTenth(c.Grades[GradeExcellent]+c.Grades[GradeCompetent], denom))
 
 		// 加权得分：弃权不计入分子分母，仅用于同优秀率时的辅助排序。
 		valid := 0
@@ -266,10 +274,15 @@ func finalize(p *model.Project, f *model.Form, q *model.Question, sid anon.ID,
 
 		// 恒等式硬断言（HLD 7.2）：四档 + 弃权 = 100.0%。
 		// 不成立即返回错误、拒绝出报表，而不是打个日志继续。
-		if total := round1(sum(r)); total != 100.0 {
+		// 定点运算下这是精确比较，不存在浮点容差问题。
+		sumTenth := 0
+		for _, v := range r {
+			sumTenth += v
+		}
+		if sumTenth != 1000 {
 			return nil, fmt.Errorf(
 				"口径恒等式不成立：题目「%s」四档与弃权比率合计 %.1f%%，应为 100.0%%",
-				q.Title, total)
+				q.Title, tenthToFloat(sumTenth))
 		}
 	}
 	return &cell, nil
@@ -323,28 +336,33 @@ func (r *Result) AllTexts() []string {
 	return out
 }
 
-func round1(f float64) float64 {
-	// 用整数运算做四舍五入，避免二进制浮点在 .05 边界上的意外行为。
-	if f >= 0 {
-		return float64(int64(f*10+0.5)) / 10
+// roundTenth 计算 count/denom 的百分比，四舍五入到 0.1%，返回以
+// 0.1% 为单位的整数。全程整数运算，不经浮点。
+//
+//	1000 * count / denom，四舍五入 = (2000*count + denom) / (2*denom)
+func roundTenth(count, denom int) int {
+	if denom == 0 {
+		return 0
 	}
-	return float64(int64(f*10-0.5)) / 10
+	return (2000*count + denom) / (2 * denom)
 }
 
-func sum(fs []float64) float64 {
-	t := 0.0
-	for _, f := range fs {
-		t += f
-	}
-	return round1(t)
-}
+func tenthToFloat(t int) float64 { return float64(t) / 10 }
 
-func argmax(fs []float64) int {
+func argmaxInt(v []int) int {
 	m := 0
-	for i := range fs {
-		if fs[i] > fs[m] {
+	for i := range v {
+		if v[i] > v[m] {
 			m = i
 		}
 	}
 	return m
+}
+
+// round1 仍用于提交率、加权得分等非恒等式约束的展示值。
+func round1(f float64) float64 {
+	if f >= 0 {
+		return float64(int64(f*10+0.5)) / 10
+	}
+	return float64(int64(f*10-0.5)) / 10
 }

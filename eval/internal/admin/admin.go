@@ -29,9 +29,12 @@ import (
 
 type Handler struct {
 	Svc *service.Service
-	// CertOK / CertMsg 来自启动自检，供发布前置校验 PC-09 与首页告警使用。
-	CertOK      bool
+	// CertUsable / CertMsg 是 PC-09 的判据（证书剩余 ≥1 天）；
+	// CertAlert 是启动自检里未通过的项，只用于首页告警（含 CK-04 的 21 天提醒）。
+	// 两者判据不同，不能混用——见 config.Status 的说明。
+	CertUsable  bool
 	CertMsg     string
+	CertAlert   string
 	SelfSigned  bool
 	Preflight   []string // 启动自检的告警行
 	SessionMgr  *Sessions
@@ -111,7 +114,7 @@ func (h *Handler) requireLogin(next http.Handler) http.Handler {
 // chrome 装配每页共用的外壳数据（启动自检告警、接入终端数）。
 func (h *Handler) chrome() views.Chrome {
 	c := views.Chrome{
-		SelfSigned: h.SelfSigned, CertOK: h.CertOK, CertMsg: h.CertMsg,
+		SelfSigned: h.SelfSigned, CertAlert: h.CertAlert,
 		Warns: h.Preflight, DomainWarns: h.DomainWarns,
 	}
 	if h.LeaseCount != nil {
@@ -191,7 +194,7 @@ func (h *Handler) project(w http.ResponseWriter, r *http.Request) {
 		P: p, F: f, Items: f.ItemCount(),
 		Tokens: total, Used: used, Submitted: submitted,
 		Trials: trials, Logs: logs,
-		Checks: h.Svc.Preflight(p, h.CertOK, h.CertMsg),
+		Checks: h.Svc.Preflight(p, h.CertUsable, h.CertMsg),
 	}))
 }
 
@@ -264,7 +267,7 @@ func (h *Handler) setStatus(w http.ResponseWriter, r *http.Request) {
 	to := model.Status(r.FormValue("to"))
 
 	if to == model.StatusPublished {
-		if cs := h.Svc.Preflight(p, h.CertOK, h.CertMsg); !service.AllOK(cs) {
+		if cs := h.Svc.Preflight(p, h.CertUsable, h.CertMsg); !service.AllOK(cs) {
 			var bad []string
 			for _, c := range cs {
 				if !c.OK {

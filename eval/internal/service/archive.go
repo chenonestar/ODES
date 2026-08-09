@@ -8,6 +8,7 @@ import (
 	"database/sql"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -28,6 +29,15 @@ import (
 // 构建结果会被缓存下来（见 lastArchive），ArchiveAndWipe 比对并擦除的
 // 都是同一份字节，而不是临时重新生成的另一份。
 func (s *Service) BuildArchive(projectID anon.ID, pass string) ([]byte, string, error) {
+	// FR-SYS-030：归档口令由管理员单独设定，**与登录密码不同**。
+	// 两者保管方式不同——登录口令随人走，归档口令随介质走；用同一个
+	// 就等于把归档包的安全性绑死在本机口令上，失去了单独设定的意义。
+	if same, err := s.samePasswordAsLogin(pass); err != nil {
+		return nil, "", err
+	} else if same {
+		return nil, "", errors.New(
+			"归档口令不得与登录口令相同：两者分别保管才有意义（FR-SYS-030）")
+	}
 	p, err := s.DB.Project(s.Vault, projectID)
 	if err != nil {
 		return nil, "", err
@@ -202,6 +212,25 @@ func (s *Service) ArchiveAndWipe(ctx context.Context, projectID anon.ID,
 	return s.DB.Log(nil, "archive", "ok",
 		fmt.Sprintf("项目「%s」已归档并擦除，核验编号 %s，包哈希 %s…",
 			p.Name, verify, sum[:16]))
+}
+
+// samePasswordAsLogin 判断给定口令是否就是登录口令。
+//
+// 用登录口令哈希比对，不需要也没有明文口令——meta 里存的是 Argon2id
+// 派生值，本来就无法反推。
+func (s *Service) samePasswordAsLogin(pass string) (bool, error) {
+	var m crypto.Meta
+	var err error
+	if m.KEKSalt, err = s.DB.GetMeta("kek_salt"); err != nil {
+		return false, err
+	}
+	if m.PwdHash, err = s.DB.GetMeta("admin_pwd_hash"); err != nil {
+		return false, err
+	}
+	if len(m.KEKSalt) == 0 || len(m.PwdHash) == 0 {
+		return false, nil
+	}
+	return crypto.VerifyPassword(pass, m), nil
 }
 
 // answerSample 取若干作答记录的密文片段作为残留检查的特征串。

@@ -22,7 +22,7 @@ type Check struct {
 
 // Preflight 返回**全部**未通过项，而非只报第一条。
 // 现场时间紧张，逐条试错的代价高。
-func (s *Service) Preflight(p *model.Project, certOK bool, certMsg string) []Check {
+func (s *Service) Preflight(p *model.Project, certUsable bool, certMsg string) []Check {
 	var out []Check
 	add := func(code string, ok bool, msg string) {
 		out = append(out, Check{Code: code, OK: ok, Msg: msg})
@@ -63,16 +63,29 @@ func (s *Service) Preflight(p *model.Project, certOK bool, certMsg string) []Che
 	trial, _ := s.DB.CountTrialAnswers(p.ID)
 	add("PC-07", trial > 0, "试填已完成至少 1 次")
 
+	// NFR-PER-020 是三个分项上限，不是一个。原先只查了作答项，
+	// 题目数与对象数两条没有把关。
+	add("PC-08a", len(f.Subjects) <= MaxSubjects,
+		fmt.Sprintf("测评对象 %d ≤ %d", len(f.Subjects), MaxSubjects))
+	add("PC-08b", qn <= MaxQuestions,
+		fmt.Sprintf("题目数 %d ≤ %d", qn, MaxQuestions))
 	items := f.ItemCount()
 	add("PC-08", items <= MaxItems,
 		fmt.Sprintf("展开后作答项 %d ≤ %d", items, MaxItems))
 
-	if certMsg == "" {
-		certMsg = "证书剩余有效期充足"
-	}
-	add("PC-09", certOK, certMsg)
+	// PC-09 的判据是**证书剩余有效期 ≥1 天**（LLD 7.3），比启动自检的
+	// CK-04（≥21 天）宽。两者用途不同：CK-04 是出发前的提醒，PC-09 是
+	// 发布的硬门槛。原先直接复用了 certOK，等于把 21 天的提醒变成了
+	// 发布拦截——证书剩 10 天时文档允许发布，实现却拦住了。
+	add("PC-09", certUsable, certMsg)
 	return out
 }
+
+// MaxSubjects / MaxQuestions / MaxItems 是 NFR-PER-020 的三条分项容量上限。
+const (
+	MaxSubjects  = 20
+	MaxQuestions = 50
+)
 
 // MaxItems 是展开后作答项上限（NFR-PER-020）。
 const MaxItems = 400
@@ -132,6 +145,69 @@ func (s *Service) Transition(ctx context.Context, id anon.ID, to model.Status) e
 	s.invalidateStats(id)
 	_ = s.DB.Log(&id, "transition", "ok", string(p.Status)+" → "+string(to))
 	return nil
+}
+
+// ── 推进器（LLD 7.1）────────────────────────────────────────────────
+//
+// 迁移表里有两行的触发者是「推进器」而不是管理员：
+//
+//	published → running   到达 start_at，自动
+//	running   → closed    到达 end_at，自动
+//
+// 原先这段逻辑写在 cmd/eval 的 ticker 里，既没有测试覆盖，也没法在
+// 启动时先补一次。移到服务层的直接原因是 M-2：迁移表里本来就没有
+// published → closed 这一行，删掉它之后，"发布后到 start_at 之前"
+// 这段时间里项目既不能作答也不能截止——推进器是唯一的出路，它必须
+// 是可测的。
+//
+// 刻意做成"到点即推进"的幂等操作而不是一次性定时触发：考察装备长期
+// 关机，start_at 很可能整个是在关机状态下过去的，开机后必须自己追上，
+// 不能依赖"那一刻恰好有人在跑程序"。
+
+// Advanced 记录一次实际发生的自动迁移，供调用方打印现场日志。
+type Advanced struct {
+	Name     string
+	From, To model.Status
+}
+
+// Advance 把所有项目推进到与当前时间相符的状态。幂等：重复调用无副作用。
+func (s *Service) Advance(ctx context.Context, now time.Time) ([]Advanced, error) {
+	ps, err := s.DB.Projects(s.Vault)
+	if err != nil {
+		return nil, err
+	}
+	var done []Advanced
+	var firstErr error
+	for _, p := range ps {
+		// for 而非 if：关机数日后开机时，published 应当一路走到 closed，
+		// 而不是先停在 running 等下一次 tick。
+		for {
+			from := p.Status
+			var to model.Status
+			switch {
+			case from == model.StatusPublished && !now.Before(p.StartAt):
+				to = model.StatusRunning
+			case from == model.StatusRunning && !now.Before(p.EndAt):
+				to = model.StatusClosed
+			default:
+				to = ""
+			}
+			if to == "" {
+				break
+			}
+			if err := s.Transition(ctx, p.ID, to); err != nil {
+				// 一个项目推进失败不连累其它项目，但错误必须往上报：
+				// 自动截止里含 VACUUM，失败即意味着匿名性承诺尚未成立。
+				if firstErr == nil {
+					firstErr = err
+				}
+				break
+			}
+			done = append(done, Advanced{Name: p.Name, From: from, To: to})
+			p.Status = to
+		}
+	}
+	return done, firstErr
 }
 
 // closeProject 执行进入「已截止」的全部副作用。

@@ -152,7 +152,10 @@ templ Project(c Chrome, v ProjectView) {
 							<button class="btn btn-sm btn-outline">撤回发布</button>
 						</form>
 					}
-					if v.P.Status == "running" || v.P.Status == "published" {
+					// 只在 running 下给「手动截止」：迁移表里没有
+					// published → closed 这一行（LLD 7.1），在 published
+					// 下把按钮画出来，点了只会得到一页"不允许的状态迁移"。
+					if v.P.Status == "running" {
 						<form method="post" action={ templ.SafeURL(projURL(v.P.ID) + "/status") }
 							onsubmit="return confirm('截止后将执行 WAL 截断与 VACUUM 重建（匿名化必需步骤），确认？')">
 							<input type="hidden" name="to" value="closed"/>

@@ -330,12 +330,48 @@ document.addEventListener("alpine:init", function () {
         });
         this.busy = true;
         this.flash("正在提交…");
+        this.post(items, null, null, 0);
+      },
+
+      // post 发一次提交。challengeId/answer 非空时带上算术验证的答案。
+      // tries 是算术验证已经答过的次数，用来兜底——见下面的注释。
+      post: function (items, challengeId, answer, tries) {
+        var self = this;
+        tries = tries || 0;
+        var headers = { "Content-Type": "application/json" };
+        if (challengeId) {
+          headers["X-Odes-Challenge"] = challengeId;
+          headers["X-Odes-Answer"] = answer;
+        }
         fetch(this.d.submitURL, {
-          method: "POST", headers: { "Content-Type": "application/json" },
+          method: "POST", headers: headers,
           body: JSON.stringify({ v: 1, items: items })
         }).then(function (r) {
           return r.json().then(function (j) { return j; });
         }).then(function (j) {
+          // 提交过于频繁：服务端出了一道算术题（FR-ANS-032）。
+          // 不是拒绝，答对即可继续——测评网络里"借用他人手机"是正常场景。
+          if (j && j.code === "CHALLENGE") {
+            self.toast = "";
+            // 必须设上限：服务端每次答错都会换一道新题，无限递归下去
+            // 参评人员会被一串永远弹不完的对话框困住，而且没有任何一处
+            // 告诉他"上一次答错了"——他会以为是系统坏了。散会后无法补测，
+            // 这条路径上的每一个死循环都是真实的数据丢失。
+            if (tries >= 3) {
+              self.busy = false;
+              self.flash("验证未通过。请稍候片刻，再点一次「提交测评」。已填内容已保留。", 6000);
+              return;
+            }
+            var ans = prompt((tries > 0 ? "答案不对，请重答：" : "提交过于频繁，请回答：") + j.question);
+            if (ans === null) {
+              self.busy = false;
+              self.flash("已取消。已填内容已保留，可再次点「提交测评」。", 4000);
+              return;
+            }
+            self.flash("正在提交…");
+            self.post(items, j.challenge, ans, tries + 1);
+            return;
+          }
           self.busy = false; self.toast = "";
           if (j && j.ok) {
             // 提交成功立即清除草稿（FR-ANS-016）。

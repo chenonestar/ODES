@@ -287,3 +287,102 @@ func TestTokensAreShuffledNotSequential(t *testing.T) {
 		t.Errorf("应生成 6 个备用令牌（10%%），得到 %d", len(spares))
 	}
 }
+
+// M-1　档位名称与档数可配置（FR-FRM-010，3–5 档）。
+//
+// 档位落在 question.config 里——schema 的列注释写明"各题型配置：grade 档位名"。
+func TestConfigurableGrades(t *testing.T) {
+	s := newSvc(t)
+	now := time.Now()
+	p := &model.Project{
+		ID: anon.NewID(), Name: "三档测评", Status: model.StatusDraft,
+		StartAt: now, EndAt: now.Add(time.Hour), ResultOpenAt: now.Add(time.Hour),
+		ExpectedCount: 10, APCount: 1, GradeScores: []int{100, 60, 0}, CreatedAt: now,
+	}
+	if err := s.DB.CreateProject(s.Vault, p); err != nil {
+		t.Fatal(err)
+	}
+	sub := &model.Subject{ID: anon.NewID(), ProjectID: p.ID, Name: "张三"}
+	if err := s.DB.CreateSubject(s.Vault, sub); err != nil {
+		t.Fatal(err)
+	}
+	g := &model.QuestionGroup{ID: anon.NewID(), ProjectID: p.ID, Title: "组"}
+	if err := s.DB.CreateGroup(g); err != nil {
+		t.Fatal(err)
+	}
+	custom := []string{"满意", "基本满意", "不满意"}
+	q := &model.Question{
+		ID: anon.NewID(), GroupID: g.ID, Kind: model.KindGrade, Title: "题",
+		Required: true, SubjectIDs: []anon.ID{sub.ID},
+		Config:   model.QuestionConfig{Grades: custom},
+	}
+	if err := s.DB.CreateQuestion(p.ID, q); err != nil {
+		t.Fatal(err)
+	}
+
+	f, err := s.DB.Form(s.Vault, p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(f.Grades) != 3 || f.Grades[0] != "满意" || f.Grades[2] != "不满意" {
+		t.Errorf("档位应取题目配置的三档，得到 %v", f.Grades)
+	}
+}
+
+// 未配置时回落到干部考核的法定四档。
+func TestDefaultGradesWhenUnconfigured(t *testing.T) {
+	s := newSvc(t)
+	pid, _ := fixture(t, s, 3)
+	p, _ := s.DB.Project(s.Vault, pid)
+	f, err := s.DB.Form(s.Vault, p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(f.Grades) != 4 || f.Grades[0] != "优秀" {
+		t.Errorf("未配置时应为法定四档，得到 %v", f.Grades)
+	}
+}
+
+func TestGradeCountRange(t *testing.T) {
+	for _, c := range []struct {
+		g    []string
+		want bool
+	}{
+		{[]string{"A", "B"}, false},                          // 2 档，少于下限
+		{[]string{"A", "B", "C"}, true},                      // 3 档
+		{[]string{"A", "B", "C", "D", "E"}, true},            // 5 档
+		{[]string{"A", "B", "C", "D", "E", "F"}, false},      // 6 档，超上限
+		{[]string{"A", "", "C"}, false},                      // 空档位名
+	} {
+		if got := model.ValidGrades(c.g); got != c.want {
+			t.Errorf("ValidGrades(%v) = %v，期望 %v（FR-FRM-010 要求 3–5 档）", c.g, got, c.want)
+		}
+	}
+}
+
+// M-7　归档口令不得与登录口令相同（FR-SYS-030）。
+func TestArchivePasswordMustDifferFromLogin(t *testing.T) {
+	s := newSvc(t)
+	// newSvc 用的登录口令是 Test-Password-123，把它的哈希写进 meta
+	_, meta, err := crypto.Init("Test-Password-123")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for k, v := range map[string][]byte{
+		"kek_salt": meta.KEKSalt, "admin_pwd_hash": meta.PwdHash,
+	} {
+		if err := s.DB.SetMeta(k, v); err != nil {
+			t.Fatal(err)
+		}
+	}
+	pid, _ := fixture(t, s, 3)
+
+	if _, _, err := s.BuildArchive(pid, "Test-Password-123"); err == nil {
+		t.Error("归档口令与登录口令相同时应被拒绝")
+	} else {
+		t.Logf("按预期拒绝：%v", err)
+	}
+	if _, _, err := s.BuildArchive(pid, "Another-Pass-456"); err != nil {
+		t.Errorf("不同口令应当放行，得到 %v", err)
+	}
+}

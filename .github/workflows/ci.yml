@@ -1,0 +1,126 @@
+# CI（LLD 附录 A.1「CI 强制检查」）
+#
+# 六项检查全部为**硬失败**，任一不通过即构建失败。这不是形式：
+# 匿名性是本系统的核心承诺，而承诺若没有强制力，迟早会在某次"顺手加个
+# 时间戳方便排查"的提交里失效。
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+defaults:
+  run:
+    working-directory: eval
+
+jobs:
+  # ① 匿名性三断言 + 全部测试
+  test:
+    name: 测试与匿名性断言
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.24"
+          cache-dependency-path: eval/go.sum
+
+      - name: 匿名性三断言（AT-02）
+        run: go test ./internal/store/ -run 'AT02|NoTimeColumn|ForeignKeys' -v
+
+      - name: 时序不可还原（AT-01，含自增主键对照组）
+        run: go test ./internal/store/ -run AT01 -v
+
+      - name: 口径恒等式穷举（ST-01）
+        run: go test ./internal/stats/ -run ST01 -v
+
+      - name: 提交幂等（TX-01 / TX-02）
+        run: go test ./internal/service/ -run 'TX01|TX02' -v
+
+      - name: 架构约束（依赖方向 / Shuffle 覆盖 / 匿名区字段）
+        run: go test ./internal/arch/ -v
+
+      - name: 全部测试
+        run: go test ./...
+
+  # ② go vet + 竞态检测
+  vet:
+    name: vet 与竞态
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.24"
+          cache-dependency-path: eval/go.sum
+      - run: go vet ./...
+      - name: 竞态检测
+        run: go test -race ./... -short
+
+  # ③ CGO 检查 + 三平台交叉编译（CON-07 / NFR-POR-011）
+  #
+  # CON-07：数据库访问层不得引入 CGO，以保证三平台交叉编译与单文件分发。
+  # 这条一旦破了，产品定位（单文件、拷贝即用）就没了。
+  build:
+    name: 交叉编译 ${{ matrix.goos }}/${{ matrix.goarch }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - { goos: windows, goarch: amd64 }
+          - { goos: darwin, goarch: arm64 }
+          - { goos: darwin, goarch: amd64 }
+          - { goos: linux, goarch: amd64 }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.24"
+          cache-dependency-path: eval/go.sum
+      - name: CGO_ENABLED=0 构建
+        env:
+          CGO_ENABLED: "0"
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+        run: go build -o /dev/null ./...
+
+  # ④ 生成物是否最新
+  #
+  # sqlc 与 templ 的生成物提交进仓库，是为了让 go run 不需要工具链。
+  # 代价是它们可能与源文件脱节——这一步就是防这个：重新生成后若有 diff，
+  # 说明有人改了 .sql / .templ 却忘了提交生成物。
+  generated:
+    name: 生成物与源文件一致
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.24"
+          cache-dependency-path: eval/go.sum
+      - name: 重新生成
+        run: go generate ./...
+      - name: 检查是否有未提交的生成物
+        run: |
+          if ! git diff --quiet; then
+            echo "生成物与源文件不一致。请在本地执行 go generate ./... 并提交结果：" >&2
+            git diff --stat >&2
+            exit 1
+          fi
+
+  # ⑤ 设计稿与迁移脚本同步
+  #
+  # 仓库根目录的 schema_V1.0.sql 是设计稿（权威），
+  # eval/migrations/00001_init.sql 是它加上 goose 标记后的副本。
+  # 两者必须逐字节一致，否则文档与实现会悄悄分家。
+  schema:
+    name: 迁移脚本与设计稿同步
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.24"
+          cache-dependency-path: eval/go.sum
+      - run: go test ./internal/store/ -run SchemaMatchesDesignDoc -v

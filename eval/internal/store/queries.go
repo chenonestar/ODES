@@ -220,7 +220,7 @@ func (db *DB) Form(v *crypto.Vault, p *model.Project) (*model.Form, error) {
 	if err != nil {
 		return nil, err
 	}
-	f := &model.Form{Grades: gradesOf(p), Subjects: subjects}
+	f := &model.Form{Grades: model.DefaultGrades, Subjects: subjects}
 
 	groups, err := db.q().ListQuestionGroups(ctx, p.ID)
 	if err != nil {
@@ -258,17 +258,22 @@ func (db *DB) Form(v *crypto.Vault, p *model.Project) (*model.Form, error) {
 		}
 		f.Groups = append(f.Groups, grp)
 	}
+
+	// 档位名称与档数可配置（FR-FRM-010）：取第一道显式配置了档位的等级题。
+	// 同一份测评表内档位必须一致——不同题目用不同档数，统计口径就没法
+	// 统一，第 6 章的恒等式也无从谈起，因此这里只认一份配置。
+	for _, g := range f.Groups {
+		for _, q := range g.Questions {
+			if q.Kind == model.KindGrade && model.ValidGrades(q.Config.Grades) {
+				f.Grades = q.Config.Grades
+				return f, nil
+			}
+		}
+	}
 	return f, nil
 }
 
-// gradesOf 取项目的档位名。
-//
-// 目前固定为干部考核的法定四档。FR-FRM-010 要求档位名称与档数（3–5 档）
-// 可配置——这一条列在审计报告的 M-1，随第 4 批处理，届时改为从
-// question.config 读取。此处集中在一个函数里，就是为了那时只改一处。
-func gradesOf(p *model.Project) []string {
-	return []string{"优秀", "称职", "基本称职", "不称职"}
-}
+
 
 // ── 令牌 ────────────────────────────────────────────────────────────
 

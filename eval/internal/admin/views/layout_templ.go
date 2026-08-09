@@ -23,8 +23,7 @@ import templruntime "github.com/a-h/templ/runtime"
 // Chrome 是每个页面共用的外壳：导航条 + 启动自检告警。
 type Chrome struct {
 	SelfSigned  bool
-	CertOK      bool
-	CertMsg     string
+	CertAlert   string
 	Warns       []string
 	DomainWarns []string
 	Leases      int
@@ -63,7 +62,7 @@ func Layout(c Chrome) templ.Component {
 			var templ_7745c5c3_Var2 string
 			templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(itoa(c.Leases))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/views/layout.templ`, Line: 39, Col: 76}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `layout.templ`, Line: 38, Col: 76}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
 			if templ_7745c5c3_Err != nil {
@@ -84,15 +83,15 @@ func Layout(c Chrome) templ.Component {
 				return templ_7745c5c3_Err
 			}
 		}
-		if !c.CertOK {
+		if c.CertAlert != "" {
 			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "<div role=\"alert\" class=\"alert alert-error mb-4\"><div><b>证书自检未通过</b><div class=\"text-sm\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var3 string
-			templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(c.CertMsg)
+			templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(c.CertAlert)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/views/layout.templ`, Line: 60, Col: 71}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `layout.templ`, Line: 59, Col: 73}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 			if templ_7745c5c3_Err != nil {
@@ -111,7 +110,7 @@ func Layout(c Chrome) templ.Component {
 			var templ_7745c5c3_Var4 string
 			templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(w)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/views/layout.templ`, Line: 64, Col: 81}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `layout.templ`, Line: 63, Col: 81}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 			if templ_7745c5c3_Err != nil {
@@ -130,7 +129,7 @@ func Layout(c Chrome) templ.Component {
 			var templ_7745c5c3_Var5 string
 			templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(w)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/views/layout.templ`, Line: 67, Col: 79}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `layout.templ`, Line: 66, Col: 79}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 			if templ_7745c5c3_Err != nil {
@@ -245,7 +244,7 @@ func Error(c Chrome, msg string) templ.Component {
 			var templ_7745c5c3_Var9 string
 			templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(msg)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/views/layout.templ`, Line: 94, Col: 59}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `layout.templ`, Line: 93, Col: 59}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 			if templ_7745c5c3_Err != nil {
@@ -298,7 +297,7 @@ func Login(errMsg string) templ.Component {
 			var templ_7745c5c3_Var11 string
 			templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(errMsg)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/views/layout.templ`, Line: 119, Col: 71}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `layout.templ`, Line: 118, Col: 71}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 			if templ_7745c5c3_Err != nil {

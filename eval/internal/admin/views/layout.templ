@@ -9,8 +9,7 @@ package views
 // Chrome 是每个页面共用的外壳：导航条 + 启动自检告警。
 type Chrome struct {
 	SelfSigned  bool
-	CertOK      bool
-	CertMsg     string
+	CertAlert   string
 	Warns       []string
 	DomainWarns []string
 	Leases      int
@@ -55,9 +54,9 @@ templ Layout(c Chrome) {
 						</div>
 					</div>
 				}
-				if !c.CertOK {
+				if c.CertAlert != "" {
 					<div role="alert" class="alert alert-error mb-4">
-						<div><b>证书自检未通过</b><div class="text-sm">{ c.CertMsg }</div></div>
+						<div><b>证书自检未通过</b><div class="text-sm">{ c.CertAlert }</div></div>
 					</div>
 				}
 				for _, w := range c.Warns {

@@ -43,8 +43,12 @@ func (s Status) Label() string {
 // AllowedTransition 是显式迁移表。任何未列出的迁移一律拒绝，
 // 校验集中在此处，不散落到各处理器（LLD 7.1）。
 var AllowedTransition = map[Status][]Status{
-	StatusDraft:     {StatusPublished},
-	StatusPublished: {StatusDraft, StatusRunning, StatusClosed},
+	StatusDraft: {StatusPublished},
+	// published 只能退回草稿或由推进器转入进行中。
+	// **不含 published → closed**：LLD 7.1 的迁移表里没有这一条，
+	// 「手动关闭」的前置状态是 running（FR-PRJ-024）。尚未开始的项目
+	// 要停掉，走的是撤回发布。
+	StatusPublished: {StatusDraft, StatusRunning},
 	StatusRunning:   {StatusClosed},
 	StatusClosed:    {StatusArchived},
 	StatusArchived:  {}, // 终态，不可回退
@@ -123,7 +127,10 @@ type Question struct {
 }
 
 type QuestionConfig struct {
-	Grades   []string `json:"grades,omitempty"`   // 等级题档位名，nil 则用项目默认
+	// Grades 是等级题的档位名称，可配置 3–5 档（FR-FRM-010）。
+	// 落在 question.config 里——schema 的列注释写明"各题型配置：grade 档位名"，
+	// 这就是那个位置。为空时用干部考核的法定四档。
+	Grades   []string `json:"grades,omitempty"`
 	ScoreMin int      `json:"scoreMin,omitempty"` // 打分题
 	ScoreMax int      `json:"scoreMax,omitempty"`
 	MinPick  int      `json:"minPick,omitempty"` // 多选
@@ -152,6 +159,28 @@ type Form struct {
 	Grades   []string
 	Subjects []Subject
 	Groups   []QuestionGroup
+}
+
+// DefaultGrades 是干部考核的法定四等次，也是未配置时的默认档位。
+var DefaultGrades = []string{"优秀", "称职", "基本称职", "不称职"}
+
+// GradeRange 是允许的档数区间（FR-FRM-010：3–5 档）。
+const (
+	MinGrades = 3
+	MaxGrades = 5
+)
+
+// ValidGrades 判定一组档位名是否合法。
+func ValidGrades(g []string) bool {
+	if len(g) < MinGrades || len(g) > MaxGrades {
+		return false
+	}
+	for _, s := range g {
+		if s == "" {
+			return false
+		}
+	}
+	return true
 }
 
 // ItemCount 是矩阵展开后的作答项总数，用于容量校验（FR-FRM-034 / PC-08）。

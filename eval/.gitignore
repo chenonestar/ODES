@@ -1,11 +1,14 @@
-data/
-snapshot/
-output/
-cert/
-config.toml
-eval
-eval.exe
-tools/.tailwindcss
-tools/.tailwindcss.exe
+# 运行时产物，一律锚定到本目录：
+# 不加前导 / 的话，`eval` 会连 cmd/eval/ 这个**目录**一起吞掉，
+# 而 main.go 就在里面——整个程序入口都进不了仓库。
+/data/
+/snapshot/
+/output/
+/cert/
+/config.toml
+/eval
+/eval.exe
+/tools/.tailwindcss
+/tools/.tailwindcss.exe
 
 # sqlc / templ 的生成物是**提交**进仓库的（见 README），此处不忽略。
