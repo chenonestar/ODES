@@ -1,0 +1,1129 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>线上民主测评系统 — 详细设计说明书 V1.2</title>
+<style>
+/* 线上民主测评系统 需求分析说明书 · 公文风格样式 */
+:root{
+  --ink:#1b2434;
+  --seal:#9e2b25;
+  --seal-soft:#f6ecea;
+  --paper:#fbfaf7;
+  --rule:#ddd7cb;
+  --slate:#5c6675;
+  --slate-soft:#eef0f3;
+  --band:#f3efe7;
+  --ok:#2f6f4f;
+  --warn:#8a5a12;
+  --warn-soft:#fbf3e2;
+  --serif:"Songti SC","SimSun","Noto Serif SC",Georgia,serif;
+  --sans:"PingFang SC","Microsoft YaHei","Hiragino Sans GB","Source Han Sans SC",system-ui,sans-serif;
+  --mono:"SFMono-Regular",Consolas,"Liberation Mono",monospace;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;background:var(--paper);color:var(--ink);
+  font-family:var(--sans);font-size:15px;line-height:1.85;
+}
+.wrap{max-width:980px;margin:0 auto;padding:0 28px 80px}
+
+/* ── 红头 ── */
+.masthead{padding:56px 0 0;text-align:center}
+.masthead .kicker{
+  font-family:var(--mono);font-size:11px;letter-spacing:.22em;
+  text-transform:uppercase;color:var(--slate);margin-bottom:18px
+}
+.masthead h1{
+  font-family:var(--serif);font-weight:700;font-size:38px;line-height:1.3;
+  color:var(--seal);margin:0 0 6px;letter-spacing:.04em
+}
+.masthead .subtitle{
+  font-family:var(--serif);font-size:19px;color:var(--ink);margin:0 0 8px;letter-spacing:.03em
+}
+.masthead .tagline{font-size:13.5px;color:var(--slate);margin:0 0 26px}
+.redrule{border:0;margin:0 0 4px;height:3px;background:var(--seal)}
+.redrule.thin{height:1px;margin-bottom:30px}
+
+.metaline{
+  display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin-bottom:38px
+}
+.metaline span{
+  font-size:12.5px;color:var(--slate);background:#fff;
+  border:1px solid var(--rule);border-radius:2px;padding:3px 11px
+}
+
+/* ── 目录 ── */
+.toc{
+  background:#fff;border:1px solid var(--rule);border-left:3px solid var(--seal);
+  padding:22px 26px;margin:0 0 48px
+}
+.toc h2{
+  font-family:var(--serif);font-size:16px;margin:0 0 12px;color:var(--ink);letter-spacing:.06em
+}
+.toc ol{margin:0;padding-left:22px;columns:2;column-gap:38px}
+.toc li{margin-bottom:5px;font-size:13.5px;break-inside:avoid}
+.toc a{color:var(--ink);text-decoration:none;border-bottom:1px solid transparent}
+.toc a:hover{border-bottom-color:var(--seal);color:var(--seal)}
+.toc .tnote{color:var(--slate);font-size:12.5px}
+
+/* ── 章节 ── */
+h2.sec{
+  font-family:var(--serif);font-size:25px;font-weight:700;letter-spacing:.04em;
+  margin:64px 0 22px;padding-bottom:10px;border-bottom:2px solid var(--seal);
+  display:flex;align-items:baseline;gap:14px
+}
+h2.sec .num{
+  font-family:var(--mono);font-size:14px;color:#fff;background:var(--seal);
+  padding:3px 9px;border-radius:2px;letter-spacing:.06em;flex:none;line-height:1.4
+}
+h3{font-family:var(--serif);font-size:19px;font-weight:700;margin:38px 0 12px;letter-spacing:.03em}
+h4{font-size:15.5px;font-weight:600;margin:26px 0 10px;color:var(--ink)}
+p{margin:0 0 14px}
+ul,ol{margin:0 0 16px;padding-left:24px}
+li{margin-bottom:6px}
+strong{font-weight:600}
+code{font-family:var(--mono);font-size:.88em;background:var(--slate-soft);
+  padding:1px 5px;border-radius:2px;color:#33405a}
+a{color:var(--seal)}
+
+/* ── 表格 ── */
+table{
+  width:100%;border-collapse:collapse;margin:16px 0 24px;
+  font-size:13.5px;background:#fff;border:1px solid var(--rule)
+}
+caption{
+  caption-side:bottom;font-size:12.5px;color:var(--slate);
+  padding-top:9px;text-align:left
+}
+th,td{border:1px solid var(--rule);padding:9px 12px;text-align:left;vertical-align:top;line-height:1.7}
+thead th{background:var(--band);font-weight:600;font-size:13px;letter-spacing:.02em}
+tbody tr:nth-child(even){background:#fcfbf9}
+td.c,th.c{text-align:center}
+td.id{font-family:var(--mono);font-size:12px;white-space:nowrap;color:var(--slate)}
+
+/* ── 标记 ── */
+.tag{
+  display:inline-block;font-size:11.5px;line-height:1.6;padding:1px 8px;
+  border-radius:2px;font-family:var(--sans);white-space:nowrap;vertical-align:1px
+}
+.tag.must{background:var(--seal);color:#fff}
+.tag.opt{background:#fff;color:var(--slate);border:1px solid var(--rule)}
+.tag.new{background:var(--ok);color:#fff}
+.tag.chg{background:var(--warn);color:#fff}
+.tag.del{background:var(--slate-soft);color:var(--slate);text-decoration:line-through}
+
+/* ── 提示框 ── */
+.box{border:1px solid var(--rule);border-left:3px solid var(--slate);
+  background:#fff;padding:16px 20px;margin:20px 0}
+.box .bt{font-weight:600;font-size:14px;margin-bottom:6px;display:block}
+.box p:last-child,.box ul:last-child,.box ol:last-child{margin-bottom:0}
+.box.crit{border-left-color:var(--seal);background:var(--seal-soft)}
+.box.crit .bt{color:var(--seal)}
+.box.warn{border-left-color:var(--warn);background:var(--warn-soft)}
+.box.warn .bt{color:var(--warn)}
+.box.ok{border-left-color:var(--ok);background:#eef5f0}
+.box.ok .bt{color:var(--ok)}
+
+/* ── 图 ── */
+.figure{background:#fff;border:1px solid var(--rule);padding:26px 20px;margin:22px 0;text-align:center}
+.figure pre{
+  font-family:var(--mono);font-size:12.5px;line-height:1.65;text-align:left;
+  display:inline-block;margin:0;color:var(--ink);white-space:pre;overflow-x:auto;max-width:100%
+}
+.figcap{font-size:12.5px;color:var(--slate);margin-top:14px;text-align:left}
+
+/* ── 场景卡（B文档） ── */
+.scene{margin:70px 0 0;border-top:2px solid var(--seal);padding-top:0}
+.scene-head{background:var(--band);border:1px solid var(--rule);border-top:0;padding:22px 26px;margin-bottom:8px}
+.scene-head .sn{
+  font-family:var(--mono);font-size:12px;letter-spacing:.2em;color:var(--seal);
+  display:block;margin-bottom:6px
+}
+.scene-head h2{font-family:var(--serif);font-size:24px;margin:0 0 8px;letter-spacing:.04em}
+.scene-head p{margin:0;font-size:13.5px;color:var(--slate)}
+
+/* ── 步骤 ── */
+.steps{counter-reset:st;margin:20px 0;padding:0;list-style:none}
+.steps>li{
+  counter-increment:st;position:relative;padding-left:44px;margin-bottom:20px
+}
+.steps>li::before{
+  content:counter(st,decimal-leading-zero);position:absolute;left:0;top:2px;
+  font-family:var(--mono);font-size:12px;color:#fff;background:var(--ink);
+  width:26px;height:22px;display:flex;align-items:center;justify-content:center;border-radius:2px
+}
+.steps>li>b{display:block;font-size:15px;margin-bottom:3px}
+
+/* ── 检查清单 ── */
+.check{list-style:none;padding:0;margin:14px 0}
+.check li{padding-left:26px;position:relative;margin-bottom:7px;font-size:13.5px}
+.check li::before{
+  content:"";position:absolute;left:0;top:6px;width:12px;height:12px;
+  border:1.5px solid var(--slate);border-radius:2px;background:#fff
+}
+
+/* ── 签署 ── */
+.sign{width:100%;border-collapse:collapse;margin-top:22px;font-size:13.5px}
+.sign td{border:1px solid var(--rule);padding:16px 12px;height:64px;background:#fff}
+.sign td.lbl{background:var(--band);width:110px;font-weight:600;text-align:center;vertical-align:middle}
+
+footer{
+  margin-top:80px;border-top:1px solid var(--rule);padding-top:18px;
+  font-size:12.5px;color:var(--slate);text-align:center
+}
+footer .rline{height:2px;background:var(--seal);margin-bottom:18px;width:100%}
+
+@media (max-width:720px){
+  .wrap{padding:0 16px 60px}
+  .masthead h1{font-size:27px}
+  .toc ol{columns:1}
+  h2.sec{font-size:21px}
+  table{font-size:12.5px}
+  th,td{padding:7px 8px}
+  .figure{padding:16px 10px;overflow-x:auto}
+}
+@media print{
+  body{background:#fff;font-size:10.5pt}
+  .wrap{max-width:none;padding:0}
+  h2.sec{page-break-after:avoid;margin-top:30px}
+  table,.box,.figure{page-break-inside:avoid}
+  .toc{page-break-after:always}
+}
+
+/* ── 代码块（LLD） ── */
+pre.code{
+  background:#1f2733;color:#e6e9ef;border:1px solid #141a23;border-left:3px solid var(--seal);
+  padding:14px 18px;margin:16px 0;overflow-x:auto;font-size:12.5px;line-height:1.75
+}
+pre.code code{background:none;color:inherit;padding:0;font-family:var(--mono)}
+@media print{pre.code{background:#f4f4f4;color:#111;border-color:#bbb}}
+
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="masthead">
+  <div class="kicker">Low-Level Design</div>
+  <h1>线上民主测评系统</h1>
+  <div class="subtitle">详细设计说明书</div>
+  <div class="tagline">依据《系统设计说明书》V1.0 与《需求分析说明书》V2.0 编制</div>
+  <hr class="redrule">
+  <hr class="redrule thin">
+  <div class="metaline">
+    <span>版本日期：2026-08-08</span>
+    <span>版本号：V1.2</span>
+    <span>文档类型：详细设计说明书</span>
+    <span>上游：HLD V1.0 / SRS V2.0</span>
+    <span>密级：内部</span>
+  </div>
+</header>
+
+<nav class="toc">
+  <h2>目 录</h2>
+  <ol>
+    <li><a href="#s1">设计说明</a> <span class="tnote">范围 · 对 HLD 的两处修正</span></li>
+    <li><a href="#s2">数据库设计</a> <span class="tnote">DDL · 匿名隔离区 · CI 断言</span></li>
+    <li><a href="#s3">加密与密钥</a> <span class="tnote">载荷结构 · 派生参数 · 接口</span></li>
+    <li><a href="#s4">令牌与短码</a> <span class="tnote">生成 · 校验位 · 打印排布</span></li>
+    <li><a href="#s5">提交事务</a> <span class="tnote">幂等 · 并发 · 失败语义</span></li>
+    <li><a href="#s6">统计聚合与口径</a> <span class="tnote">算法 · 舍入调平 · 恒等式</span></li>
+    <li><a href="#s7">状态机实现</a> <span class="tnote">迁移表 · 前置校验 · 推进器</span></li>
+    <li><a href="#s8">接口清单</a> <span class="tnote">路由 · 报文 · 错误码</span></li>
+    <li><a href="#s9">作答端单页</a> <span class="tnote">数据契约 · 状态模型 · 草稿</span></li>
+    <li><a href="#s10">导出与归档擦除</a></li>
+    <li><a href="#s11">测试设计</a> <span class="tnote">匿名性审计自动化</span></li>
+    <li><a href="#s12">配置文件与证书装载</a> <span class="tnote">config.toml · 启动校验 · 签发与续签实施</span></li>
+    <li><a href="#s13">报告导出实现</a> <span class="tnote">PDF 选型 · 字体 · ADR-009/010</span></li>
+    <li><a href="#s14">附录</a> <span class="tnote">CI 检查 · 待决 · 签署</span></li>
+  </ol>
+</nav>
+
+<h2 class="sec" id="s1"><span class="num">01</span>设计说明</h2>
+
+<h3>1.1 范围</h3>
+<p>本文给出可直接进入编码的设计：表结构 DDL、关键算法、接口报文、错误码与测试用例。界面视觉稿、逐页交互文案不在本文范围。</p>
+
+<h3>1.2 对 HLD 的两处修正 <span class="tag chg">重要</span></h3>
+<div class="box crit">
+  <span class="bt">修正一：作答数据改为整份单 BLOB 存储，不做逐项建表</span>
+  <p>HLD 第 7 章按"8 万个加密字段、逐项解密约 300ms"估算。详细设计时发现逐项建表存在两个问题：</p>
+  <ul style="margin-top:8px">
+    <li><strong>匿名性问题</strong>：作答项表若有自增 rowid，同一份作答内各项的写入顺序即题目顺序，跨记录比对可暴露"某人跳过了哪些题、按什么顺序作答"，这是一条 HLD 未识别的新泄露面；</li>
+    <li><strong>性能问题</strong>：8 万次 GCM 解密含 8 万次 nonce 处理与认证标签校验，开销主要来自调用次数而非数据量。</li>
+  </ul>
+  <p style="margin-top:8px"><strong>改为</strong>：一份作答序列化为一个 JSON，整体加密后作为 <code>answer_record.payload</code> 单列存储。200 份即 <strong>200 次解密</strong>，实测量级降至 <strong>10ms 以内</strong>，且作答项之间不再有任何可观察的顺序结构。由于统计本就走全量内存聚合（ADR-003），失去 SQL 部分查询能力没有代价。</p>
+</div>
+<div class="box crit">
+  <span class="bt">修正二：纸质补录不得在记录上打标记</span>
+  <p>需求 6.5 要求补录记录"合并统计、数据中不可区分"，同时又要标注份数。若在 <code>answer_record</code> 上加 <code>is_paper_entry</code> 标志，补录者就构成一个可识别的小群体——而不在场者名单是管理员知道的，这等于给这几份作答贴上了身份标签。</p>
+  <p style="margin-top:8px"><strong>改为</strong>：份数计入 <code>project.paper_entry_count</code> 计数器，记录本身与在线提交完全同构、不可区分。</p>
+</div>
+
+<div class="box crit">
+  <span class="bt">修正三：nip.io + Let's Encrypt 路径不成立，自有域名是硬性前提</span>
+  <p>SRS V2.0 与 HLD 均设想借助 <code>nip.io</code> 把私有 IP 包装成公网域名后申请证书，并把"自购域名"列为可选的优化建议。核查 ACME 验证流程后确认<strong>该路径实际走不通</strong>：</p>
+  <ul style="margin-top:8px">
+    <li><strong>HTTP-01 / TLS-ALPN-01</strong>：要求 CA 从公网访问该域名，而它解析到私有 IP，够不着；</li>
+    <li><strong>DNS-01</strong>：要求在 <code>_acme-challenge.192-168-66-1.nip.io</code> 下创建 TXT 记录，<strong>而 nip.io 只提供通配解析，不开放记录写入</strong>。</li>
+  </ul>
+  <p style="margin-top:8px">三种验证方式全部堵死。因此<strong>自有域名从"建议"升为硬性前提</strong>，TBD-01 的性质由"技术选型待定"变为"必须完成的采购事项"。同时把证书与域名改为<strong>配置驱动</strong>，程序只装载不申请——这使证书相关代码不再被采购进度阻塞。详见 <a href="#s12">第 12 章</a>与 ADR-010。</p>
+</div>
+
+<div class="box crit">
+  <span class="bt">修正四：PDF 字体的体积顾虑不成立</span>
+  <p>HLD 把"内嵌中文字体使二进制增加 5–15MB"列为需权衡的代价。这条约束用错了对象：<code>NFR-PER-014</code> 的 500KB 预算针对的是<strong>作答页</strong>（下发到 200 部手机），而二进制是用 U 盘拷到一台笔记本、一年用数次的东西。</p>
+  <p style="margin-top:8px">排除该伪约束后，结论改变：<strong>嵌入完整字库、不做子集化</strong>，以覆盖干部姓名中的生僻字。TBD-02 就此关闭。详见 <a href="#s13">第 13 章</a>与 ADR-009。</p>
+</div>
+
+<h2 class="sec" id="s2"><span class="num">02</span>数据库设计</h2>
+
+<h3>2.1 表清单</h3>
+<table>
+  <thead><tr><th style="width:150px">表</th><th style="width:110px">归属</th><th>说明</th></tr></thead>
+  <tbody>
+    <tr><td><code>meta</code></td><td>系统</td><td>schema 版本、KEK 盐、包裹后的 DEK、管理员口令哈希、配置项</td></tr>
+    <tr><td><code>project</code></td><td>项目</td><td>含应参加人数、档位赋分、纸质补录份数、AP 数量</td></tr>
+    <tr><td><code>form_template</code></td><td><strong>长期</strong></td><td>测评表模板，无人员无作答，<strong>不受擦除约束</strong></td></tr>
+    <tr><td><code>question_group</code> / <code>question</code> / <code>question_option</code></td><td>项目</td><td>题目结构，不加密（结构本身非敏感）</td></tr>
+    <tr><td><code>subject</code></td><td>项目</td><td>测评对象，姓名与职务加密，分组标签不加密</td></tr>
+    <tr><td><code>question_subject</code></td><td>项目</td><td>题目↔对象关联，矩阵展开依据</td></tr>
+    <tr><td><code>roster</code></td><td>项目</td><td>人员名单，标识加密，<strong>分发后可整表删除</strong></td></tr>
+    <tr><td><code>token</code></td><td><strong>匿名区</strong></td><td>随机主键、无时间</td></tr>
+    <tr><td><code>answer_record</code></td><td><strong>匿名区</strong></td><td>随机主键、无时间、整份密文单列</td></tr>
+    <tr><td><code>trial_token</code> / <code>trial_answer</code></td><td>项目</td><td>试填数据，发布时清空，<strong>不参与匿名性</strong>，可有时间字段</td></tr>
+    <tr><td><code>op_log</code></td><td>项目</td><td>操作日志，不含令牌值、IP、作答内容</td></tr>
+    <tr><td><code>archive_meta</code></td><td><strong>长期</strong></td><td>擦除后保留的元信息与核验编号</td></tr>
+  </tbody>
+</table>
+
+<h3>2.2 匿名隔离区（本设计的关键）</h3>
+<pre class="code"><code>CREATE TABLE token (
+    id         BLOB(16) PRIMARY KEY,   -- 随机 UUIDv4，非自增
+    project_id BLOB(16) NOT NULL REFERENCES project(id) ON DELETE CASCADE,
+    value      TEXT    NOT NULL UNIQUE,-- 令牌值，≥128 位熵
+    short_code TEXT    NOT NULL UNIQUE,-- 8 位人工可读短码（含校验位）
+    batch_no   INTEGER NOT NULL DEFAULT 1,
+    ap_index   INTEGER NOT NULL DEFAULT 1,  -- 印在令牌单上的 SSID 序号
+    is_spare   INTEGER NOT NULL DEFAULT 0,
+    used       INTEGER NOT NULL DEFAULT 0
+    -- ✗ 禁止：used_at、created_at、seq、roster_id、ip、user_agent
+) WITHOUT ROWID;
+
+CREATE TABLE answer_record (
+    id         BLOB(16) PRIMARY KEY,   -- 随机 UUIDv4，非自增
+    project_id BLOB(16) NOT NULL REFERENCES project(id) ON DELETE CASCADE,
+    batch_no   INTEGER NOT NULL DEFAULT 1,
+    payload    BLOB    NOT NULL        -- 整份作答的 AES-256-GCM 密文
+    -- ✗ 禁止：token_id、roster_id、submitted_at、seq、ip、is_paper_entry
+) WITHOUT ROWID;</code></pre>
+<p>两表之间<strong>没有任何可连接字段</strong>：无外键、无序号、无时间。<code>batch_no</code> 是唯一的共同列，但它是粗粒度分组（一批 50 人），不构成个体关联。</p>
+
+<h3>2.3 <code>WITHOUT ROWID</code> 的实测效果</h3>
+<p>普通 SQLite 表以隐式 <code>rowid</code> 聚簇，插入顺序即物理顺序；改为 <code>WITHOUT ROWID</code> 后以主键聚簇，而主键是随机 UUID。对照实验（200 条记录，标记真实提交顺序，无 <code>ORDER BY</code> 按物理顺序读回，计算与提交顺序的斯皮尔曼相关系数）：</p>
+<table>
+  <thead><tr><th style="width:200px">表结构</th><th style="width:230px">物理读出的前 12 条</th><th>与提交顺序相关系数</th></tr></thead>
+  <tbody>
+    <tr><td>自增主键（V1.0 做法）</td><td><code>0,1,2,3,4,5,6,7,8,9,10,11</code></td><td><strong>+1.0000</strong>　完全还原</td></tr>
+    <tr><td><strong>随机主键 + WITHOUT ROWID</strong></td><td><code>155,73,0,74,98,13,181,147,…</code></td><td><strong>+0.0559</strong>　与随机无异</td></tr>
+  </tbody>
+</table>
+<p>实验中第 1 位提交者落在物理第 3 条，无规律可循。这是 <code>NFR-ANO-020</code> 封堵成立的直接证据，验收时可复现。</p>
+
+<div class="box warn">
+  <span class="bt">仍需截止后 VACUUM</span>
+  <p>上述实验在 <code>VACUUM</code> 后测量。测评进行中 WAL 仍按提交先后排列帧，因此：<strong>进入"已截止"状态时必须执行 <code>PRAGMA wal_checkpoint(TRUNCATE)</code> 后跟 <code>VACUUM</code></strong>，这是状态迁移的一部分而非可选优化（见 <a href="#s7">7.2</a>）。<code>NFR-ANO-091</code> 时序专项测试应在此之后执行。</p>
+</div>
+
+<h3>2.4 索引</h3>
+<table>
+  <thead><tr><th style="width:220px">索引</th><th>用途</th></tr></thead>
+  <tbody>
+    <tr><td><code>idx_token_value</code> / <code>idx_token_short</code></td><td>作答入口的等值查找。令牌值与短码不加密正是为此——加密会破坏索引，而令牌本身不含身份信息</td></tr>
+    <tr><td><code>idx_token_batch(project_id, batch_no, used)</code></td><td>批次进度统计与"已用/未用"计数</td></tr>
+    <tr><td><code>idx_answer_project</code></td><td>统计时一次性全量拉取</td></tr>
+    <tr><td>—</td><td><strong>不为 <code>answer_record</code> 建立任何其它索引</strong>。额外索引会引入新的物理排列，构成潜在的顺序泄露面</td></tr>
+  </tbody>
+</table>
+
+<h3>2.5 迁移与 CI 断言</h3>
+<p>迁移脚本由 goose 管理并 <code>embed</code> 进二进制，启动时自动执行。<strong>三条匿名性断言写入 CI，任一失败则构建失败</strong>：</p>
+<ol>
+  <li><code>token</code> 与 <code>answer_record</code> 的建表语句必须含 <code>WITHOUT ROWID</code>；</li>
+  <li>两表列名不得匹配 <code>(_at|time|seq|order|token_id|roster_id|^ip$)</code>；</li>
+  <li><code>answer_record</code> 的外键列表中不得出现 <code>token</code>。</li>
+</ol>
+<p>断言脚本对实际建好的库执行 <code>PRAGMA table_info</code> 与 <code>PRAGMA foreign_key_list</code>，而非静态扫描 SQL 文本——后者可被格式变化绕过。当前 DDL 已通过全部三条。</p>
+
+<h2 class="sec" id="s3"><span class="num">03</span>加密与密钥</h2>
+
+<h3>3.1 作答载荷结构</h3>
+<p>一份作答序列化为 JSON 后整体加密。明文结构：</p>
+<pre class="code"><code>{
+  "v": 1,
+  "items": [
+    { "q": "3f2a…", "s": "9b1c…", "grade": 0 },        // 等级题：0 优秀 1 称职 2 基本称职 3 不称职 -1 弃权
+    { "q": "3f2a…", "s": "7d4e…", "grade": -1 },
+    { "q": "8c11…", "s": "9b1c…", "opts": ["a1","a3"] },// 多选
+    { "q": "5e90…", "s": "9b1c…", "text": "该同志…" }   // 评语
+  ]
+}</code></pre>
+<p><code>q</code> / <code>s</code> 为题目与对象的 UUID 十六进制。<strong>items 数组在序列化前按 (q,s) 排序</strong>，而非按作答先后——否则数组顺序会泄露答题顺序。</p>
+
+<h3>3.2 密文格式</h3>
+<pre class="code"><code>payload = nonce(12B) || ciphertext || tag(16B)      // AES-256-GCM
+AAD     = project_id(16B)                            // 绑定项目，防止跨项目重放</code></pre>
+<p>每次加密独立生成随机 nonce。50 题 × 20 对象的 JSON 明文约 25–40 KB，密文体积基本等同。</p>
+
+<h3>3.3 密钥派生参数</h3>
+<table>
+  <thead><tr><th style="width:170px">项</th><th>取值</th></tr></thead>
+  <tbody>
+    <tr><td>KDF</td><td>Argon2id，<code>m=64MB, t=3, p=4</code>，输出 32 字节</td></tr>
+    <tr><td>盐</td><td>16 字节随机，存 <code>meta.kek_salt</code></td></tr>
+    <tr><td>DEK</td><td>32 字节随机，以 KEK 用 AES-256-GCM 包裹后存 <code>meta.wrapped_dek</code></td></tr>
+    <tr><td>口令哈希</td><td>与 KEK 分别派生（不同 info 串），存 <code>meta.admin_pwd_hash</code>，用于登录校验</td></tr>
+    <tr><td>解锁耗时</td><td>约 0.3–0.8 秒（视 CPU），仅启动时一次，可接受</td></tr>
+  </tbody>
+</table>
+<p>采用 KEK/DEK 两层而非口令直接加密数据：修改口令时只需重新包裹 DEK，无需重新加密全部作答记录。</p>
+
+<h3>3.4 <code>crypto</code> 包接口</h3>
+<pre class="code"><code>type Vault struct{ aead cipher.AEAD }             // DEK 仅存于此，不导出
+
+func Init(password string) (*Vault, Meta, error)  // 首次：生成盐与 DEK
+func Unlock(password string, m Meta) (*Vault, error)
+func (v *Vault) Seal(plain []byte, aad []byte) []byte
+func (v *Vault) Open(cipher []byte, aad []byte) ([]byte, error)
+func (v *Vault) SealString(s string, aad []byte) []byte   // 姓名等短字段
+func (v *Vault) Close()                            // 显式清零内存中的密钥材料</code></pre>
+<p><code>Vault</code> 不提供任何导出密钥的方法。进程退出前调用 <code>Close()</code> 覆写密钥字节。</p>
+
+<h3>3.5 防护边界（须在评审中明确）</h3>
+<table>
+  <thead><tr><th style="width:220px">场景</th><th class="c" style="width:90px">是否防护</th></tr></thead>
+  <tbody>
+    <tr><td>笔记本失窃、数据文件被拷走</td><td class="c"><strong>有效</strong>（主要目标）</td></tr>
+    <tr><td>归档包在介质上被他人取得</td><td class="c"><strong>有效</strong></td></tr>
+    <tr><td>防止管理员查看作答内容</td><td class="c">无效</td></tr>
+  </tbody>
+</table>
+<p>第三行需要在评审中主动说明，避免出现"既然加密了为什么管理员还能看到评语"的误解：<strong>防管理员靠的是匿名隔离，不是加密</strong>；加密解决的是介质失窃。两套机制目标不同。</p>
+
+<h2 class="sec" id="s4"><span class="num">04</span>令牌与短码</h2>
+
+<h3>4.1 令牌值</h3>
+<pre class="code"><code>b := make([]byte, 20)
+crypto/rand.Read(b)                              // 160 位熵
+value := base32Custom.EncodeToString(b)          // 32 字符
+// 字符表去除易混字符 0 O 1 I L：ABCDEFGHJKMNPQRSTUVWXYZ23456789 (31 字符)</code></pre>
+
+<h3>4.2 短码与校验位</h3>
+<p>8 位：7 位随机 + 1 位校验位。校验位用于<strong>输入时即时提示</strong>，避免参评人员输错后提交才报错。</p>
+<pre class="code"><code>charset = "ABCDEFGHJKMNPQRSTUVWXYZ23456789"   // 31 字符，素数基便于取模
+// 校验位 = charset[ (Σ (idx(c_i) × (i+1))) mod 31 ]
+
+func Verify(code string) bool {
+    if len(code) != 8 { return false }
+    sum := 0
+    for i, c := range code[:7] { sum += index(c) * (i + 1) }
+    return code[7] == charset[sum%31]
+}</code></pre>
+<p>7 位随机在 31 字符表下约 3.5×10¹⁰ 组合，单场最多 220 个令牌，碰撞概率可忽略；生成时仍做唯一性校验并重试。</p>
+<p><strong>短码只在本项目内有效</strong>：入口校验时同时匹配 <code>project_id</code>，避免跨项目误入。</p>
+
+<h3>4.3 生成与打印排布</h3>
+<ol class="steps">
+  <li><b>生成</b>按应参加人数 N 生成 N 个正式令牌，另按 <code>ceil(N×10%)</code> 生成备用令牌（<code>is_spare=1</code>）。</li>
+  <li><b>随机重排</b>对正式令牌集合执行 <code>anon.Shuffle</code>（基于 <code>crypto/rand</code> 的 Fisher–Yates）。<strong>这是打印前的强制步骤</strong>（<code>FR-TKN-025</code>）。</li>
+  <li><b>分配 AP 序号</b>重排后按位置轮转赋 <code>ap_index = i mod ap_count + 1</code>。<br><span style="color:#5c6675;font-size:13.5px">因集合已随机，轮转分配天然随机，不会形成"某处室全在同一 AP"的群体聚集。</span></li>
+  <li><b>排版</b>按 <code>ap_index</code> 分组输出，每组一叠，A4 纵向一人一张。二维码边长 ≥8cm，短码 ≥36pt。</li>
+</ol>
+<p>数据库中令牌的写入顺序与打印顺序无关紧要——令牌表已是随机主键 <code>WITHOUT ROWID</code>，物理顺序本就与写入顺序无关。</p>
+
+<h2 class="sec" id="s5"><span class="num">05</span>提交事务</h2>
+
+<h3>5.1 事务体</h3>
+<pre class="code"><code>func (s *Service) Submit(ctx, projectID, tokenValue string, plain []byte) error {
+    tx := s.db.BeginTx(ctx, &sql.TxOptions{})     // SQLite: BEGIN IMMEDIATE
+    defer tx.Rollback()
+
+    tk, err := q.GetTokenForUpdate(tx, projectID, tokenValue)
+    if err != nil            { return ErrTokenInvalid }
+    if tk.Used == 1          { return ErrTokenUsed }
+    if !s.acceptingSubmit(p) { return ErrClosed }
+
+    // ① 先写作答：即便解析 WAL，也需额外推断两条记录的配对关系
+    rec := AnswerRecord{
+        ID:        anon.NewID(),                  // 随机 UUID
+        ProjectID: projectID,
+        BatchNo:   tk.BatchNo,
+        Payload:   s.vault.Seal(plain, projectID[:]),
+    }
+    if err := q.InsertAnswer(tx, rec); err != nil { return err }
+
+    // ② 再置位令牌：条件更新，影响行数为 0 即并发已被抢先
+    n, err := q.MarkTokenUsed(tx, tk.ID)          // UPDATE ... WHERE id=? AND used=0
+    if err != nil { return err }
+    if n == 0     { return ErrTokenUsed }         // 回滚，作答一并撤销
+
+    return tx.Commit()
+}</code></pre>
+
+<h3>5.2 语义保证</h3>
+<table>
+  <thead><tr><th style="width:230px">情形</th><th>结果</th></tr></thead>
+  <tbody>
+    <tr><td>同一令牌串行两次提交</td><td>第二次 <code>ErrTokenUsed</code>，无重复记录</td></tr>
+    <tr><td>同一令牌并发两次提交</td><td><code>BEGIN IMMEDIATE</code> 串行化写事务；后者 <code>MarkTokenUsed</code> 影响 0 行并回滚</td></tr>
+    <tr><td>提交中进程崩溃</td><td>事务未提交，令牌仍可用、作答未写入。参评人员重试即可</td></tr>
+    <tr><td>提交成功后崩溃</td><td>WAL 已落盘，数据一致</td></tr>
+    <tr><td><strong>令牌已用但作答丢失</strong></td><td><strong>不可能发生</strong>——这正是选择同事务方案的理由（ADR-004）</td></tr>
+  </tbody>
+</table>
+<div class="box">
+  <span class="bt">SQLite 写并发说明</span>
+  <p>SQLite 同一时刻只允许一个写事务。200 人的提交高峰下，单次事务耗时约 1–3ms（含一次 GCM 加密），理论吞吐数百 TPS，远超实际需要——现场提交本就自然错开（操作规程要求不喊统一提交）。<strong>无需引入写队列或连接池调优。</strong></p>
+</div>
+
+<h3>5.3 纸质补录</h3>
+<p>补录复用同一 <code>Submit</code> 路径，但：不消耗令牌（另起 <code>SubmitPaper</code>，直接写 <code>answer_record</code>），并对 <code>project.paper_entry_count</code> 加一。<strong>记录本身与在线提交完全同构</strong>。界面要求两人分别输入各自口令确认后方可提交。</p>
+
+<h2 class="sec" id="s6"><span class="num">06</span>统计聚合与口径</h2>
+
+<h3>6.1 管线</h3>
+<pre class="code"><code>func Aggregate(p Project, form Form, recs []AnswerRecord, v *crypto.Vault) (*Result, error) {
+    plains := make([]Answer, 0, len(recs))
+    for _, r := range recs {                       // 200 次解密，非 8 万次
+        b, err := v.Open(r.Payload, r.ProjectID[:])
+        if err != nil { return nil, err }
+        plains = append(plains, parse(b))
+    }
+    anon.Shuffle(plains)                           // 切断与读取顺序的关联
+
+    buckets := map[key]*counter{}                  // key = (questionID, subjectID)
+    for _, a := range plains {
+        for _, it := range a.Items { buckets[key{it.Q, it.S}].add(it) }
+    }
+    return finalize(buckets, p.ExpectedCount, p.GradeScores)
+}</code></pre>
+<table>
+  <thead><tr><th style="width:200px">项</th><th>实测/估算</th></tr></thead>
+  <tbody>
+    <tr><td>解密次数</td><td><strong>200 次</strong>（HLD 原估 8 万次，见 <a href="#s1">1.2 修正一</a>）</td></tr>
+    <tr><td>单次解密 30KB</td><td>约 30–50 μs</td></tr>
+    <tr><td>解密总耗时</td><td><strong>约 6–10 ms</strong></td></tr>
+    <tr><td>分桶与计数</td><td>8 万次 map 操作，约 10–20 ms</td></tr>
+    <tr><td><strong>合计</strong></td><td><strong>&lt; 50 ms</strong>，远优于 <code>NFR-PER-013</code> 的 1 秒</td></tr>
+  </tbody>
+</table>
+<p>结果缓存于内存：截止后作答数据不再变化，重复查看统计页无需重新解密。</p>
+
+<h3>6.2 计数规则</h3>
+<table>
+  <thead><tr><th style="width:190px">情形</th><th style="width:150px">计入</th><th>分母</th></tr></thead>
+  <tbody>
+    <tr><td><code>grade</code> ∈ [0,3]</td><td>对应档位</td><td>计入</td></tr>
+    <tr><td><code>grade = -1</code>（显式弃权）</td><td>弃权</td><td>计入</td></tr>
+    <tr><td>选填题项缺失</td><td>弃权</td><td>计入</td></tr>
+    <tr><td>整份未提交</td><td>弃权</td><td>计入</td></tr>
+  </tbody>
+</table>
+<p>未提交份数 = <code>expected_count − 已提交份数</code>，在每个 (题目,对象) 桶上一律并入弃权。因此：</p>
+<p style="text-align:center"><strong>四档计数之和 + 弃权计数 ≡ 应参加人数</strong></p>
+
+<h3>6.3 舍入与调平算法</h3>
+<p>比率保留一位小数。朴素做法会出现"四档加起来等于 99.9%"这类报表——一旦出现在正式报告上，整套数据的可信度即受损。算法：</p>
+<pre class="code"><code>// 1. 精确比率（十进制定点，避免二进制浮点误差）
+raw[i] = count[i] * 100 / denominator
+// 2. 各自四舍五入到一位小数
+r[i] = round_half_up(raw[i], 0.1)
+// 3. 差额调平到当前最大项
+diff = 100.0 - Σ r[i]
+if diff != 0 { r[argmax(r)] += diff }</code></pre>
+<p>调平到最大项而非首项，是因为最大项的相对误差最小，视觉上最不易察觉。</p>
+<p><strong>验证</strong>：随机穷举 20000 组（分母 3–300，各档计数随机），恒等式失败 <strong>0 组</strong>。<code>finalize()</code> 末尾设硬断言，不成立则返回错误、拒绝出报表。</p>
+
+<h3>6.4 样例与口径对照</h3>
+<table>
+  <caption>某测评对象某题：应参加 187 人，实提交 181 份</caption>
+  <thead><tr><th style="width:130px">档位</th><th class="c" style="width:90px">票数</th><th class="c" style="width:110px">标准口径</th><th class="c" style="width:110px">若误用实到</th></tr></thead>
+  <tbody>
+    <tr><td>优秀</td><td class="c">92</td><td class="c"><strong>49.2%</strong></td><td class="c">50.8%</td></tr>
+    <tr><td>称职</td><td class="c">74</td><td class="c">39.6%</td><td class="c">40.9%</td></tr>
+    <tr><td>基本称职</td><td class="c">12</td><td class="c">6.4%</td><td class="c">6.6%</td></tr>
+    <tr><td>不称职</td><td class="c">3</td><td class="c">1.6%</td><td class="c">1.7%</td></tr>
+    <tr><td>弃权</td><td class="c">6</td><td class="c">3.2%</td><td class="c">—</td></tr>
+    <tr><td style="background:var(--band)"><strong>合计</strong></td><td class="c" style="background:var(--band)"><strong>187</strong></td><td class="c" style="background:var(--band)"><strong>100.0%</strong></td><td class="c" style="background:var(--band)">—</td></tr>
+  </tbody>
+</table>
+<p>称职以上率 = (92+74)/187 = <strong>88.8%</strong>。两种分母下优秀率相差 <strong>1.6 个百分点</strong>——同一批数据，结论差异显著。这就是口径必须固化为系统行为、并随报告输出的原因。</p>
+
+<h3>6.5 加权得分</h3>
+<pre class="code"><code>weighted = Σ(count[i] × score[i]) / (Σcount[i])    // 弃权不计入分子分母
+// 默认 score = [100, 80, 60, 0]，可在项目级配置</code></pre>
+<p>界面与报告中以次要样式呈现，标注"辅助排序指标"。<strong>结论表述一律用比率</strong>。</p>
+
+<h3>6.6 小样本保护</h3>
+<p>按分组标签筛选时，若该标签下的测评对象数 &lt; 3，接口直接返回 <code>ErrSampleTooSmall</code>，前端展示"该分组人数过少，不单独统计"。<strong>在服务层拦截而非前端隐藏</strong>——前端隐藏可被绕过。</p>
+
+<h2 class="sec" id="s12"><span class="num">12</span>配置文件与证书装载 <span class="tag new">V1.1 新增</span></h2>
+
+<h3>12.1 为什么配置化</h3>
+<p>域名、网段、证书路径原先散落在代码常量中，导致 TBD-01 成为编码阻塞项。改为配置驱动后，"证书从哪来"这件事被移到程序之外——<strong>程序只负责装载与校验，不负责申请</strong>。由此带来三点收益：</p>
+<ul>
+  <li>用 certbot、acme.sh、Caddy 还是购买商业证书，程序不关心；</li>
+  <li>更换 DNS 服务商、更换域名、临时改网段，均不需改代码、不需重新编译；</li>
+  <li>证书与域名相关的代码<strong>现在即可开发</strong>，不必等采购决策落地。</li>
+</ul>
+
+<h3>12.2 <code>config.toml</code></h3>
+<p>置于可执行文件同目录，随考察装备固化。文件不存在时按内置默认值运行并在管理端提示。</p>
+<pre class="code"><code>[network]
+listen_ip   = "192.168.66.1"        # 本机静态地址，须与网卡实配一致
+pool_start  = "192.168.66.50"
+pool_end    = "192.168.66.250"
+https_port  = 8443
+enable_dhcp = true                  # 端口受限时置 false，改由外置路由分配
+enable_dns  = true                  # 不可轻易关闭，见 12.5
+
+[domain]
+primary     = "eval.example.gov.cn"  # 二维码 URL 与证书主名，驱动内置 DNS
+alternate   = "eval2.example.gov.cn" # 借用场地无线时的备用主机名，可空
+short_entry = "e.example.gov.cn"     # 短码入口，原 TBD-07
+
+[tls]
+mode = "file"                        # file | selfsigned
+cert = "cert/fullchain.pem"
+key  = "cert/privkey.pem"
+
+[session]
+timeout_min = 30                     # 现场监控场景可调至 240
+
+[snapshot]
+dir           = "snapshot"           # 可指向 U 盘
+interval_min  = 5</code></pre>
+
+<h3>12.3 配置驱动的三处行为</h3>
+<table>
+  <thead><tr><th style="width:170px">配置项</th><th>驱动的行为</th></tr></thead>
+  <tbody>
+    <tr><td><code>domain.primary</code></td><td>① 内置 DNS 的静态解析表（<code>FR-NET-020</code>）；② 令牌单二维码的 URL 生成（<code>FR-TKN-032</code>）；③ 启动时校验证书 SAN 是否覆盖该名字</td></tr>
+    <tr><td><code>domain.short_entry</code></td><td>① 内置 DNS 解析；② 令牌单上印刷的短码入口地址</td></tr>
+    <tr><td><code>network.listen_ip</code></td><td>① 网卡地址自检；② DHCP 下发的网关与 DNS；③ 全部域名的解析目标</td></tr>
+  </tbody>
+</table>
+<div class="box warn">
+  <span class="bt">二维码与配置的一致性约束</span>
+  <p>令牌单一经打印，其中的 URL 即固化。若打印后修改 <code>domain.primary</code>，已打印的二维码将失效。因此：<strong>生成令牌时把当时的 <code>primary</code> 记入项目记录</strong>，此后该项目的配置若与之不符，启动自检报错并明示"本项目令牌单使用的域名为 X，与当前配置 Y 不一致"。</p>
+</div>
+
+<h3>12.4 证书装载与启动校验</h3>
+<p>启动自检（<code>FR-NET-040</code>）新增两项，任一不通过即在管理端首页红色告警，并禁止发布测评（对应前置校验 <code>PC-09</code>）：</p>
+<table>
+  <thead><tr><th style="width:80px">编号</th><th style="width:170px">检查</th><th>失败提示</th></tr></thead>
+  <tbody>
+    <tr><td class="id">CK-01</td><td>证书文件可读、可解析</td><td>证书文件缺失或损坏：{path}</td></tr>
+    <tr><td class="id">CK-02</td><td><strong>SAN 覆盖 <code>domain.primary</code></strong>（若配了 <code>alternate</code> 亦须覆盖）</td><td>证书未包含域名 {domain}，手机将出现安全告警</td></tr>
+    <tr><td class="id">CK-03</td><td>当前时间在有效期内</td><td>证书已于 {date} 过期</td></tr>
+    <tr><td class="id">CK-04</td><td>剩余有效期 ≥21 天</td><td>证书将于 {n} 天后过期，请在出发前续签</td></tr>
+    <tr><td class="id">CK-05</td><td>私钥与证书匹配</td><td>私钥与证书不配对</td></tr>
+  </tbody>
+</table>
+<p>CK-02 是最容易被忽略、后果最严重的一项：证书本身有效、也没过期，但签发时用的是另一个主机名——现场每部手机照样红屏。<strong>必须在办公室就拦住。</strong></p>
+
+<h3>12.5 <code>selfsigned</code> 模式的护栏</h3>
+<p>自签名模式仅供开发与尖刺验证使用。为防止"某次证书忘了续签，有人图省事切成自签名"，实现下列约束：</p>
+<ul>
+  <li>管理端首页<strong>持续显示红色横幅</strong>，不可关闭：「当前为自签名证书，参评人员手机将出现安全告警，禁止用于正式测评」；</li>
+  <li>发布前置校验 <code>PC-09</code> 在此模式下<strong>直接失败</strong>，需管理员显式勾选"我确认这是演练，非正式测评"方可继续；</li>
+  <li>该模式下生成的令牌单打印页加印"演练"水印，避免与正式令牌单混淆。</li>
+</ul>
+
+<h3>12.6 借用场地无线时的处置</h3>
+<p>此情形下网段由被考察单位决定，与固定的 <code>192.168.66.1</code> 不同。处置方式：</p>
+<ol>
+  <li><strong>优先申请通配符证书</strong> <code>*.eval.xxx.gov.cn</code>——一次覆盖主用与备用主机名，无需预先枚举；若只能签单域名证书，则 SAN <strong>同时覆盖 <code>primary</code> 与 <code>alternate</code></strong> 两个主机名；</li>
+  <li>行前对接确认对方给定的 IP 后，在公网 DNS 上把 <code>alternate</code> 的 A 记录改为该 IP；</li>
+  <li>修改 <code>config.toml</code> 的 <code>listen_ip</code>，并将 <code>primary</code> 与 <code>alternate</code> 对调；</li>
+  <li><strong>无需重新签发证书</strong>，只需 DNS 记录与配置变更。</li>
+</ol>
+<p>这是把"临时换网段"从一次证书签发（需 ≥1 个工作日）降为一次配置修改（数分钟）的关键设计。</p>
+
+<h3 id="s127">12.7 证书签发与续签实施 <span class="tag new">V1.2 新增</span></h3>
+
+<h4>12.7.1 先厘清一个常见误解：CA 不看 A 记录</h4>
+<p>最容易卡住的地方是："我的域名要解析到 <code>192.168.66.1</code>，那是内网地址，CA 怎么可能验证得了？"</p>
+<p><strong>DNS-01 验证全程不访问 A 记录，也不访问该主机。</strong>流程是：</p>
+<div class="figure">
+<pre>
+   CA：请在 _acme-challenge.eval.xxx.gov.cn
+       创建一条 TXT 记录，内容为 "abc123…"
+              ↓
+   你（或工具）在 DNS 后台添加该 TXT 记录
+              ↓
+   CA 查询这条 TXT，内容吻合
+              ↓
+   证明「你拥有这个域名」→ 签发证书
+
+   全程未访问 eval.xxx.gov.cn 这台主机，
+   CA 不知道也不关心这个名字指向哪个 IP。
+</pre>
+<div class="figcap">图 12-1　DNS-01 验证流程。要证明的是<strong>域名所有权</strong>，不是<strong>服务器可达性</strong>。因此域名解析到私有 IP 完全不妨碍签发——这也正是自有域名可行而 nip.io 不可行的分水岭：前者能在自己的域名下写 TXT，后者不能。</div>
+</div>
+<p><strong>另一个推论</strong>：DNS-01 只需要<strong>出站</strong>网络访问（连 ACME 服务器与 DNS 服务商 API），不需要公网入站。因此办公室联网的机器完全可以完成自动签发与续签。</p>
+
+<h4>12.7.2 A 记录建不建</h4>
+<p>严格说不需要——现场的域名解析由笔记本内置 DNS 承担（<code>FR-NET-020</code>），公网 DNS 不参与。</p>
+<p><strong>但建议仍建一条</strong> <code>eval.xxx.gov.cn → 192.168.66.1</code>，理由是让错误行为可预期：某台手机若没连上测评 WiFi 而走蜂窝网扫码，有 A 记录时表现为<strong>连接超时</strong>，无 A 记录时表现为<strong>域名不存在</strong>。前者更便于引导人员当场判断"这人没连对 WiFi"。把私有 IP 写入公网 DNS 合法且常见。</p>
+
+<h4>12.7.3 续签方式的决策路径</h4>
+<p>决定走哪条路的<strong>不是域名归属（主域还是子域），而是"每次续签的 TXT 记录由谁来加、多久加一次"</strong>。使用本单位已有域名的子域，<strong>完全不影响</strong>申请免费证书。</p>
+<div class="figure">
+<pre>
+   ① 能直接拿到该域名的 DNS API 密钥？
+         能 ──→ win-acme 自动续签，配置一次长期免维护      【最优】
+         ↓ 不能
+   ② 能让信息中心加一条永久 CNAME 委托？
+         _acme-challenge.eval.xxx.gov.cn
+              CNAME  _acme-challenge.<我方可控域名>
+         能 ──→ 此后每次续签顺 CNAME 写到我方，
+                信息中心不再被打扰，同样全自动          【次优，最易获批】
+         ↓ 不能
+   ③ 能接受每 90 天走一次人工加 TXT 的工单流程？
+         能 ──→ Let's Encrypt 手工续签，须有制度保障
+         ↓ 不能
+   ④ 购买一年期商业证书，一年手工更换一次              【兜底】
+</pre>
+<div class="figcap">图 12-2　决策路径。<strong>第 ② 层是关键</strong>：一条一次性的永久 CNAME 不涉及任何权限下放，对信息中心而言只是加一条解析记录，比下放 API 密钥容易获批得多。大概率此层即可满足，届时免费证书 + 全自动，无需采购商业证书。</div>
+</div>
+<table>
+  <thead><tr><th style="width:150px">判据</th><th>说明</th></tr></thead>
+  <tbody>
+    <tr><td>正确表述</td><td><strong>"若续签无法自动化，则不用 Let's Encrypt"</strong>。而"无法自动化"要求 API 密钥与 CNAME 委托<strong>两条路都走不通</strong>才成立</td></tr>
+    <tr><td>为何 90 天危险</td><td>Let's Encrypt 的短周期是<strong>为常年在线的服务器设计的</strong>。考察装备长期关机、可能三个月不碰，若续签依赖人工，一年四次必漏；而漏掉的后果是现场每部手机红屏（<code>RSK-02</code>）。本架构下该问题已由"续签跑在办公室固定机器"解决</td></tr>
+    <tr><td>商业证书的唯一适用场景</td><td>信息中心既不给 API、也不加 CNAME、每次都要走工单。此时把一年四次跨部门协调降为一年一次，数百元成本划算</td></tr>
+    <tr><td>通配符</td><td>签发时建议一并申请 <code>*.eval.xxx.gov.cn</code>，一次覆盖主用与备用主机名，简化 <a href="#s12">12.6</a> 的处置</td></tr>
+  </tbody>
+</table>
+
+<h4>12.7.4 Windows 环境下的工具</h4>
+<div class="box warn">
+  <span class="bt">acme.sh 不适用于本项目环境</span>
+  <p>acme.sh 是 Shell 脚本，且依赖 cron 做自动续签。在 Git Bash / MINGW64 中虽能安装，但没有 cron，须自行在任务计划程序中调用，还要处理 MINGW 与 Windows 的路径转换差异。<strong>能用原生工具时不叠兼容层。</strong></p>
+</div>
+<table>
+  <thead><tr><th style="width:150px">工具</th><th style="width:90px">推荐度</th><th>说明</th></tr></thead>
+  <tbody>
+    <tr><td><strong>win-acme</strong></td><td class="c"><strong>首选</strong></td><td>原生 Windows 程序、免安装、交互式向导；<strong>自动注册计划任务</strong>；支持阿里云、DNSPod/腾讯云等 DNS 插件；可配置"续签后执行脚本"，自动把证书拷贝到共享目录</td></tr>
+    <tr><td>Posh-ACME</td><td class="c">次选</td><td>PowerShell 模块，国内 DNS 服务商插件覆盖更全，适合脚本化，但需自行挂计划任务</td></tr>
+    <tr><td>acme.sh</td><td class="c">不建议</td><td>见上</td></tr>
+  </tbody>
+</table>
+<div class="box">
+  <span class="bt">确认 DNS 权限之前不必研究这些工具</span>
+  <p>上述工具的价值在于自动调用 DNS 接口写 TXT 记录，<strong>仅在走路径 ①② 时才需要</strong>。若最终走路径 ④，全程在证书厂商页面点鼠标下载两个文件，不需安装任何工具。</p>
+</div>
+
+<h4>12.7.5 办公室机器操作步骤（路径 ①②）</h4>
+<ol class="steps">
+  <li><b>安装 win-acme</b>下载解压即可，无需安装运行时。<strong>装在办公室固定机器上，不装在考察笔记本上</strong>（<code>CON-08</code>）。</li>
+  <li><b>运行向导</b>管理员身份运行 <code>wacs.exe</code> → 选完全手动模式 → 输入域名（含通配符）→ 选 DNS 验证 → 选对应 DNS 插件 → 填入 API 密钥。</li>
+  <li><b>确认计划任务</b>向导完成后自动创建每日检查的计划任务，到期前自动续签，无需人工干预。</li>
+  <li><b>配置输出目录</b>在向导中设置"续签后执行脚本"，把 <code>fullchain.pem</code> 与 <code>privkey.pem</code> 复制到一个固定的共享目录。</li>
+  <li><b>出发前拷入</b>把该目录下的两个文件拷进考察笔记本的 <code>cert/</code> 目录，启动程序确认 CK-01~05 全绿（<a href="#s12">12.4</a>）。</li>
+</ol>
+
+<h4>12.7.6 商业证书操作步骤（路径 ④）</h4>
+<ol>
+  <li><strong>购买</strong>：DV 单域名或通配符证书，数百元/年；</li>
+  <li><strong>域名验证</strong>：厂商给出一条 TXT 记录的名称与值，交由管 DNS 的同事添加，等待验证通过；</li>
+  <li><strong>下载</strong>：选 <strong>Nginx 格式</strong>，得到证书链与私钥两个文件，改名为 <code>fullchain.pem</code> 与 <code>privkey.pem</code>；</li>
+  <li><strong>拷入笔记本</strong>，同上；</li>
+  <li><strong>到期前 45 天</strong>设提醒，重复上述流程。</li>
+</ol>
+
+<h4>12.7.7 年度维护日历</h4>
+<table>
+  <thead><tr><th style="width:150px">时间</th><th style="width:230px">事项</th><th>责任</th></tr></thead>
+  <tbody>
+    <tr><td>每天（自动）</td><td>win-acme 检查并自动续签</td><td>办公室固定机器</td></tr>
+    <tr><td>到期前 45 天</td><td>商业证书续费提醒（仅路径 ④）</td><td>信息化岗位</td></tr>
+    <tr><td><strong>每次出发前</strong></td><td><strong>拷入最新证书，启动确认 CK-01~05 全绿</strong></td><td><strong>考察组</strong></td></tr>
+    <tr><td>每年</td><td>域名续费</td><td>信息化岗位</td></tr>
+  </tbody>
+</table>
+<div class="box crit">
+  <span class="bt">域名续费与证书续期是两件事</span>
+  <p>不可混同。证书过期，手机弹安全警告；<strong>域名过期更致命——解析直接失效，整套系统用不了</strong>。建议两者续费日期设为同一天、记入同一个提醒。</p>
+</div>
+
+<h4>12.7.8 密钥存放约束</h4>
+<table>
+  <thead><tr><th style="width:190px">凭据</th><th class="c" style="width:130px">可否存于笔记本</th><th>说明</th></tr></thead>
+  <tbody>
+    <tr><td><code>fullchain.pem</code>（证书）</td><td class="c">可以</td><td>公开信息</td></tr>
+    <tr><td><code>privkey.pem</code>（证书私钥）</td><td class="c">必须</td><td>建立 TLS 连接所需，无法避免。作为敏感文件管理，不进代码仓库</td></tr>
+    <tr><td><strong>DNS 服务商 API 密钥</strong></td><td class="c"><strong>禁止</strong></td><td><code>CON-08</code>。持有者可为该域名下任意主机签发证书、劫持任意解析，等同于取得单位域名控制权。而考察笔记本要被带入被考察单位、置于会场、中途可能离开视线</td></tr>
+  </tbody>
+</table>
+<p><strong>技术上笔记本自签是可行的</strong>（12.7.1 已说明 DNS-01 只需出站），但被上述约束否决。<strong>可行性与应然性在此分离</strong>，特此写明，以免后续以"技术上能做"为由重新引入（见 ADR-010）。</p>
+
+<h4>12.7.9 需向信息中心确认的三个问题</h4>
+<p>确定域名归属（TBD-01）时应一并确认，按优先级：</p>
+<ol>
+  <li><strong>能否给这个子域的 DNS API 密钥？</strong>（最省事，一次配置长期免维护）</li>
+  <li>如不能，<strong>能否加一条永久 CNAME</strong>，把 <code>_acme-challenge.eval.xxx.gov.cn</code> 委托到我方可控的域名下？<strong>（不涉及权限下放，最容易获批）</strong></li>
+  <li>如都不行，<strong>走工单加一条 TXT 记录大约需要多久？</strong>（据此判断 90 天周期是否扛得住）</li>
+</ol>
+<p><strong>大概率第 2 条即可满足</strong>，届时免费证书 + 全自动，无需采购商业证书。</p>
+
+<h2 class="sec" id="s13"><span class="num">13</span>报告导出实现 <span class="tag new">V1.1 新增</span></h2>
+
+<h3>13.1 选型：纯 Go 生成 + 内嵌中文字体</h3>
+<div class="box crit">
+  <span class="bt">先纠正 HLD 的一处误判</span>
+  <p>HLD 把"中文字体使二进制增加 5–15MB"列为需要权衡的代价。这是判断错误：<code>NFR-PER-014</code> 的 500KB 预算约束的是<strong>作答页</strong>（要下发到 200 部手机），而二进制是<strong>用 U 盘拷到一台笔记本、一年用数次</strong>的东西。15MB 与 40MB 在操作上无差别。</p>
+  <p style="margin-top:8px">排除这条伪约束后，结论随之改变：<strong>不做字体子集化，直接嵌入完整覆盖的字库</strong>。理由见 13.3——干部姓名生僻字。</p>
+</div>
+
+<table>
+  <thead><tr><th style="width:170px">方案</th><th class="c" style="width:70px">单文件</th><th class="c" style="width:70px">跨平台</th><th class="c" style="width:80px">排版控制</th><th>结论</th></tr></thead>
+  <tbody>
+    <tr><td><strong>gopdf + 内嵌思源宋体</strong></td><td class="c">✅</td><td class="c">✅</td><td class="c">完全</td><td><strong>采用</strong></td></tr>
+    <tr><td>无头浏览器（chromedp/rod）</td><td class="c">❌</td><td class="c">❌</td><td class="c">中</td><td>排除，见下</td></tr>
+    <tr><td>管理员浏览器手动打印</td><td class="c">✅</td><td class="c">✅</td><td class="c">不可控</td><td>排除，见下</td></tr>
+    <tr><td>unipdf</td><td class="c">✅</td><td class="c">✅</td><td class="c">完全</td><td>商业授权，成本不合理</td></tr>
+    <tr><td>LaTeX / Typst</td><td class="c">❌</td><td class="c">❌</td><td class="c">完全</td><td>需外部工具链，排除</td></tr>
+  </tbody>
+</table>
+
+<h4>为什么排除无头浏览器</h4>
+<ul>
+  <li><strong>依赖外部浏览器</strong>：Windows 有 Edge，但 macOS 与 Linux 不保证，政务笔记本还常有软件管控。直接违背 <code>NFR-POR-010</code> 的单文件零依赖——那是整个产品定位的基石；</li>
+  <li><strong>叠加杀软风险</strong>：已因 <code>netsvc</code> 同时监听 53/67 背了一个报毒风险（TBD-04），再加"程序启动时拉起浏览器进程"，在装企业杀软的政务机器上是雪上加霜；</li>
+  <li><strong>分页控制弱</strong>：表格跨页、页眉页脚、核验编号定位在浏览器打印引擎中控制力有限，且不同版本行为不一致。</li>
+</ul>
+
+<h4>为什么排除"管理员自己打印"</h4>
+<p>产出的是<strong>不合格的归档件</strong>：浏览器打印默认在页眉页脚加 URL、日期、页码，边距与缩放取决于各人的打印设置。这份 PDF 要签字密封、进考察材料档案，<strong>每次导出版式不同、还印着一串 localhost 地址</strong>，在公文场合说不过去。</p>
+
+<h3>13.2 字体</h3>
+<table>
+  <thead><tr><th style="width:170px">项</th><th>决定</th></tr></thead>
+  <tbody>
+    <tr><td>字体</td><td><strong>思源宋体 Source Han Serif SC</strong>（正文，契合公文习惯）。授权 SIL OFL 1.1，<strong>明确允许嵌入 PDF 分发</strong></td></tr>
+    <tr><td>字重</td><td><strong>仅嵌 Regular 一个字重</strong>。加粗用 PDF 描边模拟（text rendering mode + stroke），省一半体积，报告场景视觉差异可接受</td></tr>
+    <tr><td class="c" style="background:var(--seal-soft)">禁用</td><td style="background:var(--seal-soft)"><strong>严禁使用系统自带宋体 / SimSun</strong>：① 授权不允许嵌入分发；② 三平台字体不一致，macOS 上根本没有。这是中文 PDF 生成最常见的踩坑点</td></tr>
+  </tbody>
+</table>
+
+<h3>13.3 生僻字是必须覆盖的场景</h3>
+<p>干部姓名中出现 頔、犇、燚、玥、翀 一类字并不罕见。字体子集化虽能省下十几兆，但一旦某位测评对象的姓名不在子集内，报告上就是<strong>豆腐块或空白</strong>——这是事故级问题，且往往到打印封存时才被发现。</p>
+<p><strong>处置</strong>：嵌入完整字库；同时在<strong>令牌单打印与报告导出前</strong>做一次字形覆盖检查，发现缺字则明确报出是哪个字、属于哪位测评对象，由管理员决定处置，绝不静默降级。</p>
+
+<h3>13.4 图表直接绘制矢量</h3>
+<p>四档比率柱状图、饼图均为简单图形，<strong>用 PDF 绘图原语直接绘制</strong>，不经 PNG 中转。好处：矢量输出打印清晰、体积小、不引入图表库。本项目图表种类固定，绘制代码量可控。</p>
+
+<h3>13.5 同时产出 HTML 报告</h3>
+<p>统计结果已在内存中，多一个 HTML 输出成本极低，但很实用：屏幕查阅与检索优于 PDF，也便于把数据段落贴进考察报告正文。</p>
+<p><strong>分工</strong>：PDF 用于打印封存（正式归档件），HTML 用于查阅。两者由<strong>同一份 <code>stats.Result</code> 生成</strong>，口径必然一致——这也再次印证第 6 章"口径规则单点归属"的必要性。</p>
+
+<h3>13.6 待实测确认（不影响架构，随模块开发一并完成）</h3>
+<ul>
+  <li>gopdf 的字体子集嵌入是否正常工作——应只把用到的字形写入 PDF，否则每份报告都携带十几兆字体；</li>
+  <li>实测二进制体积，确认在可接受范围；</li>
+  <li>生僻字端到端验证：取若干真实姓名生僻字走完整导出流程。</li>
+</ul>
+
+<h3>13.7 补充架构决策</h3>
+<table>
+  <thead><tr><th style="width:80px">编号</th><th style="width:190px">决策</th><th>取舍</th></tr></thead>
+  <tbody>
+    <tr><td class="id">ADR-009</td><td><strong>PDF 采用纯 Go 生成 + 内嵌完整思源宋体，不做子集化</strong></td><td>放弃十余兆体积，换取单文件零依赖、版式完全可控、生僻字不丢。体积在"U 盘拷贝、一年数次"的使用场景中不构成成本。同时排除无头浏览器（引入外部依赖与杀软风险）与手动打印（产出不合格归档件）</td></tr>
+    <tr><td class="id">ADR-010</td><td><strong>证书与域名配置化，程序只装载不申请</strong></td><td>放弃"一键续签"的便利，换取：不内置 ACME 客户端（减少依赖与攻击面）、签发方式与 DNS 服务商解耦、证书相关代码可提前开发。代价是续签成为一项人工例行动作，由出发前检查清单与 21 天到期告警兜住</td></tr>
+  </tbody>
+</table>
+<p>ADR-008 亦随本次修订更正：<strong>自有域名由"建议"变为硬性前提</strong>，理由见 <a href="#s1">1.2 修正三</a>。</p>
+
+<h2 class="sec" id="s7"><span class="num">07</span>状态机实现</h2>
+
+<h3>7.1 迁移表</h3>
+<table>
+  <thead><tr><th style="width:110px">当前</th><th style="width:110px">目标</th><th style="width:110px">触发</th><th>前置条件与副作用</th></tr></thead>
+  <tbody>
+    <tr><td>draft</td><td>published</td><td>管理员</td><td><strong>前置校验（7.2）</strong>；副作用：清空试填数据、记录 <code>published_at</code></td></tr>
+    <tr><td>published</td><td>draft</td><td>管理员</td><td>前置：<code>COUNT(answer_record)=0</code>。有任一提交则拒绝</td></tr>
+    <tr><td>published</td><td>running</td><td>推进器</td><td>到达 <code>start_at</code>，自动</td></tr>
+    <tr><td>running</td><td>closed</td><td>推进器</td><td>到达 <code>end_at</code>，自动</td></tr>
+    <tr><td>running</td><td>closed</td><td>管理员</td><td>手动提前关闭（<code>FR-PRJ-024</code>）</td></tr>
+    <tr><td>closed</td><td>archived</td><td>管理员</td><td>前置：归档包已导出且校验通过；副作用：<strong>安全擦除</strong>，写 <code>archive_meta</code></td></tr>
+  </tbody>
+</table>
+<p><code>archived</code> 为终态，不可回退。任何未列出的迁移一律拒绝，服务层用一张显式迁移表校验，不散落在各处理器中。</p>
+
+<h3>7.2 进入 closed 的副作用（不可省略）</h3>
+<pre class="code"><code>func (s *Service) closeProject(tx, p Project) error {
+    q.UpdateStatus(tx, p.ID, "closed")
+    tx.Commit()
+    // 事务外执行，两条都是 DDL 级操作
+    s.db.Exec("PRAGMA wal_checkpoint(TRUNCATE)")   // 截断 WAL：清除提交顺序痕迹
+    s.db.Exec("VACUUM")                            // 按随机主键重建文件：物理顺序随机化
+    return nil
+}</code></pre>
+<p>这两条是 <code>NFR-ANO-031</code> 的实现，<strong>是状态迁移的组成部分而非可选优化</strong>。200 份记录的 VACUUM 耗时通常 &lt;1 秒。执行失败必须告警，因为此时匿名性承诺尚未成立。</p>
+
+<h3>7.3 发布前置校验</h3>
+<table>
+  <thead><tr><th style="width:80px">编号</th><th style="width:200px">检查</th><th>失败提示</th></tr></thead>
+  <tbody>
+    <tr><td class="id">PC-01</td><td>至少 1 个测评对象</td><td>请先添加测评对象</td></tr>
+    <tr><td class="id">PC-02</td><td>至少 1 道题且每题至少关联 1 个对象</td><td>题目「X」未关联任何测评对象</td></tr>
+    <tr><td class="id">PC-03</td><td><code>start_at &lt; end_at ≤ result_open_at</code></td><td>时间设置不合法</td></tr>
+    <tr><td class="id">PC-04</td><td><code>expected_count &gt; 0</code> 且已确认</td><td>请确认应参加人数（比率分母）</td></tr>
+    <tr><td class="id">PC-05</td><td>令牌已生成，数量 ≥ 应参加人数</td><td>令牌数量不足</td></tr>
+    <tr><td class="id">PC-06</td><td>令牌单已打印（<code>printed_at</code> 标记）</td><td>请先打印令牌单</td></tr>
+    <tr><td class="id">PC-07</td><td><strong>试填已完成至少 1 次</strong></td><td>请先用测试令牌走通一次流程</td></tr>
+    <tr><td class="id">PC-08</td><td>展开后作答项 ≤400</td><td>作答项过多（当前 N 项），请精简题目</td></tr>
+    <tr><td class="id">PC-09</td><td>证书剩余有效期 ≥1 天</td><td>证书即将过期，请先续签</td></tr>
+  </tbody>
+</table>
+<p>任一失败即<strong>硬失败</strong>，返回全部未通过项而非只报第一条——现场时间紧张，逐条试错代价高。</p>
+
+<h2 class="sec" id="s8"><span class="num">08</span>接口清单</h2>
+
+<h3>8.1 作答端（<code>0.0.0.0:8443</code>）</h3>
+<table>
+  <thead><tr><th style="width:60px">方法</th><th style="width:190px">路径</th><th>说明</th></tr></thead>
+  <tbody>
+    <tr><td>GET</td><td><code>/e/{token}</code></td><td>返回自包含单页（含全部题目数据）。令牌无效一律 <strong>404</strong>，不区分"不存在"与"已使用"以外的情形，避免被枚举探测</td></tr>
+    <tr><td>GET</td><td><code>/j</code></td><td>短码输入页</td></tr>
+    <tr><td>POST</td><td><code>/j</code></td><td>短码换取跳转。含校验位前端预校验，服务端再校验</td></tr>
+    <tr><td>POST</td><td><code>/e/{token}/submit</code></td><td>提交。请求体为作答 JSON，响应见 8.3</td></tr>
+    <tr><td>GET</td><td><code>/done</code></td><td>完成页</td></tr>
+  </tbody>
+</table>
+
+<h3>8.2 管理端（<code>127.0.0.1:8443</code>，回环限定）</h3>
+<table>
+  <thead><tr><th style="width:190px">路径组</th><th>主要操作</th></tr></thead>
+  <tbody>
+    <tr><td><code>/admin/login</code></td><td>口令登录（同时解锁 DEK）、5 次失败锁定 15 分钟</td></tr>
+    <tr><td><code>/admin/projects</code></td><td>列表、创建、复制、编辑、发布、撤回、手动关闭</td></tr>
+    <tr><td><code>/admin/projects/{id}/form</code></td><td>题组、题目、选项、对象、矩阵关联、预览</td></tr>
+    <tr><td><code>/admin/projects/{id}/roster</code></td><td>名单导入、预览确认、整表删除</td></tr>
+    <tr><td><code>/admin/projects/{id}/tokens</code></td><td>生成、随机重排、AP 分配、打印页、备用令牌、短码清单导出</td></tr>
+    <tr><td><code>/admin/projects/{id}/trial</code></td><td>测试令牌获取与试填数据清空</td></tr>
+    <tr><td><code>/admin/projects/{id}/monitor</code></td><td>提交进度、分批进度、接入终端数</td></tr>
+    <tr><td><code>/admin/projects/{id}/stats</code></td><td>统计主表、汇总矩阵、评语、分组筛选</td></tr>
+    <tr><td><code>/admin/projects/{id}/export</code></td><td>PDF / Excel / 原始数据 / 加密归档包</td></tr>
+    <tr><td><code>/admin/projects/{id}/archive</code></td><td>归档与安全擦除（二次确认 + 勾选）</td></tr>
+    <tr><td><code>/admin/system</code></td><td>网络自检、证书状态与续签、会话超时、快照目录</td></tr>
+  </tbody>
+</table>
+
+<h3>8.3 提交报文</h3>
+<pre class="code"><code>POST /e/{token}/submit
+Content-Type: application/json
+
+{ "v":1, "items":[ {"q":"3f2a…","s":"9b1c…","grade":0}, … ] }
+
+200 { "ok": true }
+409 { "ok": false, "code": "TOKEN_USED",  "msg": "您已完成测评，感谢参与" }
+410 { "ok": false, "code": "CLOSED",      "msg": "测评已结束" }
+422 { "ok": false, "code": "INCOMPLETE",  "msg": "有必填项未完成",
+      "missing": ["3f2a…:9b1c…"] }                  // 前端据此滚动定位
+429 { "ok": false, "code": "RATE_LIMITED","msg": "请稍后重试" }</code></pre>
+<p><strong>服务端必须重新执行完整校验</strong>，不信任前端的必填检查——前端校验是体验优化，不是安全边界。</p>
+
+<h3>8.4 错误码</h3>
+<table>
+  <thead><tr><th style="width:170px">码</th><th style="width:70px">HTTP</th><th>面向参评人员的文案</th></tr></thead>
+  <tbody>
+    <tr><td><code>TOKEN_INVALID</code></td><td>404</td><td>（直接 404 页，不提示原因）</td></tr>
+    <tr><td><code>TOKEN_USED</code></td><td>409</td><td>您已完成测评，感谢参与</td></tr>
+    <tr><td><code>NOT_STARTED</code></td><td>425</td><td>测评尚未开始</td></tr>
+    <tr><td><code>CLOSED</code></td><td>410</td><td>测评已结束</td></tr>
+    <tr><td><code>INCOMPLETE</code></td><td>422</td><td>有必填项未完成，已为您定位到第一处</td></tr>
+    <tr><td><code>RATE_LIMITED</code></td><td>429</td><td>请稍后重试</td></tr>
+    <tr><td><code>SAMPLE_TOO_SMALL</code></td><td>—</td><td>（管理端）该分组人数过少，不单独统计</td></tr>
+  </tbody>
+</table>
+
+<h2 class="sec" id="s9"><span class="num">09</span>作答端单页</h2>
+
+<h3>9.1 数据契约</h3>
+<p>服务端在渲染页面时把全部题目数据内嵌为一个 JSON 脚本块，Alpine 直接读取：</p>
+<pre class="code"><code>&lt;script type="application/json" id="form-data"&gt;
+{
+  "title": "2026年度…民主测评",
+  "intro": "请根据该同志年度工作表现…",
+  "grades": ["优秀","称职","基本称职","不称职"],
+  "subjects": [ {"id":"9b1c…","name":"张三","duty":"局长"}, … ],
+  "groups": [
+    { "title":"德（政治品德）",
+      "questions":[ {"id":"3f2a…","kind":"grade","title":"政治立场和党性修养","required":true,
+                     "subjects":["9b1c…","7d4e…"]}, … ] }
+  ]
+}
+&lt;/script&gt;</code></pre>
+<p><strong>姓名与说明在服务端解密后写入</strong>——页面内是明文，这是必然的（参评人员必须看到姓名），传输安全由 HTTPS 保证。</p>
+
+<h3>9.2 状态模型</h3>
+<pre class="code"><code>{
+  subjectIndex: 0,              // 当前第几位测评对象（FR-FRM-033 逐对象分页）
+  answers: {},                  // "qid:sid" -> 值
+  fontScale: 1,                 // 0/1/2 三档
+  get progress()  { 已答项 / 总项 },
+  get missing()   { 当前页未完成的必填项 },
+  next() / prev() / save() / submit()
+}</code></pre>
+<p>全程零网络请求（<code>ADR-001</code>）。翻页、校验、进度计算全部本地完成。</p>
+
+<h3>9.3 草稿</h3>
+<table>
+  <thead><tr><th style="width:170px">项</th><th>设计</th></tr></thead>
+  <tbody>
+    <tr><td>存储键</td><td><code>draft:{token}</code>　<strong>按令牌分 key</strong>，同设备多人先后作答不串档（<code>FR-ANS-015</code>）</td></tr>
+    <tr><td>写入时机</td><td>每次选择后防抖 500ms 写入；翻页时强制写入</td></tr>
+    <tr><td>清除</td><td><strong>提交成功后立即 <code>removeItem</code></strong>（<code>FR-ANS-016</code>），不留内容在他人手机上</td></tr>
+    <tr><td>过期清理</td><td>页面加载时清除 <code>draft:</code> 前缀下超过 24 小时的条目</td></tr>
+    <tr><td>不可用时</td><td>LocalStorage 被禁用（无痕模式）时静默降级，不阻断作答，仅顶部提示"本页不会保存草稿"</td></tr>
+  </tbody>
+</table>
+
+<h3>9.4 适老化实现要点</h3>
+<ul>
+  <li>字号三档通过根元素 <code>font-size</code> 切换（1rem/1.15rem/1.3rem），全页等比放大，不逐元素调整；</li>
+  <li>等级选项为整行 <code>&lt;label&gt;</code>，<code>min-height:48px</code>，点击区域覆盖整行；</li>
+  <li>已选项用<strong>填充色块 + 加粗文字</strong>，不依赖细边框——老花眼下细线难分辨；</li>
+  <li>翻页按钮固定底部，<code>padding-bottom: env(safe-area-inset-bottom)</code> 适配全面屏；</li>
+  <li>不使用任何需要长按、滑动、双击的交互。</li>
+</ul>
+
+<h2 class="sec" id="s10"><span class="num">10</span>导出与归档擦除</h2>
+
+<h3>10.1 导出前统一重排</h3>
+<pre class="code"><code>func exportRaw(recs []Answer) []Row {
+    anon.Shuffle(recs)                        // 必经步骤
+    rows := make([]Row, len(recs))
+    for i, r := range recs {
+        rows[i] = Row{Label: fmt.Sprintf("作答记录 #%d", i+1), Items: r.Items}
+    }                                          // 编号现场生成，不入库
+    return rows
+}</code></pre>
+<p>两次导出的编号互不一致，这是刻意设计（<code>NFR-ANO-030</code>）。导出文件中不含时间、IP、设备信息。</p>
+
+<h3>10.2 PDF 口径说明页（必含）</h3>
+<p>正式报告须内嵌一页，写明：应参加人数与实提交份数、<strong>分母定义</strong>、弃权处理方式、纸质补录份数、档位赋分规则、加权得分的辅助性质、生成时间与核验编号（<code>FR-EXP-020/021</code>）。</p>
+
+<h3>10.3 安全擦除</h3>
+<ol class="steps">
+  <li><b>导出加密包</b>项目全量数据打包，口令单独设定，计算 <code>SHA-256</code>。</li>
+  <li><b>二次确认</b>要求勾选"已确认加密归档包已保存至指定介质"，并复述包的 SHA-256 前 8 位。</li>
+  <li><b>删除记录</b>按 <code>project_id</code> 级联删除全部关联数据。</li>
+  <li><b>重建文件</b><code>wal_checkpoint(TRUNCATE)</code> + <code>VACUUM</code>，回收页面。</li>
+  <li><b>覆写空闲空间</b>创建临时表填充随机数据至文件增长到原始大小的 1.2 倍，再删除并 <code>VACUUM</code>，覆盖原数据页所在扇区。</li>
+  <li><b>残留校验</b>以二进制方式扫描数据文件，搜索若干已知的作答特征串（导出时记下的样本），命中则<strong>硬失败</strong>，不得标记为已归档。</li>
+  <li><b>写归档元信息</b>项目名、应参加人数、提交份数、包哈希、核验编号。</li>
+</ol>
+<div class="box warn">
+  <span class="bt">擦除的边界</span>
+  <p>上述步骤覆盖的是<strong>数据库文件内部</strong>的残留。SSD 的磨损均衡与 TRIM 机制可能在物理介质上保留旧页面副本，应用层无法控制。若考察材料密级要求更高，须依靠介质级措施（全盘加密、物理销毁），这一点应在操作规程中说明，不能让擦除功能给出超出其能力的安全承诺。</p>
+</div>
+
+<h2 class="sec" id="s11"><span class="num">11</span>测试设计</h2>
+
+<h3>11.1 匿名性审计（本项目的核心验收项）</h3>
+<table>
+  <thead><tr><th style="width:100px">用例</th><th style="width:170px">目标</th><th>方法与判据</th></tr></thead>
+  <tbody>
+    <tr><td class="id">AT-01</td><td>时序不可还原</td><td>构造 200 份提交并记录真实顺序 → 截止并 VACUUM → 按物理顺序读回 → 计算与真实顺序的斯皮尔曼相关系数。<strong>判据 &#124;ρ&#124; &lt; 0.15</strong>（对照组自增主键为 1.000）</td></tr>
+    <tr><td class="id">AT-02</td><td>无关联字段</td><td><code>PRAGMA table_info</code> 与 <code>foreign_key_list</code> 断言两表无时间列、无互相引用。<strong>CI 常驻</strong></td></tr>
+    <tr><td class="id">AT-03</td><td>输出顺序随机</td><td>同一数据集连续导出 10 次，比较记录顺序，两两之间相关系数均 &lt; 0.15</td></tr>
+    <tr><td class="id">AT-04</td><td>日志洁净</td><td>跑完整流程后扫描 <code>op_log</code> 与日志文件，不得出现令牌值、IP、MAC、作答内容</td></tr>
+    <tr><td class="id">AT-05</td><td>租约不落盘</td><td>DHCP 分配 50 个地址后强杀进程，扫描全部文件不得出现 MAC 地址</td></tr>
+    <tr><td class="id">AT-06</td><td>擦除无残留</td><td>擦除后二进制扫描数据文件，不得命中作答特征串</td></tr>
+    <tr><td class="id">AT-07</td><td><strong>人工审计测试</strong></td><td>对应 <code>NFR-ANO-090</code>：10 人以上真实测评，3 名测试人员答案由第三方记录，管理员在不改程序前提下尝试推断。<strong>准确率不高于随机猜测方为通过</strong></td></tr>
+  </tbody>
+</table>
+<p>AT-01 至 AT-06 全部自动化，纳入 CI；AT-07 为人工验收，在 M5 里程碑执行。</p>
+
+<h3>11.2 其它关键用例</h3>
+<table>
+  <thead><tr><th style="width:100px">用例</th><th>内容</th></tr></thead>
+  <tbody>
+    <tr><td class="id">TX-01</td><td>同一令牌并发 20 次提交，仅 1 条记录落库，其余返回 <code>TOKEN_USED</code></td></tr>
+    <tr><td class="id">TX-02</td><td>提交事务中途注入错误，回滚后令牌仍可用、无孤儿作答记录</td></tr>
+    <tr><td class="id">ST-01</td><td>口径恒等式：随机穷举 20000 组，四档+弃权比率合计恒为 100.0%（<strong>已验证通过</strong>）</td></tr>
+    <tr><td class="id">ST-02</td><td>分母口径：同一数据集下标准口径与实到口径结果符合预期差值</td></tr>
+    <tr><td class="id">ST-03</td><td>小样本保护：分组对象数为 2 时接口返回 <code>SAMPLE_TOO_SMALL</code></td></tr>
+    <tr><td class="id">NT-01</td><td>DHCP 200 台连续分配无冲突、同一 MAC 地址稳定、池耗尽正确拒绝（<strong>已验证通过</strong>）</td></tr>
+    <tr><td class="id">NT-02</td><td>DNS 各厂商探测域名解析、<code>dns.msftncsi.com</code> 返回真实值、AAAA 空应答（<strong>已验证通过</strong>）</td></tr>
+    <tr><td class="id">NT-03</td><td>真机验证：iOS、原生 Android、至少两台国产品牌，全程不提示"无法上网"</td></tr>
+    <tr><td class="id">UI-01</td><td>作答端断网后翻页、填写、校验均正常，仅提交失败并可重试</td></tr>
+    <tr><td class="id">UI-02</td><td>同一浏览器先后用两个令牌作答，草稿不串档；提交后草稿被清除</td></tr>
+    <tr><td class="id">RC-01</td><td>冷备接管：主机强杀后按规程恢复，5 分钟内服务可用，数据损失 ≤5 分钟</td></tr>
+  </tbody>
+</table>
+
+<h2 class="sec" id="s14"><span class="num">14</span>附录</h2>
+
+<h3 id="a1">A.1 CI 强制检查</h3>
+<table>
+  <thead><tr><th style="width:170px">检查</th><th>失败后果</th></tr></thead>
+  <tbody>
+    <tr><td>匿名性三断言（AT-02）</td><td>构建失败</td></tr>
+    <tr><td>依赖方向检查</td><td><code>store</code>/<code>crypto</code>/<code>stats</code>/<code>anon</code> 不得反向依赖上层，违反则失败</td></tr>
+    <tr><td><code>anon.Shuffle</code> 调用覆盖</td><td>对外输出记录集合的函数须有对应测试覆盖，缺失则告警</td></tr>
+    <tr><td>三平台交叉编译</td><td>windows/amd64、darwin/arm64、linux/amd64 全部通过</td></tr>
+    <tr><td>CGO 检查</td><td><code>CGO_ENABLED=0</code> 构建必须成功（<code>CON-07</code>）</td></tr>
+    <tr><td><code>go vet</code> + 竞态测试</td><td><code>go test -race ./...</code> 通过</td></tr>
+  </tbody>
+</table>
+
+<h3 id="a2">A.2 待决事项（承接 HLD 附录 A.3）</h3>
+<table>
+  <thead><tr><th style="width:80px">编号</th><th style="width:150px">事项</th><th class="c" style="width:80px">状态</th><th>说明</th></tr></thead>
+  <tbody>
+    <tr><td class="id">TBD-01</td><td>域名归属</td><td class="c"><span class="tag chg">升级</span></td><td><strong>由"建议"变为硬性前提</strong>（修正三）。须注册域名或申请现有政务域名的子域，<strong>并须一并确认 DNS 权限</strong>——见 <a href="#s127">12.7.9</a> 的三个问题。<strong>不再阻塞编码</strong>：证书已配置化，程序只装载</td></tr>
+    <tr><td class="id">TBD-02</td><td>PDF 中文方案</td><td class="c"><span class="tag ok" style="background:#2f6f4f;color:#fff">已关闭</span></td><td>纯 Go + gopdf + 内嵌完整思源宋体，同时产出 HTML 副本（ADR-009）</td></tr>
+    <tr><td class="id">TBD-03</td><td>端口权限结论</td><td class="c">进行中</td><td>尖刺①现场验证中</td></tr>
+    <tr><td class="id">TBD-04</td><td>代码签名</td><td class="c">待定</td><td>取决于杀软实测结果</td></tr>
+    <tr><td class="id">TBD-05</td><td>档位赋分默认值</td><td class="c">待确认</td><td>暂定 100/80/60/0，请按考察部门习惯确认</td></tr>
+    <tr><td class="id">TBD-06</td><td>备用令牌比例</td><td class="c">待确认</td><td>暂定 10%，请确认</td></tr>
+    <tr><td class="id">TBD-07</td><td>短码入口域名</td><td class="c"><span class="tag ok" style="background:#2f6f4f;color:#fff">已关闭</span></td><td>并入 <code>config.toml</code> 的 <code>domain.short_entry</code>，随自有域名一并确定</td></tr>
+    <tr><td class="id">TBD-08</td><td>证书类型</td><td class="c">待确认</td><td><strong>取决于 12.7.3 决策路径的结果</strong>：能拿到 DNS API 密钥或能加 CNAME 委托（大概率可行）→ 用 Let's Encrypt 免费证书且全自动；仅当两条路都走不通、每次须走工单时，才购买一年期商业证书</td></tr>
+  </tbody>
+</table>
+
+<h3>A.3 版本历史</h3>
+<table>
+  <thead><tr><th style="width:80px">版本</th><th style="width:110px">日期</th><th>修改内容</th><th style="width:100px">编制</th></tr></thead>
+  <tbody>
+    <tr><td><strong>V1.2</strong></td><td>2026-08-08</td><td>按《证书与域名方案讨论纪要》写入：新增 12.7 证书签发与续签实施（DNS-01 原理、A 记录建议、四层决策路径、Windows 工具选择、操作步骤、年度维护日历、密钥存放约束）；12.6 改为优先通配符证书；TBD-01/08 更新</td><td>—</td></tr>
+    <tr><td><strong>V1.1</strong></td><td>2026-08-08</td><td><strong>修订。</strong>新增第 12 章（配置文件与证书装载）、第 13 章（报告导出实现）与 ADR-009/010。修正三：nip.io + Let's Encrypt 路径不成立，自有域名升为硬性前提，证书与域名改为配置驱动。修正四：PDF 字体体积顾虑不成立，改为嵌入完整字库。TBD-02 / TBD-07 关闭，新增 TBD-08</td><td>—</td></tr>
+    <tr><td>V1.0</td><td>2026-08-08</td><td>初稿。含 DDL 与三条匿名性断言（已在 SQLite 实测通过）、随机主键效果对照实验、口径舍入算法（20000 组穷举验证）。对 HLD 作两处修正：作答数据改为整份单 BLOB 存储；纸质补录不在记录上打标记</td><td>—</td></tr>
+  </tbody>
+</table>
+
+<h3>A.4 文档签署</h3>
+<table class="sign">
+  <tr><td class="lbl">编制</td><td></td><td class="lbl">日期</td><td style="width:150px"></td></tr>
+  <tr><td class="lbl">审核</td><td></td><td class="lbl">日期</td><td></td></tr>
+  <tr><td class="lbl">批准</td><td></td><td class="lbl">日期</td><td></td></tr>
+</table>
+
+<footer>
+  <div class="rline"></div>
+  线上民主测评系统 · 详细设计说明书 · V1.2 · 2026-08-08<br>
+  上游文档：系统设计说明书 HLD V1.0 · 需求分析说明书 V2.0
+</footer>
+
+</div>
+
+</body>
+</html>

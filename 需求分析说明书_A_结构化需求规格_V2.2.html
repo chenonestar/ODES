@@ -1,0 +1,1535 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>线上民主测评系统 — 需求分析说明书（版本A：结构化需求规格）V2.2</title>
+<style>
+/* 线上民主测评系统 需求分析说明书 · 公文风格样式 */
+:root{
+  --ink:#1b2434;
+  --seal:#9e2b25;
+  --seal-soft:#f6ecea;
+  --paper:#fbfaf7;
+  --rule:#ddd7cb;
+  --slate:#5c6675;
+  --slate-soft:#eef0f3;
+  --band:#f3efe7;
+  --ok:#2f6f4f;
+  --warn:#8a5a12;
+  --warn-soft:#fbf3e2;
+  --serif:"Songti SC","SimSun","Noto Serif SC",Georgia,serif;
+  --sans:"PingFang SC","Microsoft YaHei","Hiragino Sans GB","Source Han Sans SC",system-ui,sans-serif;
+  --mono:"SFMono-Regular",Consolas,"Liberation Mono",monospace;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;background:var(--paper);color:var(--ink);
+  font-family:var(--sans);font-size:15px;line-height:1.85;
+}
+.wrap{max-width:980px;margin:0 auto;padding:0 28px 80px}
+
+/* ── 红头 ── */
+.masthead{padding:56px 0 0;text-align:center}
+.masthead .kicker{
+  font-family:var(--mono);font-size:11px;letter-spacing:.22em;
+  text-transform:uppercase;color:var(--slate);margin-bottom:18px
+}
+.masthead h1{
+  font-family:var(--serif);font-weight:700;font-size:38px;line-height:1.3;
+  color:var(--seal);margin:0 0 6px;letter-spacing:.04em
+}
+.masthead .subtitle{
+  font-family:var(--serif);font-size:19px;color:var(--ink);margin:0 0 8px;letter-spacing:.03em
+}
+.masthead .tagline{font-size:13.5px;color:var(--slate);margin:0 0 26px}
+.redrule{border:0;margin:0 0 4px;height:3px;background:var(--seal)}
+.redrule.thin{height:1px;margin-bottom:30px}
+
+.metaline{
+  display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin-bottom:38px
+}
+.metaline span{
+  font-size:12.5px;color:var(--slate);background:#fff;
+  border:1px solid var(--rule);border-radius:2px;padding:3px 11px
+}
+
+/* ── 目录 ── */
+.toc{
+  background:#fff;border:1px solid var(--rule);border-left:3px solid var(--seal);
+  padding:22px 26px;margin:0 0 48px
+}
+.toc h2{
+  font-family:var(--serif);font-size:16px;margin:0 0 12px;color:var(--ink);letter-spacing:.06em
+}
+.toc ol{margin:0;padding-left:22px;columns:2;column-gap:38px}
+.toc li{margin-bottom:5px;font-size:13.5px;break-inside:avoid}
+.toc a{color:var(--ink);text-decoration:none;border-bottom:1px solid transparent}
+.toc a:hover{border-bottom-color:var(--seal);color:var(--seal)}
+.toc .tnote{color:var(--slate);font-size:12.5px}
+
+/* ── 章节 ── */
+h2.sec{
+  font-family:var(--serif);font-size:25px;font-weight:700;letter-spacing:.04em;
+  margin:64px 0 22px;padding-bottom:10px;border-bottom:2px solid var(--seal);
+  display:flex;align-items:baseline;gap:14px
+}
+h2.sec .num{
+  font-family:var(--mono);font-size:14px;color:#fff;background:var(--seal);
+  padding:3px 9px;border-radius:2px;letter-spacing:.06em;flex:none;line-height:1.4
+}
+h3{font-family:var(--serif);font-size:19px;font-weight:700;margin:38px 0 12px;letter-spacing:.03em}
+h4{font-size:15.5px;font-weight:600;margin:26px 0 10px;color:var(--ink)}
+p{margin:0 0 14px}
+ul,ol{margin:0 0 16px;padding-left:24px}
+li{margin-bottom:6px}
+strong{font-weight:600}
+code{font-family:var(--mono);font-size:.88em;background:var(--slate-soft);
+  padding:1px 5px;border-radius:2px;color:#33405a}
+a{color:var(--seal)}
+
+/* ── 表格 ── */
+table{
+  width:100%;border-collapse:collapse;margin:16px 0 24px;
+  font-size:13.5px;background:#fff;border:1px solid var(--rule)
+}
+caption{
+  caption-side:bottom;font-size:12.5px;color:var(--slate);
+  padding-top:9px;text-align:left
+}
+th,td{border:1px solid var(--rule);padding:9px 12px;text-align:left;vertical-align:top;line-height:1.7}
+thead th{background:var(--band);font-weight:600;font-size:13px;letter-spacing:.02em}
+tbody tr:nth-child(even){background:#fcfbf9}
+td.c,th.c{text-align:center}
+td.id{font-family:var(--mono);font-size:12px;white-space:nowrap;color:var(--slate)}
+
+/* ── 标记 ── */
+.tag{
+  display:inline-block;font-size:11.5px;line-height:1.6;padding:1px 8px;
+  border-radius:2px;font-family:var(--sans);white-space:nowrap;vertical-align:1px
+}
+.tag.must{background:var(--seal);color:#fff}
+.tag.opt{background:#fff;color:var(--slate);border:1px solid var(--rule)}
+.tag.new{background:var(--ok);color:#fff}
+.tag.chg{background:var(--warn);color:#fff}
+.tag.del{background:var(--slate-soft);color:var(--slate);text-decoration:line-through}
+
+/* ── 提示框 ── */
+.box{border:1px solid var(--rule);border-left:3px solid var(--slate);
+  background:#fff;padding:16px 20px;margin:20px 0}
+.box .bt{font-weight:600;font-size:14px;margin-bottom:6px;display:block}
+.box p:last-child,.box ul:last-child,.box ol:last-child{margin-bottom:0}
+.box.crit{border-left-color:var(--seal);background:var(--seal-soft)}
+.box.crit .bt{color:var(--seal)}
+.box.warn{border-left-color:var(--warn);background:var(--warn-soft)}
+.box.warn .bt{color:var(--warn)}
+.box.ok{border-left-color:var(--ok);background:#eef5f0}
+.box.ok .bt{color:var(--ok)}
+
+/* ── 图 ── */
+.figure{background:#fff;border:1px solid var(--rule);padding:26px 20px;margin:22px 0;text-align:center}
+.figure pre{
+  font-family:var(--mono);font-size:12.5px;line-height:1.65;text-align:left;
+  display:inline-block;margin:0;color:var(--ink);white-space:pre;overflow-x:auto;max-width:100%
+}
+.figcap{font-size:12.5px;color:var(--slate);margin-top:14px;text-align:left}
+
+/* ── 场景卡（B文档） ── */
+.scene{margin:70px 0 0;border-top:2px solid var(--seal);padding-top:0}
+.scene-head{background:var(--band);border:1px solid var(--rule);border-top:0;padding:22px 26px;margin-bottom:8px}
+.scene-head .sn{
+  font-family:var(--mono);font-size:12px;letter-spacing:.2em;color:var(--seal);
+  display:block;margin-bottom:6px
+}
+.scene-head h2{font-family:var(--serif);font-size:24px;margin:0 0 8px;letter-spacing:.04em}
+.scene-head p{margin:0;font-size:13.5px;color:var(--slate)}
+
+/* ── 步骤 ── */
+.steps{counter-reset:st;margin:20px 0;padding:0;list-style:none}
+.steps>li{
+  counter-increment:st;position:relative;padding-left:44px;margin-bottom:20px
+}
+.steps>li::before{
+  content:counter(st,decimal-leading-zero);position:absolute;left:0;top:2px;
+  font-family:var(--mono);font-size:12px;color:#fff;background:var(--ink);
+  width:26px;height:22px;display:flex;align-items:center;justify-content:center;border-radius:2px
+}
+.steps>li>b{display:block;font-size:15px;margin-bottom:3px}
+
+/* ── 检查清单 ── */
+.check{list-style:none;padding:0;margin:14px 0}
+.check li{padding-left:26px;position:relative;margin-bottom:7px;font-size:13.5px}
+.check li::before{
+  content:"";position:absolute;left:0;top:6px;width:12px;height:12px;
+  border:1.5px solid var(--slate);border-radius:2px;background:#fff
+}
+
+/* ── 签署 ── */
+.sign{width:100%;border-collapse:collapse;margin-top:22px;font-size:13.5px}
+.sign td{border:1px solid var(--rule);padding:16px 12px;height:64px;background:#fff}
+.sign td.lbl{background:var(--band);width:110px;font-weight:600;text-align:center;vertical-align:middle}
+
+footer{
+  margin-top:80px;border-top:1px solid var(--rule);padding-top:18px;
+  font-size:12.5px;color:var(--slate);text-align:center
+}
+footer .rline{height:2px;background:var(--seal);margin-bottom:18px;width:100%}
+
+@media (max-width:720px){
+  .wrap{padding:0 16px 60px}
+  .masthead h1{font-size:27px}
+  .toc ol{columns:1}
+  h2.sec{font-size:21px}
+  table{font-size:12.5px}
+  th,td{padding:7px 8px}
+  .figure{padding:16px 10px;overflow-x:auto}
+}
+@media print{
+  body{background:#fff;font-size:10.5pt}
+  .wrap{max-width:none;padding:0}
+  h2.sec{page-break-after:avoid;margin-top:30px}
+  table,.box,.figure{page-break-inside:avoid}
+  .toc{page-break-after:always}
+}
+
+/* ── 代码块（LLD） ── */
+pre.code{
+  background:#1f2733;color:#e6e9ef;border:1px solid #141a23;border-left:3px solid var(--seal);
+  padding:14px 18px;margin:16px 0;overflow-x:auto;font-size:12.5px;line-height:1.75
+}
+pre.code code{background:none;color:inherit;padding:0;font-family:var(--mono)}
+@media print{pre.code{background:#f4f4f4;color:#111;border-color:#bbb}}
+
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="masthead">
+  <div class="kicker">Software Requirements Specification</div>
+  <h1>线上民主测评系统</h1>
+  <div class="subtitle">需求分析说明书 · 版本A：结构化需求规格</div>
+  <div class="tagline">适用于开发团队技术评审、项目实施与验收对照</div>
+  <hr class="redrule">
+  <hr class="redrule thin">
+  <div class="metaline">
+    <span>版本日期：2026-08-08</span>
+    <span>版本号：V2.2（评审修订稿）</span>
+    <span>文档类型：需求分析说明书</span>
+    <span>参照标准：IEEE 830</span>
+    <span>密级：内部</span>
+  </div>
+</header>
+
+<nav class="toc">
+  <h2>目 录</h2>
+  <ol>
+    <li><a href="#s1">引言</a> <span class="tnote">背景 · 目标 · 范围 · 非目标 · 术语 · 需求编号体系</span></li>
+    <li><a href="#s2">总体描述</a> <span class="tnote">部署模型 · 角色 · 运行环境 · 假设与约束</span></li>
+    <li><a href="#s3">功能需求</a> <span class="tnote">8 个模块 · 逐条编号</span></li>
+    <li><a href="#s4">非功能需求</a> <span class="tnote">匿名性 · 安全 · 性能 · 易用 · 便携 · 可靠</span></li>
+    <li><a href="#s5">数据需求</a> <span class="tnote">实体 · 匿名隔离 · 字段加密</span></li>
+    <li><a href="#s6">统计口径与计算规则</a> <span class="tnote">新增章节</span></li>
+    <li><a href="#s7">接口需求</a> <span class="tnote">HTTP 路由 · 内置网络服务</span></li>
+    <li><a href="#s8">网络组网与装备规格</a> <span class="tnote">新增章节 · 现场部署规程</span></li>
+    <li><a href="#s9">风险清单</a> <span class="tnote">新增章节</span></li>
+    <li><a href="#s10">附录</a> <span class="tnote">状态机 · 追踪矩阵 · 清单模板 · FAQ · 签署</span></li>
+  </ol>
+</nav>
+
+<div class="box crit">
+  <span class="bt">本版修订说明</span>
+  <p>V2.0 相对 V1.0 的主要变更：① 修复匿名性设计中的<strong>时序关联通道</strong>（V1.0 设计下管理员可通过插入顺序完整还原人码对应关系）；② 令牌机制统一为<strong>一码三形态</strong>，废除原独立的"通用验证码"机制；③ 评分制主推<strong>四档等级</strong>，新增第 6 章统计口径与计算规则；④ 部署模型由"接入被考察单位局域网"改为<strong>考察组自备独立测评网络</strong>，新增第 8 章组网与装备规格；⑤ 新增应用层字段加密、非目标章节、风险清单、需求编号体系与追踪矩阵；⑥ 删除周期性测评功能。逐条对照见 <a href="#a2">附录 A.2</a>。</p>
+</div>
+
+<h2 class="sec" id="s1"><span class="num">01</span>引言</h2>
+
+<h3>1.1 项目背景</h3>
+<p>党政机关及企事业单位的民主测评（干部考察测评、年度民主评议、领导班子满意度测评等），目前普遍采用线下纸质方式：打印测评表 → 盖章分发 → 参会人员填写 → 投入票箱 → 开箱人工统计。存在以下问题：</p>
+<ul>
+  <li><strong>耗时长</strong>：从打印到统计完成至少需要半天到一天；</li>
+  <li><strong>易出错</strong>：人工计数、誊写环节容易出现疏漏或数据偏差；</li>
+  <li><strong>匿名性依赖程序而非技术</strong>：纸质表存在笔迹辨识风险；</li>
+  <li><strong>重复劳动</strong>：每次测评均需重复全部流程；</li>
+  <li><strong>不环保</strong>：大量纸张消耗。</li>
+</ul>
+
+<h3>1.2 项目目标</h3>
+<table>
+  <thead><tr><th style="width:130px">目标</th><th>说明</th></tr></thead>
+  <tbody>
+    <tr><td><strong>无纸化作答</strong></td><td>替代线下打印、分发、回收环节，测评作答与统计全流程在线化。测评结果的纸质留痕由导出打印封存实现（见 <a href="#s6">6.6</a>）。</td></tr>
+    <tr><td><strong>匿名保障</strong></td><td>在技术层面确保作答记录与测评人员身份不可关联。承诺边界见 <a href="#s4">4.1</a>。</td></tr>
+    <tr><td><strong>自动化统计</strong></td><td>提交即汇总，按组织工作通行口径直接产出可进考察报告的比率指标。</td></tr>
+    <tr><td><strong>便携部署</strong></td><td>系统为单个可执行文件，随考察装备箱携带，现场零配置启动。</td></tr>
+    <tr><td><strong>网络自持</strong></td><td>测评网络由考察组自备设备构成，不依赖被考察单位的网络与人员配合。</td></tr>
+    <tr><td><strong>操作便捷</strong></td><td>测评人员无需注册、无需安装 App，扫码即答。</td></tr>
+  </tbody>
+</table>
+
+<h3>1.3 适用范围</h3>
+<ul>
+  <li><strong>典型场景</strong>：考察组携带笔记本与测评网络装备进入被考察单位，在会议现场组建独立测评网络，参评人员用手机扫码完成测评。</li>
+  <li><strong>适用类型</strong>：干部考察测评、年度民主评议、领导班子满意度测评、专项工作评议。</li>
+  <li><strong>不适用</strong>：需要实名认证的表决类事项（如党委选举表决）；面向互联网公开的大规模问卷调查。</li>
+</ul>
+
+<h3>1.4 非目标（Out of Scope）<span class="tag new">新增</span></h3>
+<p>以下能力<strong>明确不在本系统范围内</strong>。列出的目的是防止需求蔓延，并在评审时避免反复讨论。</p>
+<table>
+  <thead><tr><th style="width:210px">非目标</th><th>说明与理由</th></tr></thead>
+  <tbody>
+    <tr><td>服务器/云端长期部署形态</td><td>考察部门不具备长期持有与运维服务器的条件。系统仅提供现场便携形态。</td></tr>
+    <tr><td>多地分散参评</td><td>下属单位、分支机构人员跨地参评不在本系统范围。此类需求形态上属于另一个产品。</td></tr>
+    <tr><td>互联网远程作答</td><td>已删除 V1.0 中的公网临时通道设想。系统全程离线运行。</td></tr>
+    <tr><td>多管理员与权限分级</td><td>单管理员模式。多角色审批、分权管理不在范围内。</td></tr>
+    <tr><td>周期性自动测评</td><td>V1.0 该功能与"用完即清"的保密要求冲突，本版删除。</td></tr>
+    <tr><td>多实例并行与数据合并</td><td>不支持两台以上笔记本同时承载同一测评。理由见 <a href="#s8">8.7</a>。</td></tr>
+    <tr><td>选举表决、记名投票</td><td>制度性质不同，不以本系统承载。</td></tr>
+    <tr><td>历史数据跨单位横向比对</td><td>与"测评结束即擦除本机数据"的保密策略冲突。历史数据以加密归档包形式离线保存，系统内不提供比对功能。</td></tr>
+  </tbody>
+</table>
+
+<h3>1.5 术语定义</h3>
+<table>
+  <thead><tr><th style="width:150px">术语</th><th>定义</th></tr></thead>
+  <tbody>
+    <tr><td>测评项目</td><td>一次完整的民主测评活动，包含测评名称、起止时间、测评表、测评对象、令牌批次等。</td></tr>
+    <tr><td>管理员</td><td>创建和管理测评项目的考察组成员。系统唯一的登录用户。</td></tr>
+    <tr><td>测评人员（参评人员）</td><td>参与作答的人员。无需注册账号，通过令牌进入。</td></tr>
+    <tr><td>测评对象</td><td>被评价的领导干部。<strong>不是系统用户</strong>，仅作为测评表中的评价目标出现。</td></tr>
+    <tr><td><strong>令牌（Token）</strong></td><td>系统生成的密码学随机凭证，是参评人员进入作答的<strong>唯一凭据</strong>。一个令牌仅允许一次有效提交。</td></tr>
+    <tr><td><strong>令牌三形态</strong></td><td>同一个令牌的三种等价表示：<strong>URL</strong>（完整链接）、<strong>二维码</strong>（URL 的图形编码）、<strong>短码</strong>（8 位人工可读字符）。三者指向同一令牌，任一形态使用后其余形态同时失效。</td></tr>
+    <tr><td>令牌单</td><td>打印分发给参评人员的凭据小票，同时承载二维码、短码与所连 SSID 名称。</td></tr>
+    <tr><td>批次</td><td>令牌的分组单位。用于分批测评时按批开放，统计时跨批合并。</td></tr>
+    <tr><td>矩阵展开</td><td>一道关联多个测评对象的题目，在作答页上展开为「测评对象 × 题目」的多个作答项。</td></tr>
+    <tr><td>作答项</td><td>矩阵展开后的最小作答单元，是容量指标的计量单位。</td></tr>
+    <tr><td>应参加人数</td><td>本次测评应参加的人员总数，等于名单人数。<strong>是全部比率指标的默认分母</strong>。</td></tr>
+    <tr><td>弃权</td><td>参评人员对某一作答项未作选择即提交。单列统计，计入分母，不计入任何等级的分子。</td></tr>
+    <tr><td>试填模式</td><td>发布前用于验证流程的沙箱模式，使用测试令牌，数据不进入统计。</td></tr>
+    <tr><td>测评网络</td><td>由考察组自备的笔记本、交换机、无线接入点构成的独立局域网，不接入互联网。</td></tr>
+    <tr><td>AP（无线接入点）</td><td>工作在接入点模式下的无线路由器，仅提供无线接入，不承担路由与地址分配。</td></tr>
+  </tbody>
+</table>
+
+<h3>1.6 需求编号体系 <span class="tag new">新增</span></h3>
+<p>本版起，每条需求分配唯一编号，格式 <code>[类型]-[模块]-[序号]</code>。版本B的场景步骤与验收清单均引用这些编号，追踪矩阵见 <a href="#a3">附录 A.3</a>。</p>
+<table>
+  <thead><tr><th style="width:110px">前缀</th><th style="width:150px">含义</th><th>模块代号</th></tr></thead>
+  <tbody>
+    <tr><td class="id">FR-</td><td>功能需求</td><td>PRJ 项目管理 · FRM 测评表 · TKN 令牌发放 · ANS 在线作答 · STA 统计 · EXP 导出 · NET 内置网络服务 · SYS 系统管理</td></tr>
+    <tr><td class="id">NFR-</td><td>非功能需求</td><td>ANO 匿名性 · SEC 安全 · PER 性能 · USA 易用 · POR 便携 · REL 可靠</td></tr>
+    <tr><td class="id">CON-</td><td>约束</td><td>—</td></tr>
+    <tr><td class="id">RSK-</td><td>风险项</td><td>—</td></tr>
+  </tbody>
+</table>
+<p>优先级标记：<span class="tag must">必做</span> 缺失则不可验收 · <span class="tag opt">可选</span> 可延后至后续版本。</p>
+
+<h2 class="sec" id="s2"><span class="num">02</span>总体描述</h2>
+
+<h3>2.1 部署模型 <span class="tag chg">重写</span></h3>
+<p>系统运行在考察组自带的笔记本上，与考察组自带的交换机、无线接入点共同构成一个<strong>独立的、不接入互联网的测评网络</strong>。参评人员的手机连接该网络的无线信号完成作答。</p>
+
+<div class="figure">
+<pre>
+                    ┌──────────────────────────────┐
+                    │   考察组笔记本（服务端）        │
+                    │   单可执行文件 + SQLite        │
+                    │   内置 HTTPS / DHCP / DNS      │
+                    │   固定 192.168.66.1 : 8443     │
+                    └───────────────┬──────────────┘
+                                    │ 有线（千兆）
+                        ┌───────────┴───────────┐
+                        │      千兆交换机        │
+                        └──┬──────┬──────┬──────┬┘
+                           │      │      │      │  有线
+                        ┌──┴─┐ ┌──┴─┐ ┌──┴─┐ ┌──┴─┐
+                        │AP 1│ │AP 2│ │AP 3│ │AP 4│   ← 均为 AP 模式
+                        │ch36│ │ch44│ │ch149││ch157│     关闭 DHCP / NAT
+                        └─╥──┘ └─╥──┘ └─╥──┘ └─╥──┘
+                          ║      ║      ║      ║  5GHz 无线
+                        （手机） （手机） （手机） （手机）
+                        KCZ-1   KCZ-2   KCZ-3   KCZ-4
+
+              ┈┈┈┈┈┈ 以上全部设备由考察组自备并全程掌控 ┈┈┈┈┈┈
+                     不接互联网 · 不接被考察单位任何网络
+</pre>
+<div class="figcap">图 2-1　测评网络拓扑。全部设备处于同一二层广播域、同一网段 <code>192.168.66.0/24</code>。手机无论连接哪台 AP，访问的都是同一个服务端实例。详细配置见 <a href="#s8">第 8 章</a>。</div>
+</div>
+
+<table>
+  <thead><tr><th style="width:150px">部署要素</th><th>说明</th></tr></thead>
+  <tbody>
+    <tr><td>运行方式</td><td>单个 Go 编译的可执行文件，无需安装任何依赖与运行时。</td></tr>
+    <tr><td>数据库</td><td>嵌入式 SQLite（<code>modernc.org/sqlite</code>，纯 Go 实现，不引入 CGO），数据文件位于程序同目录。</td></tr>
+    <tr><td>网络角色</td><td>笔记本同时是 <strong>Web 服务端 + DHCP 服务器 + DNS 服务器</strong>。整个测评网络只有这一个"大脑"，AP 仅做二层转发。</td></tr>
+    <tr><td>网段</td><td>固定 <code>192.168.66.0/24</code>，笔记本静态 <code>192.168.66.1</code>。网段固定是二维码可提前打印的前提。</td></tr>
+    <tr><td>访问方式</td><td>参评人员扫码访问 <code>https://{配置的域名}:8443/e/{token}</code>，手机浏览器显示正常锁标，无证书告警。域名由考察部门自有域名指定，原理见 <a href="#s8">8.5</a>。</td></tr>
+    <tr><td>互联网</td><td><strong>分两个时点区别对待</strong>：<br>· <strong>办公室（出发前）可以且应当联网</strong>——用于更新证书、更新程序、维护装备；<br>· <strong>考察现场全程离线</strong>——不接互联网、不接被考察单位网络。<br>现场不联网的理由是保密性而非技术性：笔记本上装有干部考察材料，接入互联网即形成暴露面；若经被考察单位网络上网，还会绕开 <code>CON-01</code> 的设计意图。</td></tr>
+    <tr><td>与被考察单位网络的关系</td><td><strong>无连接</strong>。可按接入管理要求走审批并接入上联网线，但系统功能不依赖该上联，测评数据流不经过被考察单位任何设备。</td></tr>
+    <tr><td>数据可迁移性</td><td>整个数据目录可拷贝迁移。归档时导出加密包并擦除本机数据。</td></tr>
+  </tbody>
+</table>
+
+<div class="box crit">
+  <span class="bt">CON-01　装备归属约束 <span class="tag must">必做</span></span>
+  <p>测评网络所涉全部设备（笔记本、交换机、无线接入点、线缆、插排、UPS）须由<strong>考察部门自行配备、自行保管、随组携带并全程掌控</strong>，不得由被考察单位提供。</p>
+  <p style="margin-top:8px"><strong>理由</strong>：被考察单位是本次测评的利益相关方。由其提供承载测评数据的网络设备，在程序上等同于让被监督方提供监督工具；一旦测评结果产生争议，考察组无任何可自证的独立证据。此外设备配置不可控将导致现场故障无法自救。</p>
+  <p style="margin-top:8px"><strong>例外</strong>：单批参评人数超过 100 人且确不具备分批条件时，可借用被考察单位既有企业级无线网络，须执行 <a href="#a5">附录 A.5 行前网络对接清单</a>，并由考察组负责人书面知悉残余风险（见 <a href="#s9">RSK-03</a>）。</p>
+</div>
+
+<h3>2.2 用户角色</h3>
+<table>
+  <thead><tr><th style="width:130px">角色</th><th>职责概述</th><th style="width:130px">操作频次</th></tr></thead>
+  <tbody>
+    <tr><td>管理员<br>（考察组成员）</td><td>创建测评项目 → 设计测评表 → 导入名单 → 生成并打印令牌单 → 现场组网 → 试填验证 → 发布测评 → 监控进度 → 查看统计 → 导出报告 → 加密归档与擦除</td><td>每次测评全程</td></tr>
+    <tr><td>测评人员</td><td>凭令牌单连接指定 SSID → 扫码或输入短码进入 → 匿名填写 → 提交（不可修改）</td><td>每场约 10–20 分钟</td></tr>
+  </tbody>
+</table>
+<p><strong>测评对象不是系统用户</strong>，不登录、不操作，仅在测评表中作为被评价条目出现。</p>
+
+<h3>2.3 运行环境</h3>
+<table>
+  <thead><tr><th style="width:150px">环境项</th><th>最低要求</th><th>建议配置</th></tr></thead>
+  <tbody>
+    <tr><td>操作系统</td><td>Windows 10 / macOS 12 / Linux (amd64)</td><td>Windows 10+ 或 Ubuntu 22.04+</td></tr>
+    <tr><td>内存</td><td>512 MB 可用</td><td>4 GB+</td></tr>
+    <tr><td>磁盘</td><td>100 MB</td><td>500 MB+</td></tr>
+    <tr><td>网卡</td><td>千兆有线网口（必须）</td><td>千兆有线 + 备用 USB 网卡</td></tr>
+    <tr><td>系统权限</td><td>需能绑定 53（DNS）与 67（DHCP）端口。Windows 下首次运行需允许防火墙放行；如受限则由外置路由承担 DHCP，见 <a href="#s8">8.4</a></td><td>—</td></tr>
+    <tr><td>浏览器（管理端）</td><td>Chrome 90+ / Edge 90+</td><td>最新版 Chrome / Edge</td></tr>
+    <tr><td>浏览器（测评端）</td><td>iOS 13+ Safari / Android 8+ Chrome / 微信内置浏览器</td><td>近三年主流机型</td></tr>
+  </tbody>
+</table>
+
+<h3>2.4 假设与约束</h3>
+<table>
+  <thead><tr><th style="width:90px">编号</th><th>内容</th></tr></thead>
+  <tbody>
+    <tr><td class="id">CON-01</td><td>装备归属约束。全部网络设备由考察部门自备自管，见 <a href="#s2">2.1</a>。</td></tr>
+    <tr><td class="id">CON-02</td><td>系统不依赖互联网，全部功能离线可用。证书申请等联网动作在出发前完成。</td></tr>
+    <tr><td class="id">CON-03</td><td>单管理员、单实例模式。同一场测评由一台笔记本上的一个运行实例承载。</td></tr>
+    <tr><td class="id">CON-04</td><td>参评人员需持有可连接 WiFi 并运行浏览器的设备。无设备者按纸质密封补录处理（<a href="#s3">FR-ANS-090</a>）。</td></tr>
+    <tr><td class="id">CON-05</td><td>单批次并发作答上限 200 人；超出部分分批进行。批次能力由装备规模决定，见 <a href="#s8">8.6</a>。</td></tr>
+    <tr><td class="id">CON-06</td><td>测评数据不得长期驻留本机。测评结束后须导出加密归档包并执行本机安全擦除。</td></tr>
+    <tr><td class="id">CON-07</td><td>数据库访问层不得引入 CGO，以保证三平台交叉编译与单文件分发。这排除了 SQLCipher，加密改由应用层字段加密实现（<a href="#s5">5.4</a>）。</td></tr>
+    <tr><td class="id">CON-08</td><td><strong>DNS 服务商 API 密钥不得存放于考察笔记本。</strong>该密钥的价值远高于证书本身——持有者可为该域名下任意主机签发证书、劫持任意解析，等同于取得单位域名控制权；而考察笔记本要被带入被考察单位、置于会场、中途可能离开视线。证书由办公室固定机器签发后，仅将 <code>fullchain.pem</code> 与 <code>privkey.pem</code> 两个文件拷入笔记本。</td></tr>
+  </tbody>
+</table>
+
+<h2 class="sec" id="s3"><span class="num">03</span>功能需求</h2>
+
+<h3>3.1 模块一：测评项目管理（PRJ）</h3>
+
+<h4>3.1.1 创建测评项目</h4>
+<table>
+  <thead><tr><th style="width:100px">编号</th><th style="width:130px">字段</th><th style="width:110px">类型</th><th class="c" style="width:60px">必填</th><th>说明</th></tr></thead>
+  <tbody>
+    <tr><td class="id">FR-PRJ-010</td><td>测评名称</td><td>文本 ≤100 字</td><td class="c">是</td><td>如"2026 年度XX单位领导班子民主测评"</td></tr>
+    <tr><td class="id">FR-PRJ-011</td><td>开始时间</td><td>日期时间</td><td class="c">是</td><td>测评开放作答的起始时间</td></tr>
+    <tr><td class="id">FR-PRJ-012</td><td>截止时间</td><td>日期时间</td><td class="c">是</td><td>须晚于开始时间。到时自动关闭提交通道</td></tr>
+    <tr><td class="id">FR-PRJ-013</td><td>说明文字</td><td>富文本 ≤2000 字</td><td class="c">否</td><td>测评须知、评价标准说明</td></tr>
+    <tr><td class="id">FR-PRJ-014</td><td>结果开放时间</td><td>日期时间</td><td class="c">否</td><td>默认等于截止时间，不得早于截止时间</td></tr>
+    <tr><td class="id">FR-PRJ-015</td><td>应参加人数</td><td>整数</td><td class="c">是</td><td><strong>全部比率指标的分母</strong>。默认等于导入名单人数，允许管理员按实际应到人数手工修正（如名单含已调离人员）</td></tr>
+  </tbody>
+</table>
+<div class="box">
+  <span class="bt">已删除字段</span>
+  <p><span class="tag del">是否启用验证码入口</span>　V1.0 中"通用验证码"是与匿名链接并列的第二套入口机制，且术语上"通用"与"一次性"自相矛盾。本版统一为<strong>一个令牌三种形态</strong>，短码即令牌的人工可读表示，无需单独开关。</p>
+</div>
+
+<h4>3.1.2 项目列表与状态管理</h4>
+<table>
+  <thead><tr><th style="width:100px">编号</th><th>需求</th><th class="c" style="width:70px">优先级</th></tr></thead>
+  <tbody>
+    <tr><td class="id">FR-PRJ-020</td><td>列表展示全部项目，含名称、状态、创建时间、提交数/应参加人数</td><td class="c"><span class="tag must">必做</span></td></tr>
+    <tr><td class="id">FR-PRJ-021</td><td>支持按名称搜索、按状态筛选</td><td class="c"><span class="tag must">必做</span></td></tr>
+    <tr><td class="id">FR-PRJ-022</td><td>草稿状态下支持编辑；任意状态支持复制为新项目（复制结构，不复制作答数据与令牌）</td><td class="c"><span class="tag must">必做</span></td></tr>
+    <tr><td class="id">FR-PRJ-023</td><td><strong>发布前置校验</strong>：至少 1 个测评对象、至少 1 道题、时间合法（开始&lt;截止≤结果开放）、名单已导入且令牌已生成、试填验证已通过。任一不满足则禁止发布并明示原因</td><td class="c"><span class="tag must">必做</span></td></tr>
+    <tr><td class="id">FR-PRJ-024</td><td><strong>手动关闭</strong>：进行中状态下管理员可提前关闭提交通道，状态转为已截止</td><td class="c"><span class="tag must">必做</span></td></tr>
+    <tr><td class="id">FR-PRJ-025</td><td><strong>撤回发布</strong>：已发布但尚未有任何提交时，允许退回草稿。一旦存在提交记录则不可撤回</td><td class="c"><span class="tag must">必做</span></td></tr>
+    <tr><td class="id">FR-PRJ-026</td><td>归档：执行"导出加密包 + 本机数据擦除"后项目转入已归档，列表中仅保留元信息记录</td><td class="c"><span class="tag must">必做</span></td></tr>
+  </tbody>
+</table>
+<p>完整状态机见 <a href="#a1">附录 A.1</a>。</p>
+
+<div class="box">
+  <span class="bt">已删除功能</span>
+  <p><span class="tag del">周期性测评</span>　该功能要求系统长期保存测评模板与历史数据，与 CON-06「测评结束后本机擦除」直接冲突。测评模板复用需求由 <a href="#s3">FR-FRM-060 测评表模板</a>满足（模板不含任何作答数据与人员信息，可长期保留）。</p>
+</div>
+
+<h4>3.1.3 试填模式 <span class="tag new">新增</span></h4>
+<table>
+  <thead><tr><th style="width:100px">编号</th><th>需求</th><th class="c" style="width:70px">优先级</th></tr></thead>
+  <tbody>
+    <tr><td class="id">FR-PRJ-030</td><td>系统为每个项目额外生成 3 个<strong>测试令牌</strong>，独立标识，可反复使用不失效</td><td class="c"><span class="tag must">必做</span></td></tr>
+    <tr><td class="id">FR-PRJ-031</td><td>测试令牌的作答数据写入独立的试填数据区，<strong>不进入统计、不进入导出、不计入提交数</strong></td><td class="c"><span class="tag must">必做</span></td></tr>
+    <tr><td class="id">FR-PRJ-032</td><td>作答页在试填模式下显示醒目横幅"试填模式 · 数据不计入统计"</td><td class="c"><span class="tag must">必做</span></td></tr>
+    <tr><td class="id">FR-PRJ-033</td><td>发布时清空试填数据区</td><td class="c"><span class="tag must">必做</span></td></tr>
+  </tbody>
+</table>
+<p>试填模式是现场组网验收的依赖项（见 <a href="#s8">8.8 部署顺序</a>第 5 步），也是发布前置校验 FR-PRJ-023 的条件之一。</p>
+
+<h3>3.2 模块二：测评表设计（FRM）</h3>
+
+<h4>3.2.1 题型</h4>
+<table>
+  <thead><tr><th style="width:100px">编号</th><th style="width:120px">题型</th><th>适用场景与配置</th></tr></thead>
+  <tbody>
+    <tr><td class="id">FR-FRM-010</td><td><strong>等级题</strong><br>（默认主力题型）</td><td>四档等级：优秀 / 称职 / 基本称职 / 不称职。档位名称与档数（3–5 档）可配置。<strong>每档可配置对应赋分</strong>（默认 100/80/60/0），用于产出辅助排序用的加权得分。这是干部考察测评的标准题型，产出的比率指标可直接进入考察报告</td></tr>
+    <tr><td class="id">FR-FRM-011</td><td>打分题</td><td>分值范围 1–5 或 1–10。<strong>适用于满意度测评、专项工作评议等非干部考核场景</strong>，不建议用于干部考察测评（理由见 <a href="#s6">6.2</a>）</td></tr>
+    <tr><td class="id">FR-FRM-012</td><td>单选题</td><td>选项列表 2–10 个</td></tr>
+    <tr><td class="id">FR-FRM-013</td><td>多选题</td><td>选项列表、最少/最多可选数</td></tr>
+    <tr><td class="id">FR-FRM-014</td><td>开放评语</td><td>最大字数 0–2000、占位提示文字</td></tr>
+  </tbody>
+</table>
+
+<h4>3.2.2 题目属性与组织</h4>
+<table>
+  <thead><tr><th style="width:100px">编号</th><th>需求</th><th class="c" style="width:70px">优先级</th></tr></thead>
+  <tbody>
+    <tr><td class="id">FR-FRM-020</td><td>每题可设必填 / 选填；必填题未作答不得提交</td><td class="c"><span class="tag must">必做</span></td></tr>
+    <tr><td class="id">FR-FRM-021</td><td><strong>等级题与单选题须提供"弃权"选项</strong>，作为纸质测评"废票/未表态"的电子对应物。弃权是显式选择，与"漏填"区分</td><td class="c"><span class="tag must">必做</span></td></tr>
+    <tr><td class="id">FR-FRM-022</td><td>题目拖拽排序；题目可附加说明文字</td><td class="c"><span class="tag must">必做</span></td></tr>
+    <tr><td class="id">FR-FRM-023</td><td>题组管理（如按"德能勤绩廉"分块），组名称与说明，组内独立排序、组间可排序</td><td class="c"><span class="tag must">必做</span></td></tr>
+  </tbody>
+</table>
+
+<h4>3.2.3 测评对象与矩阵关联</h4>
+<table>
+  <thead><tr><th style="width:100px">编号</th><th>需求</th><th class="c" style="width:70px">优先级</th></tr></thead>
+  <tbody>
+    <tr><td class="id">FR-FRM-030</td><td>录入测评对象（姓名、职务），支持手动添加与 Excel 导入</td><td class="c"><span class="tag must">必做</span></td></tr>
+    <tr><td class="id">FR-FRM-031</td><td>题目可关联"全部测评对象"或"指定测评对象子集"，作答时展开为矩阵</td><td class="c"><span class="tag must">必做</span></td></tr>
+    <tr><td class="id">FR-FRM-032</td><td>为测评对象设置分组标签（如"班子成员""中层正职"），用于统计筛选</td><td class="c"><span class="tag opt">可选</span></td></tr>
+    <tr><td class="id">FR-FRM-033</td><td><strong>作答页强制按测评对象分页</strong>：矩阵展开后每页只呈现一个测评对象的全部题目。禁止将全部作答项排在单一长页上</td><td class="c"><span class="tag must">必做</span></td></tr>
+    <tr><td class="id">FR-FRM-034</td><td>设计器实时显示「展开后作答项总数 = 题目数 × 关联对象数」，超出容量上限时告警</td><td class="c"><span class="tag must">必做</span></td></tr>
+  </tbody>
+</table>
+
+<div class="figure">
+<pre>
+   ┌─ 第 2 / 5 页 ───────────────── 测评对象：李 四（副局长）─┐
+   │                                                          │
+   │  【德】政治品德                                           │
+   │   1. 政治立场和党性修养 *                                 │
+   │      ○ 优秀   ● 称职   ○ 基本称职   ○ 不称职   ○ 弃权    │
+   │   2. 道德品质和个人修养 *                                 │
+   │      ● 优秀   ○ 称职   ○ 基本称职   ○ 不称职   ○ 弃权    │
+   │                                                          │
+   │  【综合】总体评价 *                                       │
+   │      ○ 优秀   ● 称职   ○ 基本称职   ○ 不称职   ○ 弃权    │
+   │                                                          │
+   │  【评语】请写下具体意见（选填）                            │
+   │      ┌────────────────────────────────────┐              │
+   │      └────────────────────────────────────┘              │
+   │                                                          │
+   │        ‹ 上一位（张三）            下一位（王五）›         │
+   └──────────────────────────────────────────────────────────┘
+</pre>
+<div class="figcap">图 3-1　作答页版式（FR-FRM-033）。按测评对象逐页呈现，每页作答项控制在 15–20 项以内，手机竖屏下一屏可见 3–4 题。若采用 V1.0 的「对象 × 维度」大矩阵，5 位对象 × 15 题 = 75 项排在同一页，手机上无法使用。</div>
+</div>
+
+<h4>3.2.4 测评表模板</h4>
+<table>
+  <thead><tr><th style="width:100px">编号</th><th>需求</th><th class="c" style="width:70px">优先级</th></tr></thead>
+  <tbody>
+    <tr><td class="id">FR-FRM-060</td><td>测评表可保存为模板（含题目结构、题组、题型配置、档位与赋分设置；<strong>不含测评对象与人员名单</strong>）</td><td class="c"><span class="tag must">必做</span></td></tr>
+    <tr><td class="id">FR-FRM-061</td><td>模板不含任何作答数据与人员信息，<strong>不受 CON-06 擦除约束</strong>，可随程序长期保留并跨考察复用</td><td class="c"><span class="tag must">必做</span></td></tr>
+    <tr><td class="id">FR-FRM-062</td><td>系统内置一套"德能勤绩廉"标准模板（见 B 文档附录）</td><td class="c"><span class="tag must">必做</span></td></tr>
+  </tbody>
+</table>
+
+<h3>3.3 模块三：令牌与发放管理（TKN）<span class="tag chg">重构</span></h3>
+
+<h4>3.3.1 名单管理</h4>
+<table>
+  <thead><tr><th style="width:100px">编号</th><th>需求</th><th class="c" style="width:70px">优先级</th></tr></thead>
+  <tbody>
+    <tr><td class="id">FR-TKN-010</td><td>手动逐条添加或 Excel/CSV 批量导入参评人员标识（姓名或编号），导入前提供预览确认</td><td class="c"><span class="tag must">必做</span></td></tr>
+    <tr><td class="id">FR-TKN-011</td><td><strong>名单仅用于确定令牌数量与核对应参加人数</strong>。名单表与令牌表之间不存在任何字段关联</td><td class="c"><span class="tag must">必做</span></td></tr>
+    <tr><td class="id">FR-TKN-012</td><td>名单可在打印分发完成后删除，不影响系统运行与统计</td><td class="c"><span class="tag must">必做</span></td></tr>
+  </tbody>
+</table>
+
+<h4>3.3.2 令牌生成（匿名性核心）</h4>
+<table>
+  <thead><tr><th style="width:100px">编号</th><th>需求</th><th class="c" style="width:70px">优先级</th></tr></thead>
+  <tbody>
+    <tr><td class="id">FR-TKN-020</td><td>令牌值由 <code>crypto/rand</code> 生成，≥128 位熵，Base32 编码去除易混字符（0/O、1/I/l）</td><td class="c"><span class="tag must">必做</span></td></tr>
+    <tr><td class="id">FR-TKN-021</td><td><strong>令牌表主键必须为随机值（如 UUIDv4），禁止使用自增整数或 rowid 作为业务主键</strong></td><td class="c"><span class="tag must">必做</span></td></tr>
+    <tr><td class="id">FR-TKN-022</td><td>一个令牌三种形态：URL、二维码、8 位短码。三者一一对应，任一形态使用后其余同时失效</td><td class="c"><span class="tag must">必做</span></td></tr>
+    <tr><td class="id">FR-TKN-023</td><td>短码采用 8 位大写字母数字混合，含 1 位校验位，输错时即时提示而非提交后报错</td><td class="c"><span class="tag must">必做</span></td></tr>
+    <tr><td class="id">FR-TKN-024</td><td><strong>令牌分批</strong>：生成时可指定批次数与每批数量。批次可独立开放/关闭，统计时跨批合并</td><td class="c"><span class="tag must">必做</span></td></tr>
+    <tr><td class="id">FR-TKN-025</td><td><strong>打印顺序随机化</strong>：令牌单排版前必须对令牌集合执行一次密码学随机重排，打印顺序与生成顺序、与名单顺序均无关</td><td class="c"><span class="tag must">必做</span></td></tr>
+    <tr><td class="id">FR-TKN-026</td><td>令牌单不得打印任何人员姓名、编号或序号</td><td class="c"><span class="tag must">必做</span></td></tr>
+  </tbody>
+</table>
+
+<div class="box crit">
+  <span class="bt">FR-TKN-025 的必要性</span>
+  <p>V1.0 中令牌"按名单顺序生成、按打印页位置分发"。这使得<strong>令牌的物理排列顺序即名单顺序</strong>，管理员只要保留一份打印底稿，人码对应关系完整可查。加之令牌表若使用自增主键，该顺序在数据库中同样可见。随机重排 + 随机主键，切断的是这条链路的第一环。</p>
+</div>
+
+<h4>3.3.3 令牌单版式</h4>
+<div class="figure">
+<pre>
+   ┌─────────────────── A4 纵向 · 一人一张 ───────────────────┐
+   │                                                          │
+   │            2026 年度 XX 单位领导班子民主测评               │
+   │            ────────────────────────────────              │
+   │                                                          │
+   │   第一步  连接无线网络                                     │
+   │                                                          │
+   │        网络名称    KCZ-EVAL-2                            │  ← 三号字
+   │        网络密码    现场公布                                │
+   │                                                          │
+   │   第二步  扫描下方二维码                                   │
+   │                                                          │
+   │            ┌────────────────────────┐                    │
+   │            │  ██▀▀██ ▄▄▄ ██  ██▀▀██ │                    │
+   │            │  ██  ██ ███ ▀█▄ ██  ██ │                    │  ← 边长 ≥8cm
+   │            │  ▀▀▀▀▀▀ ▀▀▀ ▀▀▀ ▀▀▀▀▀▀ │                    │
+   │            │  ██▀▀██ ▄█▄ ███ ██  ██ │                    │
+   │            └────────────────────────┘                    │
+   │                                                          │
+   │   扫码不成功？浏览器打开 e.xxx.gov.cn 输入下方编号：       │
+   │                                                          │
+   │              ┌──────────────────────┐                    │
+   │              │    K7M4 - QX9B       │                    │  ← 一号字
+   │              └──────────────────────┘                    │
+   │                                                          │
+   │   ────────────────────────────────────────────────       │
+   │   · 本单一人一份，仅可提交一次，提交后自动失效              │
+   │   · 手机提示"无法上网"属正常现象，选择"仍然连接"即可        │
+   │   · 填写完毕请将本单投入会场出口回收箱                      │
+   │                                                          │
+   └──────────────────────────────────────────────────────────┘
+</pre>
+<div class="figcap">图 3-2　令牌单版式（FR-TKN-030）。<strong>A4 纵向、一人一张、不裁切</strong>。一次印刷同时承载二维码与短码两条入口路径，共用同一令牌。SSID 字段完成参评人员到各 AP 的<strong>随机分流</strong>——由于令牌单本身已随机重排，分流天然随机，不会形成"某处室全在同一 AP"的群体聚集。</div>
+</div>
+
+<div class="box">
+  <span class="bt">为什么整张 A4 而不是裁成小条</span>
+  <ul style="margin-bottom:0">
+    <li><strong>免去裁切工序</strong>：200 人即 200 次裁切，且裁歪、粘连、错序都会在出发前制造额外工作量；</li>
+    <li><strong>二维码可以做大</strong>：边长 8cm 以上，会场光照不佳、手机镜头老旧、手抖的情况下识别率显著提升，这是现场扫码失败率的主要来源；</li>
+    <li><strong>短码与 WiFi 名称可用大字号</strong>：参评群体中年长者比例较高，小条上的 8 号字实际读不清；</li>
+    <li><strong>版面容得下操作须知</strong>：把"提示无法上网属正常"这类现场高频疑问直接印在单上，减少引导人员的重复解释；</li>
+    <li><strong>便于分发与回收</strong>：A4 整页与会议材料一同发放、一同收回，动作自然，不易遗落在桌面或口袋中（对应 NFR-ANO-060）。</li>
+  </ul>
+  <p style="margin-top:10px">代价是纸张消耗上升（200 人约 200 张）。相较于裁切工时与现场扫码失败的处置成本，这一取舍是划算的。若确需节省纸张，可由管理员在打印设置中改选「每页 2 张（A5 对折）」，系统同时提供该版式作为备选。</p>
+</div>
+
+<table>
+  <thead><tr><th style="width:100px">编号</th><th>需求</th><th class="c" style="width:70px">优先级</th></tr></thead>
+  <tbody>
+    <tr><td class="id">FR-TKN-030</td><td><strong>令牌单默认版式为 A4 纵向、一人一张、无需裁切</strong>。内容含：测评名称、WiFi 名称、二维码（边长 ≥8cm）、短码（≥36pt）、操作须知、回收提示</td><td class="c"><span class="tag must">必做</span></td></tr>
+    <tr><td class="id">FR-TKN-036</td><td>提供「每页 2 张（A5）」备选版式，供需要节省纸张时选用；该版式仍不含人员标识</td><td class="c"><span class="tag opt">可选</span></td></tr>
+    <tr><td class="id">FR-TKN-031</td><td>SSID 字段按 AP 数量循环分配（AP 数由管理员在打印前设定，1–6）</td><td class="c"><span class="tag must">必做</span></td></tr>
+    <tr><td class="id">FR-TKN-032</td><td>二维码内容为完整 HTTPS URL，基于固定网段生成，<strong>可在出发前打印</strong></td><td class="c"><span class="tag must">必做</span></td></tr>
+    <tr><td class="id">FR-TKN-033</td><td>二维码生成使用本地算法，不调用任何外部服务</td><td class="c"><span class="tag must">必做</span></td></tr>
+    <tr><td class="id">FR-TKN-034</td><td>导出令牌清单（短码列表）为 Excel，供现场核对与补发使用；<strong>清单不含任何人员信息</strong></td><td class="c"><span class="tag must">必做</span></td></tr>
+    <tr><td class="id">FR-TKN-035</td><td><strong>备用令牌</strong>：按应参加人数的 10% 额外生成备用令牌，单独装袋。令牌单丢失、扫码失败时直接发放备用令牌</td><td class="c"><span class="tag must">必做</span></td></tr>
+  </tbody>
+</table>
+
+<div class="box">
+  <span class="bt">已删除功能</span>
+  <p><span class="tag del">令牌重置</span>　V1.0 允许管理员为特定令牌重置状态。该功能存在两个问题：其一，参评人员须找管理员说明"我的码不能用"，这个交互本身暴露了人码对应关系；其二，"已打开未提交"状态的记录会引入新的时序泄露点。<strong>替代方案</strong>：直接发放备用令牌（FR-TKN-035），旧令牌自然作废，管理员无从、也无需知道两者的关系。</p>
+</div>
+
+<h3>3.4 模块四：在线作答（ANS）</h3>
+<table>
+  <thead><tr><th style="width:100px">编号</th><th>需求</th><th class="c" style="width:70px">优先级</th></tr></thead>
+  <tbody>
+    <tr><td class="id">FR-ANS-010</td><td>扫码直达作答页；或访问统一入口输入 8 位短码进入。两条路径等价</td><td class="c"><span class="tag must">必做</span></td></tr>
+    <tr><td class="id">FR-ANS-011</td><td>作答页不显示任何个人身份信息，不要求登录、不要求输入姓名</td><td class="c"><span class="tag must">必做</span></td></tr>
+    <tr><td class="id">FR-ANS-012</td><td>顶部展示测评名称与说明文字；按题组分块，按测评对象分页（FR-FRM-033）</td><td class="c"><span class="tag must">必做</span></td></tr>
+    <tr><td class="id">FR-ANS-013</td><td>进度指示（如"第 2/5 位　已完成 18/75"）</td><td class="c"><span class="tag must">必做</span></td></tr>
+    <tr><td class="id">FR-ANS-014</td><td>必填项星号标注；未完成时高亮并滚动定位到第一处</td><td class="c"><span class="tag must">必做</span></td></tr>
+    <tr><td class="id">FR-ANS-015</td><td>草稿暂存于浏览器 LocalStorage，<strong>按令牌分 key</strong>，避免同设备多人先后作答时串档</td><td class="c"><span class="tag must">必做</span></td></tr>
+    <tr><td class="id">FR-ANS-016</td><td><strong>提交成功后立即清除本机草稿</strong>，防止内容残留在他人手机上</td><td class="c"><span class="tag must">必做</span></td></tr>
+    <tr><td class="id">FR-ANS-017</td><td>提交前二次确认："提交后将无法修改，确定提交？"</td><td class="c"><span class="tag must">必做</span></td></tr>
+    <tr><td class="id">FR-ANS-018</td><td>重复访问已使用令牌显示"您已完成测评，感谢参与"</td><td class="c"><span class="tag must">必做</span></td></tr>
+    <tr><td class="id">FR-ANS-019</td><td>超过截止时间访问显示"测评已结束"</td><td class="c"><span class="tag must">必做</span></td></tr>
+    <tr><td class="id">FR-ANS-020</td><td>页面资源全部本地内嵌，加载后可离线填写；仅提交需要网络。提交失败明确提示并支持重试</td><td class="c"><span class="tag must">必做</span></td></tr>
+    <tr><td class="id">FR-ANS-021</td><td><strong>字号调节</strong>：作答页提供三档字号切换，默认档不小于 17px。参评群体中年长者比例较高</td><td class="c"><span class="tag must">必做</span></td></tr>
+    <tr><td class="id">FR-ANS-090</td><td><strong>纸质补录</strong>：管理员可代录纸质密封表。录入界面须由两人操作确认，录入记录在统计中单独标注份数，但作答内容与在线记录合并统计、不可区分</td><td class="c"><span class="tag must">必做</span></td></tr>
+  </tbody>
+</table>
+
+<h4>3.4.1 防重复提交</h4>
+<table>
+  <thead><tr><th style="width:100px">编号</th><th>需求</th><th class="c" style="width:70px">优先级</th></tr></thead>
+  <tbody>
+    <tr><td class="id">FR-ANS-030</td><td>令牌一次有效。提交事务内先原子性置位"已使用"，失败则拒绝写入作答记录</td><td class="c"><span class="tag must">必做</span></td></tr>
+    <tr><td class="id">FR-ANS-031</td><td><strong>IP 频率限制仅在内存中实施</strong>。IP 地址不得写入数据库、不得写入日志、不得与令牌同时出现在任何持久化记录中；进程退出即消失</td><td class="c"><span class="tag must">必做</span></td></tr>
+    <tr><td class="id">FR-ANS-032</td><td>触发频率阈值时要求完成简易算术验证（本地生成，不调用外部验证码服务）</td><td class="c"><span class="tag must">必做</span></td></tr>
+  </tbody>
+</table>
+<div class="box warn">
+  <span class="bt">关于 Cookie 标记</span>
+  <p>V1.0 提出"提交后设置 Cookie 防止同设备切换令牌作答"。本版<strong>删除该机制</strong>：测评网络中确实存在合法的同设备多人作答场景（无手机者借用他人手机，见 <a href="#a6">FAQ</a>），Cookie 标记会误伤；而其防刷价值已被"令牌一次有效"完全覆盖。</p>
+</div>
+
+<h3>3.5 模块五：统计汇总（STA）</h3>
+<p>统计的<strong>计算规则与口径定义</strong>见 <a href="#s6">第 6 章</a>，本节只描述功能界面要求。</p>
+<table>
+  <thead><tr><th style="width:100px">编号</th><th>需求</th><th class="c" style="width:70px">优先级</th></tr></thead>
+  <tbody>
+    <tr><td class="id">FR-STA-010</td><td>概要：已提交数 / 应参加人数 / 提交率；分批次显示各批进度；标注纸质补录份数</td><td class="c"><span class="tag must">必做</span></td></tr>
+    <tr><td class="id">FR-STA-011</td><td><strong>等级题统计（主报表）</strong>：每个测评对象每道题的优秀率、称职以上率、基本称职率、不称职率、弃权率；四档人数与比率并列</td><td class="c"><span class="tag must">必做</span></td></tr>
+    <tr><td class="id">FR-STA-012</td><td>加权得分列（按档位赋分计算），标注为<strong>辅助排序指标</strong>，在界面上以次要样式呈现</td><td class="c"><span class="tag must">必做</span></td></tr>
+    <tr><td class="id">FR-STA-013</td><td>汇总视图：测评对象 × 题目 的优秀率矩阵</td><td class="c"><span class="tag must">必做</span></td></tr>
+    <tr><td class="id">FR-STA-014</td><td>打分题统计：平均分、中位数、最高、最低、分值分布柱状图</td><td class="c"><span class="tag must">必做</span></td></tr>
+    <tr><td class="id">FR-STA-015</td><td>单选题：各选项人数与占比，饼图或横向柱状图</td><td class="c"><span class="tag must">必做</span></td></tr>
+    <tr><td class="id">FR-STA-016</td><td>多选题：各选项选中次数与占比</td><td class="c"><span class="tag must">必做</span></td></tr>
+    <tr><td class="id">FR-STA-017</td><td>开放评语：逐条匿名列出，<strong>顺序随机</strong>（见 NFR-ANO-030）</td><td class="c"><span class="tag must">必做</span></td></tr>
+    <tr><td class="id">FR-STA-018</td><td>敏感词过滤：可选开启，命中时标记而非删除，由管理员人工判定</td><td class="c"><span class="tag opt">可选</span></td></tr>
+    <tr><td class="id">FR-STA-019</td><td>按测评对象分组标签筛选；<strong>分组内对象数 &lt; 3 时不展示该分组独立统计</strong></td><td class="c"><span class="tag opt">可选</span></td></tr>
+    <tr><td class="id">FR-STA-020</td><td>结果查看时机受结果开放时间控制；进行中仅可查看提交进度，不可查看内容统计</td><td class="c"><span class="tag must">必做</span></td></tr>
+  </tbody>
+</table>
+
+<h3>3.6 模块六：结果导出（EXP）</h3>
+<table>
+  <thead><tr><th style="width:100px">编号</th><th style="width:130px">导出类型</th><th style="width:90px">格式</th><th>内容与用途</th></tr></thead>
+  <tbody>
+    <tr><td class="id">FR-EXP-010</td><td>正式统计报告</td><td>PDF</td><td>测评概况、应参加与实到人数、四档比率主表、加权得分辅表、图表、评语汇总、口径说明页、生成时间。<strong>供考察报告引用与打印封存</strong></td></tr>
+    <tr><td class="id">FR-EXP-011</td><td>统计数据明细</td><td>xlsx</td><td>按题型分 Sheet 的逐项统计表，供二次制表</td></tr>
+    <tr><td class="id">FR-EXP-012</td><td>原始匿名数据</td><td>xlsx / CSV</td><td>每份提交的原始答案，标识为"作答记录 #N"。<strong>N 为导出时随机重排后的序号</strong>，不含时间、IP、设备等任何可追溯信息</td></tr>
+    <tr><td class="id">FR-EXP-013</td><td>加密归档包</td><td>加密压缩包</td><td>项目全量数据的加密封存，用于离线保存。见 <a href="#s3">FR-SYS-030</a></td></tr>
+  </tbody>
+</table>
+<table>
+  <thead><tr><th style="width:100px">编号</th><th>需求</th><th class="c" style="width:70px">优先级</th></tr></thead>
+  <tbody>
+    <tr><td class="id">FR-EXP-020</td><td>PDF 报告须内嵌<strong>口径说明页</strong>，写明分母定义、弃权处理方式、纸质补录份数、赋分规则</td><td class="c"><span class="tag must">必做</span></td></tr>
+    <tr><td class="id">FR-EXP-021</td><td>PDF 报告须内嵌页脚："本报告由线上民主测评系统生成，原始数据已加密封存，编号 XXXX"，供留痕核验</td><td class="c"><span class="tag must">必做</span></td></tr>
+  </tbody>
+</table>
+
+<h3>3.7 模块七：内置网络服务（NET）<span class="tag new">新增</span></h3>
+<p>为实现"现场零配置、不依赖被考察单位网络、不依赖互联网"，程序须自行承担测评网络的地址分配与名称解析。本模块是第 8 章组网方案的软件侧实现。</p>
+<table>
+  <thead><tr><th style="width:100px">编号</th><th>需求</th><th class="c" style="width:70px">优先级</th></tr></thead>
+  <tbody>
+    <tr><td class="id">FR-NET-010</td><td><strong>内置 DHCP 服务</strong>：地址池 <code>192.168.66.50 – 192.168.66.250</code>（201 个），掩码 <code>255.255.255.0</code>，网关与 DNS 均下发 <code>192.168.66.1</code>，租期 2 小时</td><td class="c"><span class="tag must">必做</span></td></tr>
+    <tr><td class="id">FR-NET-011</td><td>DHCP 服务可在设置中关闭，供由外置路由承担地址分配的降级场景使用</td><td class="c"><span class="tag must">必做</span></td></tr>
+    <tr><td class="id">FR-NET-012</td><td><strong>DHCP 租约表不得持久化</strong>，仅存于内存，进程退出即消失（租约表含 MAC 与 IP，属可关联信息）</td><td class="c"><span class="tag must">必做</span></td></tr>
+    <tr><td class="id">FR-NET-020</td><td><strong>内置 DNS 服务</strong>：对<strong>配置文件中指定的证书域名</strong>应答本机地址；不做上游转发</td><td class="c"><span class="tag must">必做</span></td></tr>
+    <tr><td class="id">FR-NET-021</td><td>DNS 同时应答<strong>配置文件中指定的短码入口域名</strong>，供人工输入短码时使用</td><td class="c"><span class="tag must">必做</span></td></tr>
+    <tr><td class="id">FR-NET-030</td><td><strong>连通性检测应答（关键）</strong>：对 Android / iOS / Windows 的强制门户探测域名予以应答，并在 HTTP 侧返回其期望的响应，使手机判定该网络"可用"</td><td class="c"><span class="tag must">必做</span></td></tr>
+    <tr><td class="id">FR-NET-040</td><td>启动时自检：网卡 IP 是否为 192.168.66.1、53/67/8443 端口是否可绑定、证书是否在有效期内。任一不满足则在管理端首页红色告警并给出处置指引</td><td class="c"><span class="tag must">必做</span></td></tr>
+    <tr><td class="id">FR-NET-041</td><td>管理端首页显示实时接入终端数（按 DHCP 租约计数），供现场判断无线覆盖是否正常</td><td class="c"><span class="tag must">必做</span></td></tr>
+    <tr><td class="id">FR-NET-050</td><td>HTTPS 监听 8443，证书与私钥内嵌于可执行文件；HTTP 监听 80 与 8080，仅用于连通性探测应答与跳转至 HTTPS</td><td class="c"><span class="tag must">必做</span></td></tr>
+  </tbody>
+</table>
+
+<div class="box crit">
+  <span class="bt">FR-NET-030 是现场成败的关键项，不可省略</span>
+  <p>Android 连接 WiFi 后会请求 <code>connectivitycheck.gstatic.com/generate_204</code>，iOS 请求 <code>captive.apple.com/hotspot-detect.html</code>，Windows 请求 <code>www.msftconnecttest.com/connecttest.txt</code>。测评网络不通互联网，这些探测必然失败。后果是：</p>
+  <ul style="margin-top:8px">
+    <li>手机提示"此 WLAN 不可上网"，<strong>Android 的"自动切换网络"默认开启，会主动切回蜂窝数据</strong>——此后手机再也访问不到 192.168.66.1，参评人员看到的是打不开的页面；</li>
+    <li>部分机型弹出强制门户登录窗口，遮挡作答页面。</li>
+  </ul>
+  <p style="margin-top:8px"><strong>解决方式</strong>：内置 DNS 将上述探测域名解析到 192.168.66.1，内置 HTTP 服务对相应路径返回其期望结果（Android 期望 HTTP 204 空响应，iOS 期望包含 Success 的 HTML，Windows 期望特定纯文本）。手机据此判定网络正常，不再切换。</p>
+  <p style="margin-top:8px">此机制无法通过现场引导参评人员"关闭移动数据"来替代——上百人逐个设置不具可行性。<strong>必须在服务端解决。</strong></p>
+</div>
+
+<h3>3.8 模块八：系统管理（SYS）</h3>
+<table>
+  <thead><tr><th style="width:100px">编号</th><th>需求</th><th class="c" style="width:70px">优先级</th></tr></thead>
+  <tbody>
+    <tr><td class="id">FR-SYS-010</td><td>首次启动引导设置管理员密码：长度 ≥10 位、含两类以上字符；连续 5 次失败锁定 15 分钟</td><td class="c"><span class="tag must">必做</span></td></tr>
+    <tr><td class="id">FR-SYS-011</td><td>密码无找回机制，遗忘则数据不可访问。设置时须明确告知</td><td class="c"><span class="tag must">必做</span></td></tr>
+    <tr><td class="id">FR-SYS-012</td><td>会话超时<strong>可配置</strong>（默认 30 分钟，现场监控场景可调至 4 小时）</td><td class="c"><span class="tag must">必做</span></td></tr>
+    <tr><td class="id">FR-SYS-013</td><td>管理端仅监听回环地址 <code>127.0.0.1</code>，<strong>不在测评网络中暴露</strong>。管理员只能在笔记本本机操作</td><td class="c"><span class="tag must">必做</span></td></tr>
+    <tr><td class="id">FR-SYS-020</td><td>手动指定监听端口与绑定网络接口</td><td class="c"><span class="tag must">必做</span></td></tr>
+    <tr><td class="id">FR-SYS-021</td><td>证书有效期显示与到期告警（剩余 &lt; 21 天时管理端持续提示）</td><td class="c"><span class="tag must">必做</span></td></tr>
+    <tr><td class="id">FR-SYS-022</td><td><span class="tag chg">V2.1 修订</span> 证书由外部工具签发后放入程序目录，系统<strong>不内置 ACME 客户端</strong>。系统须校验：证书 SAN 是否覆盖配置的域名、是否在有效期内；不符则启动自检失败并给出处置指引</td><td class="c"><span class="tag must">必做</span></td></tr>
+    <tr><td class="id">FR-SYS-030</td><td><strong>加密归档</strong>：将指定项目全量数据导出为加密压缩包，口令由管理员单独设定（与登录密码不同）；包内含完整性校验值</td><td class="c"><span class="tag must">必做</span></td></tr>
+    <tr><td class="id">FR-SYS-031</td><td><strong>安全擦除</strong>：归档成功后执行——删除项目全部记录 → <code>VACUUM</code> 重建数据库文件 → 对原文件所占空间执行覆写 → 校验残留。全过程有进度与结果报告</td><td class="c"><span class="tag must">必做</span></td></tr>
+    <tr><td class="id">FR-SYS-032</td><td>擦除前强制二次确认，并要求管理员勾选"已确认加密归档包已保存至指定介质"</td><td class="c"><span class="tag must">必做</span></td></tr>
+    <tr><td class="id">FR-SYS-033</td><td>归档包导入：可将归档包导入本机查看统计（只读），查看结束后同样执行擦除</td><td class="c"><span class="tag opt">可选</span></td></tr>
+    <tr><td class="id">FR-SYS-040</td><td>过程备份：测评进行中每 5 分钟自动将数据文件快照至指定目录（可指向 U 盘），用于主机故障时冷备接管</td><td class="c"><span class="tag must">必做</span></td></tr>
+    <tr><td class="id">FR-SYS-050</td><td><strong>操作日志</strong>：记录管理员关键操作（创建、发布、关闭、导出、归档、擦除）的时间、类型、结果。<strong>日志不得记录任何令牌值、IP 地址、作答内容</strong></td><td class="c"><span class="tag must">必做</span></td></tr>
+  </tbody>
+</table>
+
+<h2 class="sec" id="s4"><span class="num">04</span>非功能需求</h2>
+
+<h3>4.1 匿名性保障（NFR-ANO）</h3>
+
+<div class="box crit">
+  <span class="bt">匿名性承诺边界 <span class="tag chg">本版修订</span></span>
+  <p>V1.0 承诺"即使管理员直接查看数据库也无法关联"。该承诺<strong>无法兑现且无法验收</strong>：管理员物理持有笔记本，可修改程序、抓取内存、读取 WAL 与页残留，亦可在会场直接观察提交时序。对拥有完整物理控制权者，密码学上无法提供匿名保证。</p>
+  <p style="margin-top:8px"><strong>本版承诺（可验收）</strong>：在<strong>不修改程序、不使用外部取证手段</strong>的前提下，管理员通过系统界面、数据库文件、日志与导出文件，无法将任何一条作答记录关联到具体测评人员。超出此边界的防护由工作程序（双人在场、设备封存、令牌单回收）承担。</p>
+</div>
+
+<h4>4.1.1 数据隔离要求</h4>
+<table>
+  <thead><tr><th style="width:110px">编号</th><th style="width:150px">要求</th><th>实现约束</th></tr></thead>
+  <tbody>
+    <tr><td class="id">NFR-ANO-010</td><td>物理隔离存储</td><td>令牌表与作答记录表之间不得存在外键、不得存在任何可连接字段。作答记录不存储令牌 ID、不存储名单 ID</td></tr>
+    <tr><td class="id">NFR-ANO-011</td><td>随机主键</td><td><strong>令牌表与作答记录表的主键均为随机 UUID</strong>，禁止自增整数作为业务主键</td></tr>
+    <tr><td class="id">NFR-ANO-012</td><td>不记录分发轨迹</td><td>系统不存储"哪个令牌发给谁"。分发对应关系仅存在于令牌单的物理分发动作中，且令牌单已随机重排</td></tr>
+    <tr><td class="id">NFR-ANO-020</td><td><strong>切断时序通道</strong></td><td>见下方专项说明。这是本版最重要的修订项</td></tr>
+    <tr><td class="id">NFR-ANO-021</td><td>作答记录不存时间</td><td>作答记录表<strong>不存储提交时间</strong>，仅存储所属测评项目与批次</td></tr>
+    <tr><td class="id">NFR-ANO-022</td><td>令牌表不存时间</td><td>令牌表仅存"是否已使用"布尔值，<strong>不存储使用时间</strong></td></tr>
+    <tr><td class="id">NFR-ANO-030</td><td>输出顺序随机化</td><td>统计页、评语列表、原始数据导出中的记录顺序，均为<strong>每次读取时重新随机排列</strong>；匿名编号在导出时现场生成，两次导出的编号不一致</td></tr>
+    <tr><td class="id">NFR-ANO-031</td><td>物理存储顺序打散</td><td>作答记录写入时，其在数据文件中的物理位置不应反映提交顺序。实现方式：随机 UUID 主键 + 定期 <code>VACUUM</code>；或写入前置于内存缓冲、按随机顺序批量落盘</td></tr>
+    <tr><td class="id">NFR-ANO-040</td><td>IP 与 MAC 不落地</td><td>IP 仅在内存限流窗口中使用；DHCP 租约表仅在内存；日志、数据库、导出文件中不得出现 IP 或 MAC</td></tr>
+    <tr><td class="id">NFR-ANO-050</td><td>小样本保护</td><td>分组统计对象数 &lt; 3 时不展示该分组独立结果</td></tr>
+    <tr><td class="id">NFR-ANO-060</td><td>令牌单回收</td><td>操作规程要求令牌单当场回收销毁。未回收的令牌单使持有者可反查该令牌（若攻击者掌握链路抓包数据）</td></tr>
+  </tbody>
+</table>
+
+<div class="box crit">
+  <span class="bt">NFR-ANO-020　时序通道及其封堵（V1.0 的关键缺陷）</span>
+  <p>V1.0 设计中，作答记录使用自增匿名编号（R001、R002……），令牌表记录使用时间。两表虽"无外键"，但<strong>插入顺序天然一一对应</strong>：第 N 个被使用的令牌，对应第 N 条作答记录。执行两次 <code>ORDER BY rowid</code> 并排比对，人码映射即完整还原。结合管理员对现场提交先后的直接观察，V1.0 的匿名性在实践中不成立，4.1.2 的审计测试必然不通过。</p>
+  <p style="margin-top:10px"><strong>封堵措施（四项须同时实施，缺一无效）</strong>：</p>
+  <ol style="margin-top:6px">
+    <li>令牌表与作答记录表主键均改为随机 UUID（NFR-ANO-011）；</li>
+    <li>两表均不存储时间戳（NFR-ANO-021 / 022）；</li>
+    <li>匿名编号不持久化，改为每次输出时随机重排后现场生成（NFR-ANO-030）；</li>
+    <li>作答记录物理写入顺序打散（NFR-ANO-031）。</li>
+  </ol>
+  <p style="margin-top:10px">V1.0 提出的"时间戳模糊到分钟"<strong>不足以解决问题</strong>：一场 100 人测评通常在 15 分钟内完成，分钟级精度下每分钟仅数人，仍可大幅缩小范围；且时序通道的根源是<strong>顺序</strong>而非<strong>精度</strong>，降低精度不改变顺序信息。故本版直接取消时间存储。</p>
+</div>
+
+<h4>4.1.2 验收方法</h4>
+<table>
+  <thead><tr><th style="width:110px">编号</th><th>验收要求</th></tr></thead>
+  <tbody>
+    <tr><td class="id">NFR-ANO-090</td><td><strong>审计测试</strong>：组织 10 人以上完成一次完整测评，其中 3 名指定测试人员的作答内容事先由第三方记录。测评结束后，由管理员在<strong>不修改程序</strong>的前提下，尝试从数据库文件、日志、全部导出文件中推断这 3 人的答案。若准确率不高于随机猜测，则匿名性达标</td></tr>
+    <tr><td class="id">NFR-ANO-091</td><td><strong>时序专项测试</strong>：3 名测试人员按指定顺序先后提交（第 1、第 5、第 9 位）。审计者获知该顺序信息后仍无法定位对应记录，方为通过</td></tr>
+    <tr><td class="id">NFR-ANO-092</td><td><strong>残留检查</strong>：擦除后使用文件恢复工具扫描数据文件所在扇区，不应恢复出任何作答内容明文</td></tr>
+  </tbody>
+</table>
+
+<h3>4.2 安全性（NFR-SEC）</h3>
+<table>
+  <thead><tr><th style="width:110px">编号</th><th style="width:130px">安全项</th><th>要求</th></tr></thead>
+  <tbody>
+    <tr><td class="id">NFR-SEC-010</td><td>传输加密</td><td>测评端<strong>强制 HTTPS</strong>（TLS 1.2+），使用公共 CA 签发的真实证书，手机端无任何证书告警。原理见 <a href="#s8">8.5</a>。<strong>不接受自签名证书</strong>——数百部手机逐一点击"继续访问"不具可行性，且会严重损害参评人员对系统的信任</td></tr>
+    <tr><td class="id">NFR-SEC-011</td><td>防篡改</td><td>HTTPS 的首要目的是<strong>防止在途篡改</strong>而非防窃听。作答内容若可被链路上的第三方静默改写，测评结果的真实性即不成立，而这种篡改无声无痕、事后无法发现</td></tr>
+    <tr><td class="id">NFR-SEC-020</td><td>存储加密</td><td><strong>应用层字段加密</strong>：作答内容、评语文本、测评对象姓名、人员名单等敏感字段以密文存储。算法 AES-256-GCM，密钥由管理员口令经 Argon2id 派生，不落盘。见 <a href="#s5">5.4</a></td></tr>
+    <tr><td class="id">NFR-SEC-021</td><td>不使用 SQLCipher</td><td>受 CON-07 约束。整库加密方案需 CGO，将破坏单文件分发与交叉编译</td></tr>
+    <tr><td class="id">NFR-SEC-030</td><td>管理端隔离</td><td>管理端仅监听回环地址，不在测评网络暴露（FR-SYS-013）</td></tr>
+    <tr><td class="id">NFR-SEC-031</td><td>口令与会话</td><td>密码强度要求、失败锁定、会话超时可配置（FR-SYS-010～012）</td></tr>
+    <tr><td class="id">NFR-SEC-040</td><td>输入安全</td><td>全部输出做 HTML 转义防 XSS；全部查询使用参数化绑定；评语内容在 PDF/Excel 导出时做公式注入防护（前导 <code>=</code>、<code>+</code>、<code>-</code>、<code>@</code> 加撇号）</td></tr>
+    <tr><td class="id">NFR-SEC-050</td><td>无线链路加密</td><td>SSID 使用 WPA2-PSK（兼容性优先，不用 WPA3）。密码每场更换，不使用固定密码</td></tr>
+    <tr><td class="id">NFR-SEC-060</td><td>客户端隔离</td><td>各 AP <strong>建议开启客户端隔离</strong>：参评人员手机之间无需互访，仅需访问有线侧的笔记本。开启后可防止终端之间互相探测。须在装备预演中验证该型号的隔离实现不影响到有线侧的访问</td></tr>
+  </tbody>
+</table>
+
+<h3>4.3 性能（NFR-PER）</h3>
+<table>
+  <thead><tr><th style="width:110px">编号</th><th style="width:150px">指标</th><th>要求</th></tr></thead>
+  <tbody>
+    <tr><td class="id">NFR-PER-010</td><td>并发作答</td><td>单批次 ≥200 人同时在线，页面响应 &lt; 2 秒</td></tr>
+    <tr><td class="id">NFR-PER-011</td><td>入会峰值</td><td>支持 50 台终端在 2 分钟内完成关联、DHCP 获址、页面加载全过程</td></tr>
+    <tr><td class="id">NFR-PER-012</td><td>提交响应</td><td>&lt; 1 秒（P95）</td></tr>
+    <tr><td class="id">NFR-PER-013</td><td>统计生成</td><td>&lt; 1 秒（200 人 × 200 作答项）。本地 SQLite 聚合，指标按毫秒级设计余量</td></tr>
+    <tr><td class="id">NFR-PER-014</td><td>页面加载</td><td>作答页首屏 &lt; 3 秒；页面资源全部内嵌，总体积 &lt; 500 KB</td></tr>
+    <tr><td class="id">NFR-PER-020</td><td>容量上限</td><td><strong>题目模板数 ≤50、测评对象数 ≤20、展开后作答项 ≤400</strong>。V1.0 的"≤200 道题目（含矩阵展开）"对 15 人班子评议（15 题 × 15 人 = 225 项）已不够用，本版按分项设限</td></tr>
+    <tr><td class="id">NFR-PER-021</td><td>单批人数</td><td>≤200 人/批；批次数不限</td></tr>
+    <tr><td class="id">NFR-PER-022</td><td>资源占用</td><td>200 人并发下常驻内存 &lt; 300 MB</td></tr>
+  </tbody>
+</table>
+<div class="box">
+  <span class="bt">流量估算（供组网设计参考）</span>
+  <p>单人首屏约 500 KB，提交约 10–50 KB。200 人总流量不足 120 MB；填写过程中无网络交互。即使 50 人同时加载首屏，瞬时约 25 MB，5GHz / 40MHz 单 AP 实测吞吐 200 Mbps 量级，耗时约 1 秒。<strong>带宽从来不是瓶颈，无线信道时间与终端关联数才是。</strong>组网设计据此按"每 AP 承载终端数"而非"带宽"进行。</p>
+</div>
+
+<h3>4.4 易用性（NFR-USA）</h3>
+<table>
+  <thead><tr><th style="width:110px">编号</th><th>要求</th></tr></thead>
+  <tbody>
+    <tr><td class="id">NFR-USA-010</td><td>免注册免安装：扫码即答，不下载 App、不注册账号、不输入姓名</td></tr>
+    <tr><td class="id">NFR-USA-011</td><td>移动端适配：320px 宽竖屏正常显示；触摸目标 ≥44×44px；选项按钮整行可点，不要求精确点击圆点</td></tr>
+    <tr><td class="id">NFR-USA-012</td><td>字号三档可调，默认 ≥17px（NFR 对应 FR-ANS-021）</td></tr>
+    <tr><td class="id">NFR-USA-013</td><td>管理端首次使用提供快速入门向导</td></tr>
+    <tr><td class="id">NFR-USA-014</td><td>每个操作有明确成功/失败反馈；失败提示说明原因与下一步做法，不使用"操作失败"这类无信息量文案</td></tr>
+    <tr><td class="id">NFR-USA-015</td><td>网络中断时页面顶部显示提示条，不影响已填内容；恢复后自动消失</td></tr>
+  </tbody>
+</table>
+
+<h3>4.5 便携性（NFR-POR）</h3>
+<table>
+  <thead><tr><th style="width:110px">编号</th><th>要求</th></tr></thead>
+  <tbody>
+    <tr><td class="id">NFR-POR-010</td><td>单个可执行文件，复制即可运行；不写注册表、不写用户目录外的路径</td></tr>
+    <tr><td class="id">NFR-POR-011</td><td>Windows / macOS / Linux (amd64) 三平台交叉编译产出，由 CI 统一构建</td></tr>
+    <tr><td class="id">NFR-POR-012</td><td>数据目录随程序拷贝即完成迁移</td></tr>
+    <tr><td class="id">NFR-POR-013</td><td>不需要管理员权限运行。<strong>例外</strong>：绑定 53/67 端口在部分系统上需提权，此时提供降级路径（关闭内置 DHCP/DNS，改由外置路由承担，见 <a href="#s8">8.4</a>）</td></tr>
+  </tbody>
+</table>
+
+<h3>4.6 可靠性（NFR-REL）</h3>
+<table>
+  <thead><tr><th style="width:110px">编号</th><th>要求</th></tr></thead>
+  <tbody>
+    <tr><td class="id">NFR-REL-010</td><td>SQLite WAL 模式 + 事务提交；异常退出重启后数据一致</td></tr>
+    <tr><td class="id">NFR-REL-011</td><td>提交幂等：令牌置位与作答写入在同一事务内完成，重复提交不产生重复记录</td></tr>
+    <tr><td class="id">NFR-REL-020</td><td>过程备份：每 5 分钟快照至指定目录（FR-SYS-040）</td></tr>
+    <tr><td class="id">NFR-REL-021</td><td><strong>冷备接管</strong>：备用笔记本预装同版本程序，主机故障时拷入最近快照、接管 192.168.66.1，5 分钟内恢复服务。已提交数据最多损失 5 分钟，未提交者重新扫码继续</td></tr>
+    <tr><td class="id">NFR-REL-022</td><td>UPS 保障：装备清单含小型 UPS，会场断电时笔记本与网络设备维持运行 ≥30 分钟</td></tr>
+  </tbody>
+</table>
+
+<h2 class="sec" id="s5"><span class="num">05</span>数据需求</h2>
+
+<h3>5.1 核心实体</h3>
+<div class="figure">
+<pre>
+  ┌─────────────┐      ┌─────────────┐      ┌─────────────┐
+  │  测评项目    │─────>│  题组 / 题目 │─────>│  测评对象    │
+  │  UUID 主键   │      │  题型/选项   │      │  姓名(密文)  │
+  │  时间/配置   │      │  档位/赋分   │      │  分组标签    │
+  └─────────────┘      └─────────────┘      └─────────────┘
+         │
+         ├──────────────────────┐
+         ▼                      ▼
+  ┌─────────────┐        ┌────────────────────────────┐
+  │  令牌        │        │   作答记录（匿名隔离区）      │
+  │  UUID 主键   │        │   UUID 主键                 │
+  │  随机 token  │   ╳    │   项目ID · 批次              │
+  │  批次        │  无任何 │   各作答项答案（密文）        │
+  │  是否已使用  │  关联   │   ✗ 无令牌ID  ✗ 无名单ID     │
+  │  ✗ 无时间    │  路径   │   ✗ 无提交时间 ✗ 无IP/MAC    │
+  │  ✗ 无人员ID  │        │   ✗ 无自增序号               │
+  └─────────────┘        └────────────────────────────┘
+         ▲
+         │  仅数量对应，无字段关联
+  ┌─────────────┐
+  │  人员名单    │   仅用于确定令牌数量与核对应参加人数
+  │  标识(密文)  │   分发完成后可整表删除
+  └─────────────┘
+</pre>
+<div class="figcap">图 5-1　核心实体关系。<strong>作答记录与令牌、名单之间不存在任何关联路径</strong>：既无外键，也无可用于对齐的序号或时间。</div>
+</div>
+
+<h3>5.2 匿名隔离设计</h3>
+<ul>
+  <li><strong>令牌表</strong>：随机 UUID 主键、随机 token 值、所属批次、是否已使用。<strong>不存使用时间、不存人员标识、不存 IP</strong>。唯一用途是判定令牌能否使用。</li>
+  <li><strong>作答记录表</strong>：随机 UUID 主键、所属项目与批次、各作答项答案（密文）。<strong>不存令牌 ID、不存名单 ID、不存提交时间、不存自增序号</strong>。</li>
+  <li><strong>人员名单表</strong>：参评人员标识（密文）。仅用于确定令牌数量与核对应参加人数，不参与任何作答链路，分发完成后可整表删除（FR-TKN-012）。</li>
+  <li><strong>匿名编号不入库</strong>：统计与导出中的"作答记录 #N"于输出时随机重排后现场生成，不持久化。两次导出的编号互不一致，这是刻意设计。</li>
+</ul>
+
+<h3>5.3 数据保留与销毁</h3>
+<table>
+  <thead><tr><th style="width:150px">数据类别</th><th style="width:130px">保留策略</th><th>说明</th></tr></thead>
+  <tbody>
+    <tr><td>测评表模板</td><td>长期保留</td><td>不含任何人员与作答信息，可跨考察复用</td></tr>
+    <tr><td>人员名单</td><td>分发后即可删除</td><td>系统运行不依赖</td></tr>
+    <tr><td>令牌表</td><td>随项目归档擦除</td><td>—</td></tr>
+    <tr><td>作答记录</td><td><strong>归档后本机擦除</strong></td><td>导出加密包至指定介质后执行 FR-SYS-031</td></tr>
+    <tr><td>统计报告 PDF</td><td>按考察工作要求归档</td><td>打印封存，作为纸质留痕</td></tr>
+    <tr><td>操作日志</td><td>随项目擦除</td><td>不含令牌、IP、作答内容</td></tr>
+  </tbody>
+</table>
+
+<h3>5.4 应用层字段加密 <span class="tag new">新增</span></h3>
+<table>
+  <thead><tr><th style="width:150px">项目</th><th>设计</th></tr></thead>
+  <tbody>
+    <tr><td>加密范围</td><td>作答项答案、评语文本、测评对象姓名与职务、人员名单标识、测评说明文字</td></tr>
+    <tr><td>不加密</td><td>项目名称、时间、状态、题目结构、令牌使用标志、统计中间结果（不含明文答案）</td></tr>
+    <tr><td>算法</td><td>AES-256-GCM，每字段独立随机 nonce</td></tr>
+    <tr><td>密钥</td><td>由管理员口令经 Argon2id 派生；主密钥随机生成后以派生密钥包裹存储。<strong>明文密钥仅存于内存，不落盘</strong></td></tr>
+    <tr><td>生效范围</td><td>数据文件被拷走后，无口令不可解读。这是"测评结束前笔记本丢失"场景下的主要防线</td></tr>
+    <tr><td>局限（须知悉）</td><td>程序运行中密钥在内存里，对持有运行中机器的人无防护作用。字段加密的目标是<strong>介质失窃</strong>，不是防管理员</td></tr>
+    <tr><td>性能</td><td>200 人 × 400 作答项 ≈ 8 万次解密，单次数微秒级，全量统计增加耗时 &lt; 200ms，满足 NFR-PER-013</td></tr>
+  </tbody>
+</table>
+
+<h2 class="sec" id="s6"><span class="num">06</span>统计口径与计算规则 <span class="tag new">新增章节</span></h2>
+
+<div class="box crit">
+  <span class="bt">本章的必要性</span>
+  <p>V1.0 只规定了"计算平均分、中位数、占比"，未定义口径。而民主测评的结论要进考察报告、要与其他单位横向比较、要经得起质疑，<strong>口径不明是最容易出事的地方</strong>：分母取应到人数还是实到人数，同一批数据能算出差异显著的两个"优秀率"。本章将口径固化为系统行为，并要求随报告一同输出（FR-EXP-020）。</p>
+</div>
+
+<h3>6.1 为什么以四档等级为主 <span class="tag chg">评分制变更</span></h3>
+<p>V1.0 的示例测评表全部采用 1–10 分制。本版改为<strong>四档等级为主、打分制为辅</strong>，理由如下：</p>
+<table>
+  <thead><tr><th style="width:140px">维度</th><th>四档等级</th><th>1–10 分</th></tr></thead>
+  <tbody>
+    <tr><td>制度对接</td><td>优秀 / 称职 / 基本称职 / 不称职直接对应年度考核法定等次，产出的比率可直接写入考察报告</td><td>平均分在公文中无制度依据，上级无法解读，无法横向比较</td></tr>
+    <tr><td>跨人可比性</td><td>四档有明确文字锚点，不同人理解趋同</td><td>标尺因人而异——有人从不给 10 分，有人普遍给 9 分，同一个"8 分"含义不同</td></tr>
+    <tr><td>精度真实性</td><td>不产生虚假精度</td><td>平均分 8.6 与 8.5 的差异无统计意义，但印在报告上会被当作排名依据过度解读</td></tr>
+    <tr><td>移动端交互</td><td>4–5 个大按钮，年长者友好</td><td>10 个选项在手机上密集难点</td></tr>
+    <tr><td>区分度</td><td>较低，多人同为"优秀率 95%"时难以排序 → 由加权得分辅助解决</td><td>较高</td></tr>
+  </tbody>
+</table>
+<p>打分制并未删除，保留用于<strong>满意度测评、专项工作评议</strong>等确实使用分数的场景（FR-FRM-011）。</p>
+
+<h3>6.2 分母定义（最重要的一条）</h3>
+<table>
+  <thead><tr><th style="width:150px">口径</th><th style="width:130px">分母</th><th>使用场合</th></tr></thead>
+  <tbody>
+    <tr><td><strong>标准口径</strong>（默认）</td><td><strong>应参加人数</strong></td><td><strong>全部比率指标的默认口径</strong>，与组织工作通行做法一致。未提交者相当于未投票，不减小分母</td></tr>
+    <tr><td>实到口径</td><td>已提交份数</td><td>界面上与标准口径并列显示，供管理员核对；<strong>不进入 PDF 正式报告主表</strong>，仅在附注中列出</td></tr>
+  </tbody>
+</table>
+<p>应参加人数由 FR-PRJ-015 设定，默认等于名单人数，允许按实际应到人数手工修正。两种口径在界面上须同时可见，避免管理员误用。</p>
+
+<h3>6.3 弃权与未作答</h3>
+<table>
+  <thead><tr><th style="width:150px">情形</th><th style="width:130px">计入分子</th><th style="width:130px">计入分母</th><th>说明</th></tr></thead>
+  <tbody>
+    <tr><td>选择某一等级</td><td>对应等级</td><td>是</td><td>正常作答</td></tr>
+    <tr><td><strong>显式选择"弃权"</strong></td><td>弃权项</td><td><strong>是</strong></td><td>相当于纸质测评的"未表态"，是有效表达，单列统计</td></tr>
+    <tr><td>选填题未作答</td><td>不计</td><td><strong>是</strong></td><td>视同弃权，合并入弃权项统计</td></tr>
+    <tr><td>整份未提交</td><td>不计</td><td>是（标准口径下）</td><td>相当于缺席未投票</td></tr>
+  </tbody>
+</table>
+<p><strong>四档比率之和 + 弃权率 = 100%</strong>（标准口径下，未提交部分体现为弃权率的一部分）。报表须保证该恒等式成立，否则视为口径错误。</p>
+
+<h3>6.4 主要指标定义</h3>
+<table>
+  <thead><tr><th style="width:150px">指标</th><th>计算式</th><th>用途</th></tr></thead>
+  <tbody>
+    <tr><td>优秀率</td><td>优秀票数 ÷ 应参加人数</td><td><strong>考察报告主指标</strong></td></tr>
+    <tr><td>称职以上率</td><td>（优秀 + 称职）票数 ÷ 应参加人数</td><td>考察报告主指标</td></tr>
+    <tr><td>基本称职率</td><td>基本称职票数 ÷ 应参加人数</td><td>—</td></tr>
+    <tr><td>不称职率</td><td>不称职票数 ÷ 应参加人数</td><td><strong>关注指标</strong>，报表须醒目呈现</td></tr>
+    <tr><td>弃权率</td><td>（显式弃权 + 未作答 + 未提交）÷ 应参加人数</td><td>反映参与充分度</td></tr>
+    <tr><td>提交率</td><td>已提交份数 ÷ 应参加人数</td><td>过程指标</td></tr>
+    <tr><td>加权得分<br><span style="font-weight:400;color:#5c6675">（辅助）</span></td><td>Σ（各档票数 × 档位赋分）÷ 有效票数<br>默认赋分 优秀 100 / 称职 80 / 基本称职 60 / 不称职 0；弃权不计入分子分母</td><td><strong>仅用于同优秀率时的辅助排序</strong>，界面与报告中以次要样式呈现，不作为结论表述</td></tr>
+  </tbody>
+</table>
+<p>比率一律保留一位小数，采用四舍五入。因舍入导致合计不等于 100.0% 时，在最大项上调平，并在口径说明页注明。</p>
+
+<h3>6.5 纸质补录的处理</h3>
+<ul>
+  <li>纸质补录记录与在线记录<strong>合并统计，在数据中不可区分</strong>（否则补录者群体本身构成一个可识别的小样本）；</li>
+  <li>补录<strong>份数</strong>在统计概要与 PDF 口径说明页中单独标注，如"共 187 份，其中纸质补录 6 份"；</li>
+  <li>补录操作须双人在场确认（FR-ANS-090）。</li>
+</ul>
+
+<h3>6.6 留痕与备查</h3>
+<p>干部考察工作通常要求测评原始材料留存备查。电子化后的对应做法：</p>
+<ol>
+  <li>导出<strong>原始匿名数据</strong>（FR-EXP-012）并打印；</li>
+  <li>导出<strong>正式统计报告 PDF</strong>（FR-EXP-010）并打印；</li>
+  <li>两份材料由考察组两名以上成员签字，装入密封袋封存，按考察材料管理规定归档；</li>
+  <li>加密归档包（FR-EXP-013）另存于指定介质，与纸质材料分别保管；</li>
+  <li>本机执行安全擦除（FR-SYS-031）。</li>
+</ol>
+
+<h2 class="sec" id="s7"><span class="num">07</span>接口需求</h2>
+
+<h3>7.1 HTTP 路由</h3>
+<table>
+  <thead><tr><th style="width:170px">路由</th><th style="width:90px">监听</th><th>说明</th></tr></thead>
+  <tbody>
+    <tr><td><code>/admin/*</code></td><td>127.0.0.1:8443</td><td>管理端，密码登录。<strong>仅回环可访问</strong>，测评网络中不可达</td></tr>
+    <tr><td><code>/e/{token}</code></td><td>0.0.0.0:8443</td><td>作答端，凭令牌访问，无需登录。无效令牌返回 404，不提示"令牌不存在"以免被枚举探测</td></tr>
+    <tr><td><code>/j</code></td><td>0.0.0.0:8443</td><td>短码入口页，输入 8 位短码进入</td></tr>
+    <tr><td><code>/generate_204</code> 等</td><td>0.0.0.0:80</td><td>连通性探测应答（FR-NET-030）</td></tr>
+    <tr><td><code>/*</code></td><td>0.0.0.0:80</td><td>其余 HTTP 请求 301 跳转至 HTTPS</td></tr>
+  </tbody>
+</table>
+
+<h3>7.2 内置网络服务端口</h3>
+<table>
+  <thead><tr><th style="width:110px">端口</th><th style="width:110px">协议</th><th>用途</th></tr></thead>
+  <tbody>
+    <tr><td>8443</td><td>TCP / HTTPS</td><td>主服务</td></tr>
+    <tr><td>80</td><td>TCP / HTTP</td><td>连通性探测应答与跳转</td></tr>
+    <tr><td>53</td><td>UDP / DNS</td><td>内置 DNS（FR-NET-020）</td></tr>
+    <tr><td>67</td><td>UDP / DHCP</td><td>内置 DHCP（FR-NET-010）</td></tr>
+  </tbody>
+</table>
+
+<h3>7.3 二维码生成</h3>
+<ul>
+  <li>本地算法生成，不调用任何外部 API（FR-TKN-033）；</li>
+  <li>纠错级别 M，最小模块 4px，确保低端手机摄像头在会场光照下可靠识别；</li>
+  <li>默认版式 A4 纵向一人一张，二维码边长 ≥8cm，不需裁切；另提供 A5 每页 2 张备选版式。</li>
+</ul>
+
+<h2 class="sec" id="s8"><span class="num">08</span>网络组网与装备规格 <span class="tag new">新增章节</span></h2>
+
+<div class="box crit">
+  <span class="bt">本章定位</span>
+  <p>本章是 <a href="#s2">2.1 部署模型</a>的展开，规定测评网络的设备构成、配置参数、部署规程与验收方法，可直接作为现场作业指导使用。<strong>本章内容与 CON-01 装备归属约束绑定</strong>：全部设备由考察部门自备自管。</p>
+</div>
+
+<h3>8.1 设计前提：瓶颈在射频，不在带宽也不在服务端</h3>
+<p>组网设计的全部取舍源于三个事实，先明确它们可以避免大量误判：</p>
+<ul>
+  <li><strong>服务端不是瓶颈。</strong>Go + SQLite 处理 200 人的表单提交，CPU 占用为个位数百分比。增加笔记本不会提升承载能力。</li>
+  <li><strong>带宽不是瓶颈。</strong>整场测评总流量不足 120 MB（见 <a href="#s4">4.3</a> 流量估算），任何设备都能胜任。</li>
+  <li><strong>无线信道时间与终端关联数是瓶颈。</strong>WiFi 是半双工共享介质，同一射频上所有终端轮流占用信道，终端越多协商开销占比越高。厂商标称的"支持 128 台"指的是关联表与会话表的内存上限，不是实际可用体验的上限。</li>
+</ul>
+<p><strong>因此：容量按"每射频承载终端数"设计，扩容手段是增加 AP 数量与信道数，不是升级单台设备或增加笔记本。</strong>业界经验值为单射频 30–50 台，本方案取 <strong>50 台/AP</strong>。</p>
+
+<h3>8.2 拓扑与设备角色</h3>
+<div class="figure">
+<pre>
+   ┌────────────────────────────────────────────────────────────────┐
+   │                     考察组笔记本（服务端）                        │
+   │  · Web 服务   HTTPS 8443 / HTTP 80                              │
+   │  · DHCP 服务  UDP 67   地址池 192.168.66.50–250                 │
+   │  · DNS  服务  UDP 53   自有证书域名 + 连通性探测域名              │
+   │  · 网卡静态   192.168.66.1 / 255.255.255.0                      │
+   │  · 管理端仅监听 127.0.0.1，测评网络中不可达                       │
+   └───────────────────────────────┬────────────────────────────────┘
+                                   │ 千兆网线（Cat5e 以上）
+                     ┌─────────────┴─────────────┐
+                     │      千兆交换机（8 口）      │  非网管型即可
+                     └──┬───────┬───────┬───────┬─┘
+                        │       │       │       │  千兆网线
+                 ┌──────┴─┐ ┌───┴────┐ ┌┴───────┐ ┌┴───────┐
+                 │  AP 1  │ │  AP 2  │ │  AP 3  │ │  AP 4  │
+                 │.66.11  │ │.66.12  │ │.66.13  │ │.66.14  │  ← 管理IP
+                 │ ch 36  │ │ ch 44  │ │ ch 149 │ │ ch 157 │  ← 5G 主信道
+                 │KCZ-EVAL│ │KCZ-EVAL│ │KCZ-EVAL│ │KCZ-EVAL│
+                 │   -1   │ │   -2   │ │   -3   │ │   -4   │  ← SSID
+                 └───╥────┘ └───╥────┘ └───╥────┘ └───╥────┘
+                     ║          ║          ║          ║
+                  ~50 台      ~50 台     ~50 台     ~50 台      ≈200 人
+                                                                
+   全部设备处于同一二层广播域，网段 192.168.66.0/24
+   AP 仅做二层桥接，不做路由、不做地址分配、不接互联网
+</pre>
+<div class="figcap">图 8-1　四 AP 组网（200 人规模）。AP 数量按每 50 人一台线性增减。</div>
+</div>
+
+<table>
+  <thead><tr><th style="width:120px">设备</th><th style="width:150px">角色</th><th>要点</th></tr></thead>
+  <tbody>
+    <tr><td>笔记本</td><td>服务端 + DHCP + DNS</td><td>整个网络唯一的"大脑"。有线接入交换机，<strong>不占用任何无线信道</strong></td></tr>
+    <tr><td>交换机</td><td>二层汇聚</td><td>千兆非网管型即可。百兆在带宽上也够用，但千兆无额外成本且免除瓶颈疑虑</td></tr>
+    <tr><td>AP × N</td><td>纯无线接入</td><td><strong>必须切换到 AP 模式</strong>。关闭路由、NAT、DHCP。详见 8.3</td></tr>
+    <tr><td>UPS</td><td>供电保障</td><td>整套负载 &lt;100W，500VA 机型可支撑 30 分钟以上</td></tr>
+  </tbody>
+</table>
+
+<h3>8.3 AP 配置规范（成败关键）</h3>
+<div class="box warn">
+  <span class="bt">最常见的现场故障：多个 DHCP 服务器打架</span>
+  <p>家用路由器出厂默认开启 DHCP 与 NAT。若直接把四台路由器插进交换机而不做配置，网络中会同时存在<strong>五个</strong>地址分配者（四台路由 + 笔记本），手机随机从其中之一获址，网关指向错误设备。现场表现为"WiFi 连上了但页面打不开"，且症状随机、极难当场定位。<strong>必须在出发前逐台完成下列配置并保存备份。</strong></p>
+</div>
+
+<table>
+  <thead><tr><th style="width:40px" class="c">#</th><th style="width:170px">配置项</th><th>要求</th></tr></thead>
+  <tbody>
+    <tr><td class="c">1</td><td>工作模式</td><td>切换为<strong>「AP 模式 / 接入点模式 / 无线接入点」</strong>。多数国产路由器在"上网设置"或"工作模式"中提供该选项，切换后设备自动关闭 NAT 与 DHCP</td></tr>
+    <tr><td class="c">2</td><td>网线接口</td><td><strong>网线插 LAN 口，绝不插 WAN 口。</strong>插 WAN 口会启用路由与 NAT，这是第二常见的现场故障</td></tr>
+    <tr><td class="c">3</td><td>DHCP 服务器</td><td>确认<strong>已关闭</strong>。无 AP 模式选项的机型须手动关闭</td></tr>
+    <tr><td class="c">4</td><td>管理 IP</td><td>静态设为 <code>192.168.66.11 / .12 / .13 / .14</code>，掩码 <code>255.255.255.0</code>，网关 <code>192.168.66.1</code>。便于现场登录检查</td></tr>
+    <tr><td class="c">5</td><td>5G 信道</td><td><strong>手动固定</strong>，禁用自动选台。四台依次为 <code>36 / 44 / 149 / 157</code>。理由见 8.3.1</td></tr>
+    <tr><td class="c">6</td><td>信道带宽</td><td><strong>锁定 40MHz</strong>，不使用 80/160MHz。理由见 8.3.1</td></tr>
+    <tr><td class="c">7</td><td>2.4G 频段</td><td><strong>建议关闭</strong>。仅保留 AP1 开启 2.4G（固定 ch 1、20MHz）作为老旧机型兜底</td></tr>
+    <tr><td class="c">8</td><td>SSID</td><td><code>KCZ-EVAL-1</code> … <code>KCZ-EVAL-4</code>，四台各不相同。不隐藏 SSID</td></tr>
+    <tr><td class="c">9</td><td>加密</td><td>WPA2-PSK（AES）。<strong>不使用 WPA3</strong>，老旧机型兼容性优先。密码每场考察更换</td></tr>
+    <tr><td class="c">10</td><td>发射功率</td><td>调至<strong>中档（约 50–70%）</strong>。满功率会使覆盖过度重叠，手机粘滞在远端 AP 上不切换，导致负载严重失衡</td></tr>
+    <tr><td class="c">11</td><td>客户端隔离</td><td><strong>建议开启</strong>。手机之间无需互访，仅需访问有线侧笔记本。须在预演中验证该型号的隔离实现不阻断到有线侧的访问；若阻断则关闭此项</td></tr>
+    <tr><td class="c">12</td><td>无关服务</td><td>关闭 UPnP、IPv6、访客网络、云管理/远程管理、自动固件升级、Mesh/漫游协议</td></tr>
+    <tr><td class="c">13</td><td>配置备份</td><td>逐台导出配置文件保存。以后现场只需恢复配置，不再重新调试</td></tr>
+  </tbody>
+</table>
+
+<h4 id="s831">8.3.1 信道规划说明</h4>
+<p>四台 AP 若均使用自动选台，实测常出现挤在同一信道的情况——此时容量等同于单台，还额外引入同频干扰，<strong>"加了设备反而更慢"多由此而来</strong>。必须手动固定为互不重叠的信道。</p>
+<table>
+  <thead><tr><th style="width:100px">频段</th><th style="width:150px">可用信道</th><th style="width:90px">是否 DFS</th><th>本方案取用</th></tr></thead>
+  <tbody>
+    <tr><td rowspan="3">5GHz</td><td>36 / 40 / 44 / 48</td><td>否</td><td><strong>取 36、44</strong>（40MHz 绑定后各占两个 20MHz 信道）</td></tr>
+    <tr><td>52 / 56 / 60 / 64</td><td><strong>是</strong></td><td><strong>不使用</strong></td></tr>
+    <tr><td>149 / 153 / 157 / 161 / 165</td><td>否</td><td><strong>取 149、157</strong>（165 仅支持 20MHz，作备用）</td></tr>
+    <tr><td>2.4GHz</td><td>1 / 6 / 11</td><td>否</td><td>仅 AP1 取 ch 1，20MHz，兜底用</td></tr>
+  </tbody>
+</table>
+<ul>
+  <li><strong>为什么避开 DFS 信道</strong>：DFS（动态频率选择）信道要求设备持续侦听雷达信号，一旦检测到疑似雷达即强制切换信道并静默数分钟。会场附近若有气象雷达、机场或军用设施，可能在测评过程中触发，导致该 AP 下的参评人员突然掉线。<strong>本方案完全避开 DFS，四个 40MHz 信道全部取自非 DFS 频段。</strong></li>
+  <li><strong>为什么锁 40MHz 而非 80MHz</strong>：带宽越宽，可用的互不重叠信道数越少。80MHz 下非 DFS 频段只能容纳两个不重叠信道，无法支撑四台 AP。而本场景流量极小，40MHz 提供的吞吐远超需要。<strong>这是用带宽换信道数，在密集部署下是正确取舍。</strong></li>
+  <li><strong>为什么优先 5GHz</strong>：会场是同一空间，不需要穿墙；而办公楼内 2.4GHz 频段通常已被十余个 SSID 占满，干扰不可控、不可预判。</li>
+</ul>
+
+<h4>8.3.2 为什么用四个不同 SSID 而非统一 SSID</h4>
+<p>家用 AP 之间没有漫游协商能力（不支持 802.11k/v/r）。若四台使用同一 SSID，手机会"粘"在最初关联的那台上，即使信号已明显劣化也不主动切换，结果是负载严重不均——可能出现 AP1 挂了 120 台而 AP4 空载的情况。</p>
+<p>本方案改用<strong>四个不同 SSID + 令牌单指定</strong>：令牌单上印明"请连接 KCZ-EVAL-2"（FR-TKN-031），由令牌单完成分流。这一设计有三重收益：</p>
+<ul>
+  <li><strong>负载确定</strong>：每台 AP 承载多少人在打印令牌单时即已确定，不依赖手机自主选择；</li>
+  <li><strong>分流天然随机</strong>：令牌单已在打印前随机重排（FR-TKN-025），因此 SSID 分配也是随机的，<strong>不会形成"某处室人员全在同一 AP 上"的群体聚集</strong>——这一点对匿名性有实质意义；</li>
+  <li><strong>故障可定位</strong>：某台 AP 异常时，受影响的是令牌单上印着该 SSID 的那批人，范围明确，可直接发放备用令牌并改连其他 SSID。</li>
+</ul>
+
+<h3 id="s84">8.4 地址分配与名称解析</h3>
+<table>
+  <thead><tr><th style="width:170px">项目</th><th>参数</th></tr></thead>
+  <tbody>
+    <tr><td>网段</td><td><code>192.168.66.0/24</code>，掩码 <code>255.255.255.0</code></td></tr>
+    <tr><td>笔记本</td><td><code>192.168.66.1</code>（静态）</td></tr>
+    <tr><td>AP 管理地址</td><td><code>192.168.66.11 – .16</code>（静态，预留 6 台）</td></tr>
+    <tr><td>保留段</td><td><code>192.168.66.2 – .49</code>（备用、冷备笔记本接管用）</td></tr>
+    <tr><td>DHCP 地址池</td><td><code>192.168.66.50 – 192.168.66.250</code>，共 <strong>201 个</strong>，满足单批 200 人</td></tr>
+    <tr><td>下发网关 / DNS</td><td>均为 <code>192.168.66.1</code></td></tr>
+    <tr><td>租期</td><td>2 小时（短租期便于分批测评时地址回收）</td></tr>
+    <tr><td>DNS 应答</td><td>配置文件中的证书域名与短码入口域名 → <code>192.168.66.1</code>；连通性探测域名 → <code>192.168.66.1</code>；<strong>其余一律不应答，不做上游转发</strong></td></tr>
+  </tbody>
+</table>
+<div class="box">
+  <span class="bt">降级路径</span>
+  <p>若笔记本所在系统限制绑定 53 / 67 端口（NFR-POR-013），关闭内置 DHCP/DNS（FR-NET-011），改由其中一台设备工作在路由模式承担地址分配。此时须在该设备上手动配置：地址池、网关指向 <code>192.168.66.1</code>、DNS 指向 <code>192.168.66.1</code>（DNS 仍由笔记本承担，因为连通性探测应答必须由程序完成）。<strong>此路径配置复杂度明显上升，仅作应急。</strong></p>
+</div>
+
+<h3 id="s85">8.5 HTTPS 证书方案 <span class="tag chg">V2.1 修订</span></h3>
+
+<h4>8.5.1 问题</h4>
+<p>浏览器信任 HTTPS 站点的前提是：证书上的<strong>域名</strong>与地址栏一致，且由受信任的 CA 签发。而笔记本的地址是私有 IP <code>192.168.66.1</code>——公共 CA 不为私有 IP 签发证书。自签名证书则会在每部手机上触发全屏安全警告，数百人逐一点击"继续访问"不具可行性，且严重损害参评人员对系统的信任（<code>NFR-SEC-010</code>）。</p>
+
+<div class="box warn">
+  <span class="bt">V2.0 方案不成立，本节整体重写</span>
+  <p>V2.0 提出借助 <code>nip.io</code> 这类公共通配 DNS 服务，把私有 IP 包装成 <code>192-168-66-1.nip.io</code> 形式的域名，再向 Let's Encrypt 申请证书。<strong>该路径实际走不通</strong>：</p>
+  <ul style="margin-top:8px">
+    <li><strong>HTTP-01 / TLS-ALPN-01</strong>：要求 CA 从公网访问该域名，而它解析到私有 IP，够不着；</li>
+    <li><strong>DNS-01</strong>：要求在 <code>_acme-challenge.192-168-66-1.nip.io</code> 下创建 TXT 记录，<strong>而 nip.io 是第三方服务，只提供通配解析，不开放任何记录写入接口</strong>。</li>
+  </ul>
+  <p style="margin-top:8px">三种验证方式全部不可用。因此<strong>本系统必须使用考察部门自有域名</strong>——这不是"为消除第三方依赖而作的优化建议"，而是硬性前提。</p>
+</div>
+
+<h4>8.5.2 方案：自有域名 + 外部签发 + 程序装载</h4>
+<p>由考察部门注册一个域名（可为现有政务域名的子域），在公网 DNS 上把用于测评的主机名解析到约定的私有 IP；证书通过常规工具签发，程序只负责<strong>装载与使用</strong>，不负责申请。</p>
+<div class="figure">
+<pre>
+  【一次性准备 · 由信息化岗位完成】
+
+   ① 注册域名或申请子域       eval.<单位域名>
+              ↓
+   ② 公网 DNS 添加 A 记录     eval.<单位域名>  →  192.168.66.1
+              ↓                （解析到私有 IP 完全合法，
+              ↓                  只是公网访问不到，这正是我们要的）
+              ↓
+   ③ 签发证书                 商业证书（推荐，一年期）
+              ↓                或 Let's Encrypt DNS-01
+              ↓                （自有域名下可自由写 TXT 记录，验证成立）
+              ↓
+   ④ 证书与私钥放入程序目录    cert/fullchain.pem  cert/privkey.pem
+      域名写入配置文件          config.toml → [domain] primary
+
+
+  【现场 · 完全离线】
+
+   参评人员扫码 → https://eval.<单位域名>:8443/e/{token}
+              ↓
+   手机请求解析该域名
+              ↓
+   笔记本内置 DNS 按配置应答 192.168.66.1   ← 不出网，不依赖公网 DNS
+              ↓
+   建立 TLS 连接，笔记本递出证书
+              ↓
+   手机校验：域名一致 ✓   签发者为受信任 CA ✓
+              ↓
+        正常锁标，无任何告警，全程加密
+</pre>
+<div class="figcap">图 8-2　离线可用的真实证书方案。公网 DNS 记录只是为了让签发流程成立；<strong>现场的域名解析由笔记本内置 DNS 承担</strong>（<code>FR-NET-020</code>），完全断网的会场同样可用。</div>
+</div>
+
+<h4>8.5.3 证书类型选择</h4>
+<table>
+  <thead><tr><th style="width:150px">选项</th><th style="width:90px">有效期</th><th>评价</th></tr></thead>
+  <tbody>
+    <tr><td><strong>商业证书（推荐）</strong></td><td>1 年</td><td>考察装备平时闲置、一年用数次。一年一续与域名续费同节奏，可记在同一张日历上。<strong>成本数百元，买的是"少一件容易忘的事"</strong></td></tr>
+    <tr><td>Let's Encrypt</td><td>90 天</td><td>免费，但每季度须有人记得续签，漏掉即现场翻车（<code>RSK-02</code>）。适合有自动化续签流程的单位</td></tr>
+  </tbody>
+</table>
+
+<h4>8.5.4 注意事项</h4>
+<table>
+  <thead><tr><th style="width:170px">事项</th><th>处置</th></tr></thead>
+  <tbody>
+    <tr><td><strong>证书过期</strong></td><td><strong>过期则现场全场红屏。</strong>系统在剩余 21 天时持续告警（<code>FR-SYS-021</code>），并将"证书有效期检查"列入出发前检查清单（<a href="#a4">附录 A.4</a>）</td></tr>
+    <tr><td><strong>证书由外部工具获取</strong></td><td>程序<strong>不内置 ACME 客户端</strong>：签发方式随单位的 DNS 服务商而异，内置反而增加依赖与攻击面。程序只做装载与到期告警，<code>FR-SYS-022</code>"一键续签"相应降级（见 <a href="#s3">3.8 修订</a>）</td></tr>
+    <tr><td>域名与 IP 绑定</td><td>证书绑定域名，域名解析到固定网段。网段由考察组自备设备保证永不变化，<strong>证书与二维码均可长期复用</strong></td></tr>
+    <tr><td>借用场地无线时</td><td>网段由对方决定。处置：在公网 DNS 上为该情形<strong>预置第二个主机名</strong>（如 <code>eval2.&lt;单位域名&gt;</code>），行前确认 IP 后修改其 A 记录并更新配置文件即可，无需重新签发证书——只要证书 SAN 已同时覆盖两个名字</td></tr>
+    <tr><td>私钥管理</td><td>私钥以文件形式随程序目录分发，作为敏感文件管理，<strong>不得进入代码仓库</strong></td></tr>
+  </tbody>
+</table>
+
+<h3 id="s86">8.6 规模分级与装备清单</h3>
+<table>
+  <thead><tr><th style="width:130px">单批参评人数</th><th style="width:150px">方案</th><th>装备</th></tr></thead>
+  <tbody>
+    <tr><td>≤50 人</td><td>单 AP</td><td>笔记本 + AP×1（可省交换机，笔记本直连 AP 的 LAN 口）</td></tr>
+    <tr><td>50–100 人</td><td>双 AP</td><td>笔记本 + 交换机 + AP×2（ch 36 / 149）</td></tr>
+    <tr><td>100–200 人</td><td>四 AP</td><td>笔记本 + 交换机 + AP×4（ch 36 / 44 / 149 / 157）</td></tr>
+    <tr><td>&gt;200 人</td><td><strong>分批测评</strong></td><td>装备不变，按批开放令牌（FR-TKN-024）。400 人分两批，每批约 15 分钟</td></tr>
+    <tr><td>装备不足或场地受限</td><td>分批测评</td><td>单 AP + 分批。50 人/批，四批约 1 小时</td></tr>
+    <tr><td><strong>例外</strong>：单批 &gt;100 人且不可分批</td><td>借用场地既有企业级无线</td><td>执行行前对接清单，残余风险书面知悉（RSK-03）</td></tr>
+  </tbody>
+</table>
+
+<table>
+  <caption>表 8-2　考察组标准测评装备清单（含冷备笔记本）</caption>
+  <thead><tr><th style="width:200px">项目</th><th class="c" style="width:70px">数量</th><th class="c" style="width:100px">参考单价</th><th class="c" style="width:100px">小计</th><th>备注</th></tr></thead>
+  <tbody>
+    <tr><td>双频无线路由器（AP 用）</td><td class="c">4</td><td class="c">300</td><td class="c">1200</td><td>AX3000 级；须支持 AP 模式、手动固定信道、40MHz 锁定、内存 ≥256MB</td></tr>
+    <tr><td>千兆交换机（8 口）</td><td class="c">1</td><td class="c">150</td><td class="c">150</td><td>非网管型即可</td></tr>
+    <tr><td>网线（5m / 10m 混装）</td><td class="c">6</td><td class="c">20</td><td class="c">120</td><td>Cat5e 以上，备 1 根 20m</td></tr>
+    <tr><td>插排</td><td class="c">2</td><td class="c">50</td><td class="c">100</td><td>带独立开关</td></tr>
+    <tr><td>小型 UPS</td><td class="c">1</td><td class="c">400</td><td class="c">400</td><td>500VA，负载 &lt;100W 可支撑 30 分钟以上</td></tr>
+    <tr><td>收纳箱</td><td class="c">1</td><td class="c">150</td><td class="c">150</td><td>含配置卡与线缆分装</td></tr>
+    <tr><td style="background:var(--band)"><strong>网络装备合计</strong></td><td class="c" style="background:var(--band)">—</td><td class="c" style="background:var(--band)">—</td><td class="c" style="background:var(--band)"><strong>约 2120</strong></td><td style="background:var(--band)">一次采购，长期复用</td></tr>
+    <tr><td>冷备笔记本</td><td class="c">1</td><td class="c">—</td><td class="c">—</td><td>可用考察组现有设备。<strong>作用是可靠性冷备，不是分担负载</strong>，见 8.7</td></tr>
+  </tbody>
+</table>
+
+<h3 id="s87">8.7 关于多笔记本：为什么不做多实例</h3>
+<p>常见设想是"带两台以上笔记本分担负载"。此路径<strong>不成立且有害</strong>，本版将其列入非目标（<a href="#s1">1.4</a>）：</p>
+<ul>
+  <li><strong>解决不了真问题。</strong>瓶颈在射频而非服务端。加笔记本不增加信道，除非每台笔记本再配一套 AP——而那正是"一台笔记本 + 多 AP"能提供的，且成本更低、复杂度更低。</li>
+  <li><strong>引入匿名性缺口（关键）。</strong>现场分流最自然的做法是按部门或按座区分配，那么每台笔记本的数据库中装的就是"某几个处室全体人员的作答"，<strong>这恰是小样本排除法所需的群体标签</strong>。即使事后合并打乱，合并前的两个分片文件已各自构成带标签的子集，且就在管理员手上。</li>
+  <li><strong>令牌须预先分区</strong>，两实例独立生成存在理论碰撞，且无法判定某令牌应归属哪台机器。</li>
+  <li><strong>合并需专门开发</strong>：两份 SQLite 的统计合并、匿名编号重排、分母与弃权口径对齐，均须新增功能与测试。</li>
+  <li><strong>打破 CON-03 单管理员约束</strong>：现场需两人分别值守，提交率分裂在两个后台，无法实时合并。</li>
+</ul>
+<p>为节省约 45 分钟（四批 1.5 小时 → 并行 45 分钟）而引入上述代价，不成比例。<strong>第二台笔记本的正确用途是冷备</strong>（NFR-REL-021）：预装同版本程序，测评中每 5 分钟接收一次数据快照，主机故障时接管 <code>192.168.66.1</code>，5 分钟内恢复服务。</p>
+<p><strong>唯一的例外</strong>是真正的物理分会场（主会场与分会场分处不同楼层，有线布设不可达）。此情形下多实例是被迫的，须另行开发合并工具，并强制：分流按随机而非按部门、合并时重排匿名编号、合并后立即安全擦除分片文件。该功能<strong>不在本版范围</strong>。</p>
+
+<h3 id="s88">8.8 现场部署规程</h3>
+<ol class="steps">
+  <li><b>供电与汇聚</b>插排通电 → UPS 上电 → 交换机上电，确认指示灯正常。</li>
+  <li><b>服务端就位</b>笔记本网线插入交换机，确认网卡为静态 <code>192.168.66.1</code>；启动程序；查看管理端首页自检结果（FR-NET-040）：网卡地址、端口绑定、证书有效期须全部为绿色。</li>
+  <li><b>AP 上电</b>四台 AP 依次上电并插入交换机 LAN 口（<strong>确认不是 WAN 口</strong>），等待各自 SSID 广播出现。用手机扫描无线列表，确认 <code>KCZ-EVAL-1</code> 至 <code>-4</code> 全部可见。</li>
+  <li><b>逐 AP 连通验证</b>用两部手机<strong>分别连接 AP1 与 AP4</strong>（覆盖信道两端），各自扫描一张<strong>测试令牌</strong>令牌单（FR-PRJ-030），完整走完"进入页面 → 填写 → 提交 → 完成页"。试填数据不进统计，可放心操作。</li>
+  <li><b>接入计数核对</b>管理端首页查看实时接入终端数（FR-NET-041），与实际连接的手机数一致，说明 DHCP 工作正常。</li>
+  <li><b>发布测评</b>确认发布前置校验全部通过（FR-PRJ-023）→ 点击发布。</li>
+  <li><b>分发令牌单</b>按 SSID 分组的令牌单<strong>随机分发</strong>给参评人员，不按座次、不按名单顺序。同时公布 WiFi 密码（写在会场白板或大屏）。</li>
+  <li><b>引导入会</b><strong>分排引导扫码，不统一号令。</strong>让数十台终端的关联过程自然错开到 5 分钟，避开入会瞬间的管理帧峰值。</li>
+  <li><b>作答与收尾</b>不喊统一提交，填完即交，自然错开提交峰值。散会时<strong>当场回收全部令牌单</strong>（含未使用与已使用），集中销毁（NFR-ANO-060）。</li>
+</ol>
+<p>预计部署耗时 15–20 分钟（首次 30 分钟）。较之现场协调网管、申请 IP、调整隔离策略，本流程完全在考察组掌控之内，时间可预期。</p>
+
+<h4>8.8.1 现场故障排查三步法</h4>
+<table>
+  <thead><tr><th style="width:180px">症状</th><th style="width:200px">先查</th><th>常见原因</th></tr></thead>
+  <tbody>
+    <tr><td>手机连不上 WiFi</td><td>该 AP 电源与指示灯</td><td>AP 未上电；密码输错；终端过多超出该 AP 关联上限 → 改连其他 SSID</td></tr>
+    <tr><td><strong>连上但页面打不开</strong></td><td>手机获取到的 IP 是否在 .50–.250 段</td><td>①AP 网线误插 WAN 口；②某台 AP 的 DHCP 未关闭；③笔记本 DHCP 服务未启动。<strong>这是最高频故障</strong></td></tr>
+    <tr><td>页面能开但很慢</td><td>管理端接入终端数分布</td><td>负载不均，某台 AP 承载过多 → 引导部分人员改连其他 SSID</td></tr>
+    <tr><td>手机自动切回移动数据</td><td>连通性探测应答是否生效</td><td>FR-NET-030 未正确实现或被系统防火墙拦截 80 端口</td></tr>
+    <tr><td>证书告警</td><td>管理端证书有效期</td><td>证书过期 → 应急降级为 HTTP 并记录风险；根本解决靠出发前检查</td></tr>
+    <tr><td>部分人员突然掉线</td><td>该 AP 信道是否被改为 DFS 段</td><td>自动选台未关闭，设备漂移到 DFS 信道后触发雷达检测 → 手动改回固定信道</td></tr>
+  </tbody>
+</table>
+
+<h3 id="s89">8.9 装备预演与验收</h3>
+<div class="box warn">
+  <span class="bt">不得凭配置表直接上现场</span>
+  <p>装备采购到位后须完成一次实验室预演，通过后固化为标准配置。<strong>预演未通过的装备不得投入正式考察。</strong></p>
+</div>
+<ul>
+  <li><strong>规模</strong>：凑齐 40–50 台终端（可用同事手机、平板混合），集中在一个会议室；</li>
+  <li><strong>验证项</strong>：50 台同时关联 → 2 分钟内全部完成获址、页面加载、提交，无掉线、无超时；</li>
+  <li><strong>专项验证</strong>：客户端隔离开启后手机仍能访问笔记本（NFR-SEC-060）；关闭移动数据前后行为一致（FR-NET-030）；两台不同品牌手机（iOS / Android）均无证书告警；</li>
+  <li><strong>记录</strong>：逐台 AP 导出配置文件备份；拍照留存接线方式；</li>
+  <li><strong>制作 A4 配置卡</strong>置于装备箱内，写明：接线顺序、各 AP 信道与 SSID、笔记本静态 IP、故障排查三步法。</li>
+</ul>
+
+<h2 class="sec" id="s9"><span class="num">09</span>风险清单 <span class="tag new">新增章节</span></h2>
+<table>
+  <thead><tr><th style="width:80px">编号</th><th style="width:170px">风险</th><th style="width:70px" class="c">影响</th><th>控制措施</th></tr></thead>
+  <tbody>
+    <tr><td class="id">RSK-01</td><td><strong>可信度受损</strong>：参评人员不相信匿名性，普遍投安全票，结果全优、无区分度</td><td class="c">高</td><td>会前明确说明技术措施；网络设备全部考察组自备且可当众说明；令牌单当场回收；审计测试结果可对外说明。<strong>此风险无需漏洞被真正利用即会发生</strong></td></tr>
+    <tr><td class="id">RSK-02</td><td>证书过期导致现场全场告警</td><td class="c">高</td><td>剩余 21 天持续告警（FR-SYS-021）；列入出发前检查清单；准备 HTTP 降级预案</td></tr>
+    <tr><td class="id">RSK-03</td><td><strong>借用场地无线时的链路风险</strong>：流量经被考察单位设备，存在在途篡改与通过 MAC 关联历史认证库还原身份的可能</td><td class="c">高</td><td>仅在 8.6 例外条件下使用；强制 HTTPS 防篡改；<strong>要求新建临时 SSID，禁止复用办公 SSID</strong>（复用时手机会沿用该 SSID 的固定随机 MAC，与历史记录完全对应；新建 SSID 则生成全新 MAC，历史库中查无此项）；网管不得进入会场；会后书面确认未做端口镜像；残余风险由考察组负责人书面知悉</td></tr>
+    <tr><td class="id">RSK-04</td><td>笔记本故障或断电，测评中断</td><td class="c">高</td><td>UPS 保障；5 分钟快照（FR-SYS-040）；冷备笔记本接管（NFR-REL-021）</td></tr>
+    <tr><td class="id">RSK-05</td><td>笔记本失窃，考察数据泄露</td><td class="c">高</td><td>应用层字段加密（5.4）；测评结束立即归档擦除（CON-06）；装备随身保管</td></tr>
+    <tr><td class="id">RSK-05b</td><td><strong>笔记本失窃导致单位域名被接管</strong></td><td class="c">高</td><td>与 RSK-05 性质不同、量级更大：若 DNS API 密钥随笔记本外出，失窃者可为该域名下任意主机签发证书、劫持任意解析。<strong>控制措施为 <code>CON-08</code>——密钥一律不进笔记本</strong>，签发在办公室固定机器完成，笔记本只持有证书与私钥文件</td></tr>
+    <tr><td class="id">RSK-06</td><td>手机自动切回移动数据，大面积无法访问</td><td class="c">高</td><td>连通性探测应答（FR-NET-030）；预演专项验证</td></tr>
+    <tr><td class="id">RSK-07</td><td>DHCP 冲突导致"连上但打不开"</td><td class="c">中</td><td>AP 配置规范逐项核对（8.3）；配置备份复用；故障排查三步法</td></tr>
+    <tr><td class="id">RSK-08</td><td>信道自动漂移至 DFS 段，触发雷达检测掉线</td><td class="c">中</td><td>手动固定非 DFS 信道并关闭自动选台（8.3.1）</td></tr>
+    <tr><td class="id">RSK-09</td><td>未回收令牌单被他人拾得，可反查该令牌</td><td class="c">中</td><td>令牌单当场回收销毁（NFR-ANO-060）；令牌单不印任何人员标识</td></tr>
+    <tr><td class="id">RSK-10</td><td>年长参评人员操作困难</td><td class="c">中</td><td>字号三档可调；选项整行可点；现场安排 1–2 名引导人员；备纸质表兜底</td></tr>
+    <tr><td class="id">RSK-11</td><td>统计口径被质疑，结论不被采信</td><td class="c">中</td><td>口径固化为系统行为（第 6 章）；PDF 报告内嵌口径说明页（FR-EXP-020）</td></tr>
+    <tr><td class="id">RSK-12</td><td>管理员密码遗忘，数据不可恢复</td><td class="c">中</td><td>设置时明确告知无找回机制；建议考察组两人分别知悉；归档口令单独登记保管</td></tr>
+    <tr><td class="id">RSK-13</td><td>会场无线覆盖不足（大礼堂、承重墙分隔）</td><td class="c">中</td><td>行前踩点；AP 分散架高布置；必要时增配 AP 或分批</td></tr>
+  </tbody>
+</table>
+
+<h2 class="sec" id="s10"><span class="num">10</span>附录</h2>
+
+<h3 id="a1">A.1 测评项目状态机 <span class="tag new">新增</span></h3>
+<div class="figure">
+<pre>
+                     创建
+                      │
+                      ▼
+                 ┌─────────┐
+        ┌───────>│  草 稿  │<──────────┐
+        │        └────┬────┘           │
+        │             │ 发布            │ 撤回发布
+   编辑 │             │ （须通过         │ （仅当无任何提交）
+   复制 └─────────────┤   FR-PRJ-023   │
+                      │   前置校验）    │
+                      ▼                │
+                 ┌─────────┐───────────┘
+                 │ 已发布  │
+                 └────┬────┘
+                      │ 到达开始时间（自动）
+                      ▼
+                 ┌─────────┐
+                 │ 进行中  │  ← 可查看提交进度，不可查看内容统计
+                 └────┬────┘
+          ┌───────────┴───────────┐
+   到达截止时间（自动）      管理员手动关闭
+          └───────────┬───────────┘  （FR-PRJ-024）
+                      ▼
+                 ┌─────────┐
+                 │ 已截止  │  ← 到达结果开放时间后可查看统计与导出
+                 └────┬────┘
+                      │ 导出加密包 + 本机安全擦除
+                      │ （FR-SYS-030 / 031，须二次确认）
+                      ▼
+                 ┌─────────┐
+                 │ 已归档  │  ← 仅保留元信息，作答数据已从本机擦除
+                 └─────────┘
+</pre>
+<div class="figcap">图 A-1　状态机。V1.0 中"手动关闭"仅在 FAQ 中提及而未定义为功能，"撤回发布"边界不清，本版补齐并明确各迁移的前置条件。<strong>已归档为终态</strong>，不可回退。</div>
+</div>
+
+<h3 id="a2">A.2 V1.0 → V2.0 变更对照</h3>
+<table>
+  <thead><tr><th style="width:60px" class="c">#</th><th style="width:150px">条目</th><th style="width:70px" class="c">类型</th><th>说明</th></tr></thead>
+  <tbody>
+    <tr><td class="c">1</td><td>时序关联通道</td><td class="c"><span class="tag chg">修复</span></td><td>V1.0 的自增编号 + 使用时间使人码映射可完整还原。改为随机 UUID 主键、不存时间、输出时随机重排、物理写入打散（NFR-ANO-020）</td></tr>
+    <tr><td class="c">2</td><td>匿名性承诺</td><td class="c"><span class="tag chg">修订</span></td><td>由"即使管理员看数据库也无法关联"降级为"非取证条件下不可关联"，使承诺可验收</td></tr>
+    <tr><td class="c">3</td><td>令牌与验证码</td><td class="c"><span class="tag chg">重构</span></td><td>两套并列机制合并为"一码三形态"；术语"通用验证码/一次性"的矛盾消除</td></tr>
+    <tr><td class="c">4</td><td>令牌打印顺序</td><td class="c"><span class="tag new">新增</span></td><td>强制随机重排（FR-TKN-025），切断"打印顺序 = 名单顺序"的映射</td></tr>
+    <tr><td class="c">23</td><td>HTTPS 证书方案</td><td class="c"><span class="tag chg">V2.1 修正</span></td><td>原拟用 nip.io + Let's Encrypt，<strong>该路径不成立</strong>（三种 ACME 验证方式全部不可用，详见 8.5）。改为<strong>自有域名 + 外部签发 + 程序装载</strong>，域名与证书路径由配置文件驱动；FR-SYS-022 一键续签相应降级为到期告警</td></tr>
+    <tr><td class="c">4b</td><td>令牌单版式</td><td class="c"><span class="tag chg">变更</span></td><td>由「A4 每页 6 张、裁切分发」改为<strong>A4 纵向一人一张、不裁切</strong>（FR-TKN-030）。免去裁切工序，二维码与短码可放大，版面可容纳操作须知</td></tr>
+    <tr><td class="c">5</td><td>令牌重置</td><td class="c"><span class="tag del">删除</span></td><td>该交互天然暴露人码对应，改为发放备用令牌（FR-TKN-035）</td></tr>
+    <tr><td class="c">6</td><td>Cookie 标记防刷</td><td class="c"><span class="tag del">删除</span></td><td>误伤合法的同设备多人作答场景，防刷价值已被令牌一次性覆盖</td></tr>
+    <tr><td class="c">7</td><td>IP 频率限制</td><td class="c"><span class="tag chg">约束</span></td><td>明确 IP 仅在内存，不落库、不入日志（FR-ANS-031 / NFR-ANO-040）</td></tr>
+    <tr><td class="c">8</td><td>评分制</td><td class="c"><span class="tag chg">变更</span></td><td>四档等级为主、打分为辅；新增弃权档（FR-FRM-010 / 021）</td></tr>
+    <tr><td class="c">9</td><td>统计口径</td><td class="c"><span class="tag new">新增</span></td><td>第 6 章。分母、弃权、比率、加权得分、纸质补录、留痕全部定义</td></tr>
+    <tr><td class="c">10</td><td>部署与组网</td><td class="c"><span class="tag chg">重写</span></td><td>由"接入被考察单位局域网"改为自备独立测评网络；新增第 8 章</td></tr>
+    <tr><td class="c">11</td><td>内置网络服务</td><td class="c"><span class="tag new">新增</span></td><td>DHCP / DNS / 连通性探测应答 / 真实证书（FR-NET-*）</td></tr>
+    <tr><td class="c">12</td><td>数据库加密</td><td class="c"><span class="tag chg">变更</span></td><td>SQLCipher 与 CGO 约束冲突，改为应用层字段加密（5.4 / CON-07）</td></tr>
+    <tr><td class="c">13</td><td>归档策略</td><td class="c"><span class="tag chg">变更</span></td><td>归档 = 导出加密包 + 本机安全擦除（CON-06 / FR-SYS-030-031）</td></tr>
+    <tr><td class="c">14</td><td>周期性测评</td><td class="c"><span class="tag del">删除</span></td><td>与"用完即清"冲突；模板复用需求由 FR-FRM-060 满足</td></tr>
+    <tr><td class="c">15</td><td>容量上限</td><td class="c"><span class="tag chg">调整</span></td><td>"≤200 道题（含展开）"对 15 人班子已不够用，改为分项设限（NFR-PER-020）</td></tr>
+    <tr><td class="c">16</td><td>作答页版式</td><td class="c"><span class="tag chg">强化</span></td><td>由"支持分页或滚动"改为强制按测评对象分页（FR-FRM-033）</td></tr>
+    <tr><td class="c">17</td><td>试填模式</td><td class="c"><span class="tag new">新增</span></td><td>现场组网验收的依赖项（FR-PRJ-030～033）</td></tr>
+    <tr><td class="c">18</td><td>状态机</td><td class="c"><span class="tag new">补齐</span></td><td>手动关闭、撤回发布、发布前置校验（附录 A.1）</td></tr>
+    <tr><td class="c">19</td><td>非目标 / 风险清单</td><td class="c"><span class="tag new">新增</span></td><td>1.4 与第 9 章</td></tr>
+    <tr><td class="c">20</td><td>需求编号体系</td><td class="c"><span class="tag new">新增</span></td><td>1.6 与附录 A.3，支撑与 B 文档的交叉引用</td></tr>
+    <tr><td class="c">21</td><td>缺席人员方案</td><td class="c"><span class="tag chg">收敛</span></td><td>公网临时通道删除；改为当日现场补位 + 纸质密封补录（FR-ANS-090）</td></tr>
+    <tr><td class="c">22</td><td>管理端暴露面</td><td class="c"><span class="tag new">收紧</span></td><td>管理端仅监听回环，测评网络中不可达（FR-SYS-013）</td></tr>
+  </tbody>
+</table>
+
+<h3 id="a3">A.3 需求追踪矩阵（摘要）</h3>
+<p>本表用于评审与验收对照，完整矩阵在实施阶段维护为独立台账。B 文档各场景的验收清单均引用本列编号。</p>
+<table>
+  <thead><tr><th style="width:150px">B 文档场景</th><th>对应需求编号</th></tr></thead>
+  <tbody>
+    <tr><td>场景一　出发前准备</td><td>FR-PRJ-010～015、020～026、030～033；FR-FRM-010～014、020～023、030～034、060～062；FR-TKN-010～012、020～026、030～035；FR-SYS-010～012、021～022；NFR-POR-010～013</td></tr>
+    <tr><td>场景二　到达与组网</td><td>FR-NET-010～050；FR-PRJ-023；FR-PRJ-030～033；NFR-SEC-010、011、050、060；CON-01</td></tr>
+    <tr><td>场景三　测评进行中</td><td>FR-ANS-010～021、030～032、090；FR-STA-010；NFR-USA-010～015；NFR-PER-010～014；NFR-REL-020～022</td></tr>
+    <tr><td>场景四　结束与归档</td><td>FR-PRJ-024、026；FR-STA-011～020；FR-EXP-010～013、020～021；FR-SYS-030～033、050；第 6 章全部口径</td></tr>
+    <tr><td>贯穿全程</td><td>NFR-ANO-010～092；NFR-SEC-020～040；CON-01～07；RSK-01～13</td></tr>
+  </tbody>
+</table>
+
+<h3 id="a4">A.4 出发前检查清单（模板）</h3>
+<ul class="check">
+  <li><strong>证书有效期 ≥30 天</strong>，且 SAN 覆盖配置文件中的域名（不足则先由信息化岗位续签后替换证书文件）</li>
+  <li>程序版本与冷备笔记本一致，两机均可正常启动并通过自检</li>
+  <li>测评项目已创建，测评表设计完成并预览确认</li>
+  <li>测评对象名单已录入，应参加人数已按实际应到人数核定（FR-PRJ-015）</li>
+  <li>令牌已生成、已随机重排、已打印（A4 一人一张）并按 SSID 分袋</li>
+  <li>备用令牌（10%）已单独装袋</li>
+  <li>试填模式已走通全流程，发布前置校验全部通过</li>
+  <li>四台 AP 已恢复标准配置，信道 36 / 44 / 149 / 157，SSID 与密码已设定</li>
+  <li>WiFi 密码已更换为本场专用，并已写入会场公示卡</li>
+  <li>装备箱清点：AP×4、交换机、网线×6、插排×2、UPS、配置卡、令牌单回收袋</li>
+  <li>冷备笔记本已预装程序，快照目录（U 盘）已准备</li>
+  <li>纸质测评表若干份（无设备人员兜底）</li>
+  <li>会场无线覆盖情况已踩点或已向对方了解</li>
+</ul>
+
+<h3 id="a5">A.5 行前网络对接清单（仅用于借用场地无线的例外情形）</h3>
+<p>仅在 8.6 例外条件下使用。应于测评前 1–2 个工作日向被考察单位网管发出。</p>
+<ul class="check">
+  <li>预留一个<strong>固定 IP</strong>并告知考察组（用于更新备用主机名的 A 记录，需预留 ≥1 个工作日）</li>
+  <li>放行该 IP 的 <strong>8443 / 80 入站</strong></li>
+  <li><strong>新建测评专用 SSID</strong>，会后关闭。<strong>不得复用员工日常办公 SSID</strong>（见 RSK-03）</li>
+  <li>该 SSID 关闭 <strong>AP 隔离 / 客户端隔离</strong>，确保终端可访问考察组笔记本</li>
+  <li>该 SSID 与办公网做 VLAN 隔离，不提供互联网出口</li>
+  <li>确认会场无线覆盖点位与并发承载能力</li>
+  <li>测评当日<strong>不做 DHCP 与网络配置变更</strong></li>
+  <li>会前完成连通性实测（网管自测 + 考察组手机复测）</li>
+  <li>测评时段内网管<strong>不进入会场</strong></li>
+  <li>会后书面确认未对该 SSID 做端口镜像或流量留存</li>
+</ul>
+
+<h3 id="a6">A.6 常见问题</h3>
+<table>
+  <thead><tr><th style="width:230px">问题</th><th>答复</th></tr></thead>
+  <tbody>
+    <tr><td>作答中笔记本断电怎么办？</td><td>UPS 可维持 30 分钟以上。SQLite WAL 模式下已提交数据不丢失。若笔记本硬件故障，由冷备机接管，已提交数据最多损失 5 分钟，未提交者重新扫码继续。</td></tr>
+    <tr><td>手机提示"此 WLAN 不可上网"怎么办？</td><td>正常现象，测评网络本就不通互联网。系统已对系统级连通性探测做出应答（FR-NET-030），手机不会自动切回移动数据。若仍出现，按故障排查三步法处置。</td></tr>
+    <tr><td>参评人员没有智能手机怎么办？</td><td>可借用他人手机（草稿按令牌分 key 且提交后清除，不会串档）；或使用考察组备用平板；或填写纸质表，由考察组双人密封补录（FR-ANS-090）。</td></tr>
+    <tr><td>测评当天有人出差不在？</td><td>时间窗可放宽至当日，允许当天返回者补测；确不能到场者按纸质密封补录处理。跨地远程参评不在系统范围（1.4 非目标）。</td></tr>
+    <tr><td>测评对象临时变动？</td><td>发布前（草稿状态）可随时修改。已发布但无任何提交时可撤回发布。已有提交则不可修改，需关闭后复制为新项目。</td></tr>
+    <tr><td>能同时进行多场测评吗？</td><td>可管理多个项目，但同一时段建议只开放一个，避免参评人员混淆。</td></tr>
+    <tr><td>怎么验证匿名性达标？</td><td>执行 NFR-ANO-090 审计测试与 NFR-ANO-091 时序专项测试。测试结果可在会前向参评人员说明，有助于缓解 RSK-01。</td></tr>
+    <tr><td>为什么不能用被考察单位的路由器？</td><td>见 CON-01。核心不是技术问题而是程序问题：由被监督方提供承载测评数据的设备，一旦结果产生争议，考察组无任何可自证的独立证据。</td></tr>
+    <tr><td>为什么不做成服务器版长期运行？</td><td>考察部门不具备长期持有与运维服务器的条件，且干部考察数据长期驻留会形成新的保密风险。已列入非目标（1.4）。</td></tr>
+  </tbody>
+</table>
+
+<h3>A.7 线下与线上流程对照</h3>
+<table>
+  <thead><tr><th style="width:110px">环节</th><th>线下流程</th><th>本系统</th><th style="width:110px">效率变化</th></tr></thead>
+  <tbody>
+    <tr><td>准备测评表</td><td>手工设计、排版、打印</td><td>在线设计，模板复用</td><td>节省 60–90 分钟</td></tr>
+    <tr><td>准备名单</td><td>手工整理、编号</td><td>Excel 导入</td><td>节省 15–30 分钟</td></tr>
+    <tr><td>发放</td><td>盖章、打印多份、逐人分发</td><td>令牌单出发前打印，现场随机分发</td><td>节省 30–60 分钟</td></tr>
+    <tr><td>现场准备</td><td>布置票箱</td><td>组网部署 15–20 分钟</td><td>新增环节</td></tr>
+    <tr><td>填写</td><td>纸质填写、投箱</td><td>手机扫码作答、一键提交</td><td>体验提升</td></tr>
+    <tr><td>回收统计</td><td>开箱、人工逐表统计</td><td>提交即统计，秒级出结果</td><td>节省 2–4 小时</td></tr>
+    <tr><td>报告输出</td><td>手工整理、制表、编写</td><td>一键导出 PDF / Excel，含口径说明</td><td>节省 1–2 小时</td></tr>
+    <tr><td>留痕归档</td><td>纸质表装箱存放</td><td>导出打印签字封存 + 加密包保存 + 本机擦除</td><td>检索与保密性提升</td></tr>
+  </tbody>
+</table>
+
+<h3>A.8 版本历史</h3>
+<table>
+  <thead><tr><th style="width:80px">版本</th><th style="width:110px">日期</th><th>修改内容</th><th style="width:100px">编制</th></tr></thead>
+  <tbody>
+    <tr><td>V1.0</td><td>2026-08-07</td><td>初稿，基于原始需求文档结构化整理</td><td>—</td></tr>
+    <tr><td><strong>V2.2</strong></td><td>2026-08-08</td><td>按《证书与域名方案讨论纪要》写入：2.1 部署模型区分"办公室联网维护 / 现场离线运行"；新增 CON-08（DNS API 密钥不得存放于考察笔记本）；风险清单新增 RSK-05b</td><td>—</td></tr>
+    <tr><td><strong>V2.1</strong></td><td>2026-08-08</td><td>修正 8.5 HTTPS 证书方案：nip.io 路径不成立，改为自有域名 + 外部签发 + 配置驱动；FR-SYS-022 降级为证书校验与到期告警；出发前检查清单相应调整</td><td>—</td></tr>
+    <tr><td><strong>V2.0</strong></td><td>2026-08-07</td><td>评审修订稿。修复匿名性时序通道；令牌机制重构为一码三形态；评分制改为四档为主并新增统计口径章节；部署模型改为自备独立测评网络并新增组网与装备规格章节；新增内置网络服务、应用层字段加密、试填模式；新增非目标、风险清单、需求编号体系与追踪矩阵；删除周期性测评、令牌重置、Cookie 标记与公网通道。逐条对照见 A.2</td><td>—</td></tr>
+  </tbody>
+</table>
+
+<h3>A.9 文档签署</h3>
+<table class="sign">
+  <tr><td class="lbl">编制</td><td></td><td class="lbl">日期</td><td style="width:150px"></td></tr>
+  <tr><td class="lbl">审核</td><td></td><td class="lbl">日期</td><td></td></tr>
+  <tr><td class="lbl">批准</td><td></td><td class="lbl">日期</td><td></td></tr>
+</table>
+
+<footer>
+  <div class="rline"></div>
+  线上民主测评系统 · 需求分析说明书（版本A：结构化需求规格）· V2.2 · 2026-08-08<br>
+  本文档为结构化需求规格，适用于开发团队技术评审、项目实施与验收对照，建议与版本B（场景驱动）配合使用
+</footer>
+
+</div>
+
+</body>
+</html>

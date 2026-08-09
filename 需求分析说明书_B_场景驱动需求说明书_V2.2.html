@@ -1,0 +1,946 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>线上民主测评系统 — 需求分析说明书（版本B：场景驱动）V2.2</title>
+<style>
+/* 线上民主测评系统 需求分析说明书 · 公文风格样式 */
+:root{
+  --ink:#1b2434;
+  --seal:#9e2b25;
+  --seal-soft:#f6ecea;
+  --paper:#fbfaf7;
+  --rule:#ddd7cb;
+  --slate:#5c6675;
+  --slate-soft:#eef0f3;
+  --band:#f3efe7;
+  --ok:#2f6f4f;
+  --warn:#8a5a12;
+  --warn-soft:#fbf3e2;
+  --serif:"Songti SC","SimSun","Noto Serif SC",Georgia,serif;
+  --sans:"PingFang SC","Microsoft YaHei","Hiragino Sans GB","Source Han Sans SC",system-ui,sans-serif;
+  --mono:"SFMono-Regular",Consolas,"Liberation Mono",monospace;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;background:var(--paper);color:var(--ink);
+  font-family:var(--sans);font-size:15px;line-height:1.85;
+}
+.wrap{max-width:980px;margin:0 auto;padding:0 28px 80px}
+
+/* ── 红头 ── */
+.masthead{padding:56px 0 0;text-align:center}
+.masthead .kicker{
+  font-family:var(--mono);font-size:11px;letter-spacing:.22em;
+  text-transform:uppercase;color:var(--slate);margin-bottom:18px
+}
+.masthead h1{
+  font-family:var(--serif);font-weight:700;font-size:38px;line-height:1.3;
+  color:var(--seal);margin:0 0 6px;letter-spacing:.04em
+}
+.masthead .subtitle{
+  font-family:var(--serif);font-size:19px;color:var(--ink);margin:0 0 8px;letter-spacing:.03em
+}
+.masthead .tagline{font-size:13.5px;color:var(--slate);margin:0 0 26px}
+.redrule{border:0;margin:0 0 4px;height:3px;background:var(--seal)}
+.redrule.thin{height:1px;margin-bottom:30px}
+
+.metaline{
+  display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin-bottom:38px
+}
+.metaline span{
+  font-size:12.5px;color:var(--slate);background:#fff;
+  border:1px solid var(--rule);border-radius:2px;padding:3px 11px
+}
+
+/* ── 目录 ── */
+.toc{
+  background:#fff;border:1px solid var(--rule);border-left:3px solid var(--seal);
+  padding:22px 26px;margin:0 0 48px
+}
+.toc h2{
+  font-family:var(--serif);font-size:16px;margin:0 0 12px;color:var(--ink);letter-spacing:.06em
+}
+.toc ol{margin:0;padding-left:22px;columns:2;column-gap:38px}
+.toc li{margin-bottom:5px;font-size:13.5px;break-inside:avoid}
+.toc a{color:var(--ink);text-decoration:none;border-bottom:1px solid transparent}
+.toc a:hover{border-bottom-color:var(--seal);color:var(--seal)}
+.toc .tnote{color:var(--slate);font-size:12.5px}
+
+/* ── 章节 ── */
+h2.sec{
+  font-family:var(--serif);font-size:25px;font-weight:700;letter-spacing:.04em;
+  margin:64px 0 22px;padding-bottom:10px;border-bottom:2px solid var(--seal);
+  display:flex;align-items:baseline;gap:14px
+}
+h2.sec .num{
+  font-family:var(--mono);font-size:14px;color:#fff;background:var(--seal);
+  padding:3px 9px;border-radius:2px;letter-spacing:.06em;flex:none;line-height:1.4
+}
+h3{font-family:var(--serif);font-size:19px;font-weight:700;margin:38px 0 12px;letter-spacing:.03em}
+h4{font-size:15.5px;font-weight:600;margin:26px 0 10px;color:var(--ink)}
+p{margin:0 0 14px}
+ul,ol{margin:0 0 16px;padding-left:24px}
+li{margin-bottom:6px}
+strong{font-weight:600}
+code{font-family:var(--mono);font-size:.88em;background:var(--slate-soft);
+  padding:1px 5px;border-radius:2px;color:#33405a}
+a{color:var(--seal)}
+
+/* ── 表格 ── */
+table{
+  width:100%;border-collapse:collapse;margin:16px 0 24px;
+  font-size:13.5px;background:#fff;border:1px solid var(--rule)
+}
+caption{
+  caption-side:bottom;font-size:12.5px;color:var(--slate);
+  padding-top:9px;text-align:left
+}
+th,td{border:1px solid var(--rule);padding:9px 12px;text-align:left;vertical-align:top;line-height:1.7}
+thead th{background:var(--band);font-weight:600;font-size:13px;letter-spacing:.02em}
+tbody tr:nth-child(even){background:#fcfbf9}
+td.c,th.c{text-align:center}
+td.id{font-family:var(--mono);font-size:12px;white-space:nowrap;color:var(--slate)}
+
+/* ── 标记 ── */
+.tag{
+  display:inline-block;font-size:11.5px;line-height:1.6;padding:1px 8px;
+  border-radius:2px;font-family:var(--sans);white-space:nowrap;vertical-align:1px
+}
+.tag.must{background:var(--seal);color:#fff}
+.tag.opt{background:#fff;color:var(--slate);border:1px solid var(--rule)}
+.tag.new{background:var(--ok);color:#fff}
+.tag.chg{background:var(--warn);color:#fff}
+.tag.del{background:var(--slate-soft);color:var(--slate);text-decoration:line-through}
+
+/* ── 提示框 ── */
+.box{border:1px solid var(--rule);border-left:3px solid var(--slate);
+  background:#fff;padding:16px 20px;margin:20px 0}
+.box .bt{font-weight:600;font-size:14px;margin-bottom:6px;display:block}
+.box p:last-child,.box ul:last-child,.box ol:last-child{margin-bottom:0}
+.box.crit{border-left-color:var(--seal);background:var(--seal-soft)}
+.box.crit .bt{color:var(--seal)}
+.box.warn{border-left-color:var(--warn);background:var(--warn-soft)}
+.box.warn .bt{color:var(--warn)}
+.box.ok{border-left-color:var(--ok);background:#eef5f0}
+.box.ok .bt{color:var(--ok)}
+
+/* ── 图 ── */
+.figure{background:#fff;border:1px solid var(--rule);padding:26px 20px;margin:22px 0;text-align:center}
+.figure pre{
+  font-family:var(--mono);font-size:12.5px;line-height:1.65;text-align:left;
+  display:inline-block;margin:0;color:var(--ink);white-space:pre;overflow-x:auto;max-width:100%
+}
+.figcap{font-size:12.5px;color:var(--slate);margin-top:14px;text-align:left}
+
+/* ── 场景卡（B文档） ── */
+.scene{margin:70px 0 0;border-top:2px solid var(--seal);padding-top:0}
+.scene-head{background:var(--band);border:1px solid var(--rule);border-top:0;padding:22px 26px;margin-bottom:8px}
+.scene-head .sn{
+  font-family:var(--mono);font-size:12px;letter-spacing:.2em;color:var(--seal);
+  display:block;margin-bottom:6px
+}
+.scene-head h2{font-family:var(--serif);font-size:24px;margin:0 0 8px;letter-spacing:.04em}
+.scene-head p{margin:0;font-size:13.5px;color:var(--slate)}
+
+/* ── 步骤 ── */
+.steps{counter-reset:st;margin:20px 0;padding:0;list-style:none}
+.steps>li{
+  counter-increment:st;position:relative;padding-left:44px;margin-bottom:20px
+}
+.steps>li::before{
+  content:counter(st,decimal-leading-zero);position:absolute;left:0;top:2px;
+  font-family:var(--mono);font-size:12px;color:#fff;background:var(--ink);
+  width:26px;height:22px;display:flex;align-items:center;justify-content:center;border-radius:2px
+}
+.steps>li>b{display:block;font-size:15px;margin-bottom:3px}
+
+/* ── 检查清单 ── */
+.check{list-style:none;padding:0;margin:14px 0}
+.check li{padding-left:26px;position:relative;margin-bottom:7px;font-size:13.5px}
+.check li::before{
+  content:"";position:absolute;left:0;top:6px;width:12px;height:12px;
+  border:1.5px solid var(--slate);border-radius:2px;background:#fff
+}
+
+/* ── 签署 ── */
+.sign{width:100%;border-collapse:collapse;margin-top:22px;font-size:13.5px}
+.sign td{border:1px solid var(--rule);padding:16px 12px;height:64px;background:#fff}
+.sign td.lbl{background:var(--band);width:110px;font-weight:600;text-align:center;vertical-align:middle}
+
+footer{
+  margin-top:80px;border-top:1px solid var(--rule);padding-top:18px;
+  font-size:12.5px;color:var(--slate);text-align:center
+}
+footer .rline{height:2px;background:var(--seal);margin-bottom:18px;width:100%}
+
+@media (max-width:720px){
+  .wrap{padding:0 16px 60px}
+  .masthead h1{font-size:27px}
+  .toc ol{columns:1}
+  h2.sec{font-size:21px}
+  table{font-size:12.5px}
+  th,td{padding:7px 8px}
+  .figure{padding:16px 10px;overflow-x:auto}
+}
+@media print{
+  body{background:#fff;font-size:10.5pt}
+  .wrap{max-width:none;padding:0}
+  h2.sec{page-break-after:avoid;margin-top:30px}
+  table,.box,.figure{page-break-inside:avoid}
+  .toc{page-break-after:always}
+}
+
+/* ── 代码块（LLD） ── */
+pre.code{
+  background:#1f2733;color:#e6e9ef;border:1px solid #141a23;border-left:3px solid var(--seal);
+  padding:14px 18px;margin:16px 0;overflow-x:auto;font-size:12.5px;line-height:1.75
+}
+pre.code code{background:none;color:inherit;padding:0;font-family:var(--mono)}
+@media print{pre.code{background:#f4f4f4;color:#111;border-color:#bbb}}
+
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="masthead">
+  <div class="kicker">Requirements Specification · Scenario-Driven</div>
+  <h1>线上民主测评系统</h1>
+  <div class="subtitle">需求分析说明书 · 版本B：场景驱动</div>
+  <div class="tagline">以考察组实际工作流为主线，按「准备 → 进场 → 测评 → 收尾」四大场景组织</div>
+  <hr class="redrule">
+  <hr class="redrule thin">
+  <div class="metaline">
+    <span>版本日期：2026-08-08</span>
+    <span>版本号：V2.2（评审修订稿）</span>
+    <span>文档类型：需求分析说明书</span>
+    <span>视角：业务场景驱动</span>
+    <span>密级：内部</span>
+  </div>
+</header>
+
+<nav class="toc">
+  <h2>目 录</h2>
+  <ol>
+    <li><a href="#s1">引言与背景</a> <span class="tnote">缘起 · 目标 · 边界 · 阅读指引</span></li>
+    <li><a href="#s2">角色速览</a> <span class="tnote">两类用户</span></li>
+    <li><a href="#s3">场景一：出发前准备</a> <span class="tnote">设计测评表 · 生成打印令牌单 · 试填验证</span></li>
+    <li><a href="#s4">场景二：到达与组网</a> <span class="tnote">装备部署 · 连通验证 · 发布分发</span></li>
+    <li><a href="#s5">场景三：测评进行中</a> <span class="tnote">作答体验 · 进度监控 · 异常处理</span></li>
+    <li><a href="#s6">场景四：结束与归档</a> <span class="tnote">统计口径 · 报告导出 · 加密归档与擦除</span></li>
+    <li><a href="#s7">非功能需求汇总</a> <span class="tnote">匿名 · 安全 · 性能 · 便携 · 可靠</span></li>
+    <li><a href="#s8">附录</a> <span class="tnote">标准测评表 · 装备清单 · FAQ · 签署</span></li>
+  </ol>
+</nav>
+
+<div class="box crit">
+  <span class="bt">本版修订说明</span>
+  <p><strong>V2.1 补充变更</strong>：HTTPS 证书方案修正——原设想的公共通配域名服务无法完成证书签发流程，改为<strong>由考察部门使用自有域名</strong>、证书经外部签发后放入程序目录，系统只负责校验与到期提醒，不再提供"一键续签"。场景一的证书检查步骤、场景二的启动自检、两处检查清单与附录 FAQ 相应调整。</p>
+<p>V2.0 的主要变更：<strong>部署形态</strong>由"接入被考察单位局域网"改为考察组自备独立测评网络（场景二重写）；<strong>发放机制</strong>由"匿名链接 + 通用验证码"两套并列改为一码三形态（场景一、二）；<strong>评分制</strong>由 1–10 分改为四档等级为主，并新增统计口径说明（场景四、附录）；<strong>归档</strong>改为导出加密包 + 本机擦除。各场景步骤与验收清单均标注版本A的需求编号，便于交叉核对。</p>
+</div>
+
+<h2 class="sec" id="s1"><span class="num">01</span>引言与背景</h2>
+
+<h3>1.1 项目缘起</h3>
+<p>考察组到某单位考察干部，需要组织该单位干部职工进行民主测评。当前做法是：提前打印测评表、盖章、带到现场分发、参会人员纸质填写、投入票箱、开箱后人工逐张统计。整个过程耗时半天甚至一天，人工统计容易出错，纸质表存在笔迹辨识风险。</p>
+<p>本系统的定位是：把一套<strong>可随身携带的装备</strong>——一台笔记本、一台交换机、几台无线接入点——变成移动测评工作站。考察组进入被考察单位后自行组建一个独立的测评网络，参会人员用手机扫码匿名完成测评，统计自动生成，测评结束即出报告，随后加密封存并擦除本机数据。</p>
+
+<h3>1.2 核心目标</h3>
+<table>
+  <thead><tr><th style="width:130px">目标</th><th>说明</th></tr></thead>
+  <tbody>
+    <tr><td><strong>拎包即走</strong></td><td>系统为单个可执行文件，与网络装备一同装箱，现场 15–20 分钟完成部署</td></tr>
+    <tr><td><strong>网络自持</strong></td><td>测评网络由考察组自备设备构成，不接互联网、不接被考察单位任何网络、不需要对方网管配合</td></tr>
+    <tr><td><strong>真正匿名</strong></td><td>在不修改程序、不使用取证手段的前提下，任何人无法把一条作答记录关联到具体的人</td></tr>
+    <tr><td><strong>口径可用</strong></td><td>产出的是优秀率、称职以上率这类可直接写入考察报告的指标，而不是无制度依据的平均分</td></tr>
+    <tr><td><strong>扫码即答</strong></td><td>参评人员不下载 App、不注册账号、不输姓名，扫码即进入</td></tr>
+    <tr><td><strong>用完即清</strong></td><td>测评结束导出加密归档包，随即擦除本机数据，笔记本不长期携带考察材料</td></tr>
+  </tbody>
+</table>
+
+<h3>1.3 系统边界</h3>
+<p>以下情形<strong>明确不由本系统承担</strong>，在业务确认时需一并说明：</p>
+<ul>
+  <li><strong>多地分散参评</strong>：下属单位、分支机构人员跨地参评，形态上属于另一个产品，不在本系统范围；</li>
+  <li><strong>互联网远程作答</strong>：系统全程离线，不提供任何公网通道；</li>
+  <li><strong>选举表决、记名投票</strong>：制度性质不同，不以本系统承载；</li>
+  <li><strong>长期历史数据比对</strong>：与"测评结束即擦除"的保密要求冲突，历史数据以离线加密包保存，系统内不提供比对；</li>
+  <li><strong>多台笔记本并行承载同一场测评</strong>：理由见版本A第 8.7 节。</li>
+</ul>
+
+<h3>1.4 阅读指引</h3>
+<ul>
+  <li><strong>业务与领导</strong>：按场景顺序阅读即可，重点关注每个场景末尾的检查清单与第 6 章统计口径；</li>
+  <li><strong>考察组操作人员</strong>：场景二的组网部署与场景三的异常处理是现场作业依据，建议打印随身；</li>
+  <li><strong>开发人员</strong>：本文档描述用户流程，技术约束见版本A。各步骤标注的 <code>FR-xxx</code> 编号即版本A中对应的需求条目；</li>
+  <li><strong>验收人员</strong>：以四大场景为验收主线，逐项核对检查清单，并按编号回查版本A的详细要求。</li>
+</ul>
+
+<h2 class="sec" id="s2"><span class="num">02</span>角色速览</h2>
+<table>
+  <thead><tr><th style="width:160px">角色</th><th>一句话职责</th><th style="width:180px">系统交互方式</th></tr></thead>
+  <tbody>
+    <tr><td><strong>管理员</strong><br>（考察组成员）</td><td>负责全流程操作——创建项目、设计测评表、生成打印令牌单、现场组网、发布测评、监控进度、查看统计、导出报告、加密归档并擦除</td><td>在笔记本本机浏览器访问管理后台（管理端不在测评网络中暴露）</td></tr>
+    <tr><td><strong>测评人员</strong><br>（参评干部职工）</td><td>凭令牌单连接指定 WiFi，扫码进入，匿名填写并提交</td><td>手机浏览器，无需登录</td></tr>
+  </tbody>
+</table>
+<div class="box">
+  <span class="bt">测评对象不是系统用户</span>
+  <p>被考察的领导干部不使用系统、不登录、不操作，仅作为测评表中被评价的对象出现，如"请对张三同志作出评价"。</p>
+</div>
+
+<div class="scene">
+  <div class="scene-head">
+    <span class="sn">场 景 一</span>
+    <h2>出发前准备</h2>
+    <p>考察组在办公室完成测评项目的全部准备工作，包括证书检查、测评表设计、令牌打印与试填验证。做好这一步，现场只剩部署与分发。</p>
+  </div>
+</div>
+
+<h2 class="sec" id="s3"><span class="num">03</span>场景一：出发前准备</h2>
+
+<h3>3.1 装备与系统就位</h3>
+<ol class="steps">
+  <li><b>取出装备箱</b>装备箱内容：笔记本、冷备笔记本、交换机、无线接入点×4、网线、插排、UPS、配置卡、令牌单回收袋。<strong>全部设备由考察部门自备</strong>，不使用被考察单位提供的任何网络设备（版本A <code>CON-01</code>）。</li>
+  <li><b>启动系统</b>双击可执行文件，系统自动启动服务并打开管理后台。无需安装数据库、无需配置运行时。首次使用时引导设置管理员密码（<code>FR-SYS-010</code>）。<br><span style="color:#5c6675;font-size:13.5px">密码无找回机制，遗忘则数据不可访问。建议考察组两人分别知悉。</span></li>
+  <li><b>检查证书</b>管理后台首页显示启动自检结果，其中证书一项须显示：域名匹配、在有效期内、剩余天数 ≥30 天。<br><strong>不满足时，须请信息化岗位重新签发并替换程序目录下的证书文件</strong>（系统不内置续签功能，<code>FR-SYS-021 / 022</code>）。<br><span style="color:#5c6675;font-size:13.5px">两种情况都会导致现场每部手机弹安全警告：一是证书过期；二是证书本身有效，但签发时用的主机名与系统配置的域名不一致。后者更隐蔽，系统会在自检中直接指出。这是最容易被忽略、后果最严重的准备遗漏。</span></li>
+</ol>
+
+<h3>3.2 创建测评项目</h3>
+<table>
+  <thead><tr><th style="width:140px">填写项</th><th style="width:80px">编号</th><th>说明与示例</th></tr></thead>
+  <tbody>
+    <tr><td>测评名称</td><td class="id">FR-PRJ-010</td><td>"2026 年度XX单位领导班子民主测评"</td></tr>
+    <tr><td>测评说明</td><td class="id">FR-PRJ-013</td><td>展示给参评人员的须知与评价标准说明</td></tr>
+    <tr><td>开始时间</td><td class="id">FR-PRJ-011</td><td>2026-08-10 09:00</td></tr>
+    <tr><td>截止时间</td><td class="id">FR-PRJ-012</td><td>2026-08-10 11:30</td></tr>
+    <tr><td>结果开放时间</td><td class="id">FR-PRJ-014</td><td>默认同截止时间，不得早于截止时间</td></tr>
+    <tr><td><strong>应参加人数</strong></td><td class="id">FR-PRJ-015</td><td><strong>这是全部比率指标的分母</strong>，默认等于名单人数。若名单中含已调离、长期病休等确实不应计入的人员，在此手工修正。<strong>这个数字直接决定优秀率的高低，须与被考察单位核实确认</strong></td></tr>
+  </tbody>
+</table>
+<p>填写完成后项目为<strong>草稿</strong>状态，可随时修改。若历史项目结构类似，可直接复制后调整（<code>FR-PRJ-022</code>）。</p>
+
+<h3>3.3 设计测评表</h3>
+<p>工作量最大的环节。多数情况下可直接调用内置的"德能勤绩廉"标准模板（<code>FR-FRM-062</code>，见 <a href="#a1">附录 8.1</a>），仅替换测评对象即可。</p>
+
+<ol class="steps">
+  <li><b>添加测评对象</b>录入本次被评价的领导干部姓名与职务，手动添加或 Excel 导入（<code>FR-FRM-030</code>）。<br>可为其设置分组标签（如"班子成员""中层正职"），用于后期分组查看统计（<code>FR-FRM-032</code>）。<br><span style="color:#5c6675;font-size:13.5px">注意：分组内对象少于 3 人时系统不展示该分组独立统计，以防通过小样本排除法推断个人意见。</span></li>
+
+  <li><b>添加题目</b>四种主要题型：
+    <table style="margin-top:10px">
+      <thead><tr><th style="width:130px">题型</th><th style="width:80px">编号</th><th>适用</th></tr></thead>
+      <tbody>
+        <tr><td><strong>等级题</strong><br><span style="font-weight:400;color:#5c6675">干部测评首选</span></td><td class="id">FR-FRM-010</td><td>优秀 / 称职 / 基本称职 / 不称职 + 弃权。这是干部考察测评的标准题型，产出的比率可直接写入考察报告</td></tr>
+        <tr><td>打分题</td><td class="id">FR-FRM-011</td><td>1–5 或 1–10 分。<strong>适用于满意度测评、专项工作评议，不建议用于干部考察测评</strong>，理由见 <a href="#s61">6.1</a></td></tr>
+        <tr><td>单选题</td><td class="id">FR-FRM-012</td><td>综合性判断题</td></tr>
+        <tr><td>多选题</td><td class="id">FR-FRM-013</td><td>如"该同志的突出优点（可多选）"</td></tr>
+        <tr><td>开放评语</td><td class="id">FR-FRM-014</td><td>具体意见与建议</td></tr>
+      </tbody>
+    </table>
+    每题可设必填或选填。<strong>等级题与单选题必须提供"弃权"选项</strong>（<code>FR-FRM-021</code>）——这是纸质测评中"未表态"的电子对应物，是有效表达，与漏填区分统计。
+  </li>
+
+  <li><b>组织题组</b>按"德 / 能 / 勤 / 绩 / 廉"分块，或按"政治素质 / 业务能力 / 作风纪律"等其他方式分组，支持拖拽排序（<code>FR-FRM-023</code>）。</li>
+
+  <li><b>确认规模</b>设计器实时显示<strong>展开后作答项总数 = 题目数 × 关联对象数</strong>（<code>FR-FRM-034</code>）。<br>上限：题目 ≤50 道、测评对象 ≤20 人、展开后作答项 ≤400 个。<br><span style="color:#5c6675;font-size:13.5px">举例：15 题 × 8 位班子成员 = 120 个作答项，参评人员在手机上约需 12–18 分钟完成。规模明显超出时应精简题目，而非指望参评人员有耐心。</span></li>
+
+  <li><b>预览</b>以参评人员视角查看展示效果。<strong>作答页按测评对象逐页呈现</strong>（<code>FR-FRM-033</code>），每页只评一个人，不会出现几十行的大矩阵。</li>
+</ol>
+
+<h3>3.4 导入参评人员名单</h3>
+<ul>
+  <li>手动逐条添加或 Excel/CSV 批量导入（<code>FR-TKN-010</code>），导入前提供预览确认；</li>
+  <li>名单只需一个标识（姓名或编号）；</li>
+  <li><strong>名单的作用仅有两个</strong>：确定生成多少个令牌，以及核定应参加人数。</li>
+</ul>
+<div class="box crit">
+  <span class="bt">关键设计：名单与作答之间不存在任何链路</span>
+  <p>导入名单时，系统<strong>不会</strong>把姓名或编号写入令牌表。令牌表只存三样东西：随机生成的令牌值、所属批次、是否已使用。"哪张令牌单给了谁"这件事只发生在管理员的物理分发动作中，系统对此一无所知。</p>
+  <p style="margin-top:8px">名单在令牌单打印完成后<strong>可以整表删除</strong>，不影响系统运行与统计（<code>FR-TKN-012</code>）。</p>
+</div>
+
+<h3>3.5 生成并打印令牌单</h3>
+<p>这是本版相对 V1.0 变化最大的环节。原来的"匿名链接"与"通用验证码"两套并列机制，合并为<strong>一个令牌、三种表示形态</strong>。</p>
+
+<table>
+  <thead><tr><th style="width:110px">形态</th><th>说明</th></tr></thead>
+  <tbody>
+    <tr><td>URL</td><td>完整链接，二维码的编码内容</td></tr>
+    <tr><td>二维码</td><td>主用入口，扫码直达</td></tr>
+    <tr><td>8 位短码</td><td>肉眼可读，扫码失败时手工输入。含校验位，输错即时提示</td></tr>
+  </tbody>
+</table>
+<p>三者指向同一个令牌，<strong>任一形态使用后其余同时失效</strong>（<code>FR-TKN-022</code>）。一次印刷同时承载两条入口路径，不需要准备第二套凭据。</p>
+
+<ol class="steps">
+  <li><b>生成令牌</b>系统按名单人数生成令牌，另按 10% 生成<strong>备用令牌</strong>单独装袋（<code>FR-TKN-035</code>）。<br>若需分批测评，在此指定批次数与每批数量（<code>FR-TKN-024</code>）。</li>
+  <li><b>系统自动随机重排</b>排版打印前，系统对令牌集合执行一次密码学随机重排（<code>FR-TKN-025</code>）。<strong>打印顺序与生成顺序、与名单顺序均无关。</strong><br><span style="color:#5c6675;font-size:13.5px">这一步是匿名性的第一道关口。若打印顺序即名单顺序，管理员只要留一份打印底稿，人码对应关系就完整可查——V1.0 的设计正是如此。</span></li>
+  <li><b>打印</b><strong>A4 纵向、一人一张，不需裁切。</strong>单页上有：测评名称、要连接的 WiFi 名称、大幅二维码（边长 ≥8cm）、8 位短码、操作须知、回收提示。<strong>单页上不出现任何人员姓名或序号</strong>（<code>FR-TKN-026</code>）。<br><span style="color:#5c6675;font-size:13.5px">整页印刷免去了 200 次裁切，二维码和短码都能做得足够大——会场光线不佳、手机镜头老旧时的扫码失败，主要就来自二维码太小。须知直接印在单上，也省去引导人员反复解释。</span></li>
+  <li><b>按 WiFi 分袋</b>令牌单上的 WiFi 名称（KCZ-EVAL-1 至 -4）用于把参评人员分流到不同的无线接入点。按 SSID 分装成四袋，现场随机分发。<br><span style="color:#5c6675;font-size:13.5px">由于令牌单已随机重排，分流天然是随机的，不会出现"某个处室全在同一台设备上"的情况——这对匿名性有实质意义。</span></li>
+</ol>
+
+<div class="box ok">
+  <span class="bt">出发前就能把令牌单全部印好</span>
+  <p>二维码里含访问地址，而地址取决于笔记本的 IP。因为测评网络是考察组自备的、网段永久固定为 <code>192.168.66.x</code>，所以地址在出发前就是确定的，<strong>令牌单可以提前一周打印装袋</strong>。</p>
+  <p style="margin-top:8px">这正是坚持自备网络设备的实际收益之一。若依赖被考察单位分配 IP，地址要到现场才知道，令牌单就只能现场打印——考察组要么背一台打印机，要么借用被考察单位的打印机打印测评二维码。</p>
+</div>
+
+<h3>3.6 试填验证</h3>
+<p>系统为每个项目额外生成 3 个<strong>测试令牌</strong>，可反复使用不失效，数据不进统计、不计入提交数（<code>FR-PRJ-030～033</code>）。</p>
+<ul>
+  <li>出发前用测试令牌完整走一遍作答流程，确认题目无误、必填设置合理、手机显示正常；</li>
+  <li>试填也是现场组网验收的手段——到达会场后用测试令牌验证每台无线接入点是否可用，不消耗真令牌；</li>
+  <li>发布时系统自动清空试填数据。</li>
+</ul>
+
+<h3>3.7 保存为模板</h3>
+<p>设计好的测评表可保存为模板（<code>FR-FRM-060</code>），下次创建同类测评直接调用，仅替换测评对象。<strong>模板不含任何人员与作答信息，不受"用完即清"约束，可长期保留跨考察复用。</strong></p>
+
+<div class="box ok">
+  <span class="bt">场景一检查清单</span>
+  <ul class="check" style="margin-bottom:0">
+    <li>证书自检通过：域名匹配、在有效期内、剩余 ≥30 天</li>
+    <li>主机与冷备笔记本均已装好程序并可正常启动</li>
+    <li>管理员密码已设置，考察组两人分别知悉</li>
+    <li>测评项目已创建，应参加人数已核定确认</li>
+    <li>测评表设计完成，展开后作答项数在合理范围，预览通过</li>
+    <li>测评对象名单已录入，分组标签已设置（如需）</li>
+    <li>参评人员名单已导入</li>
+    <li>令牌已生成、随机重排、打印完成（A4 一人一张），按 WiFi 分袋</li>
+    <li>备用令牌（10%）已单独装袋</li>
+    <li>试填模式已完整走通</li>
+    <li>装备箱清点完毕，四台 AP 已恢复标准配置</li>
+    <li>本场 WiFi 密码已更换并写入会场公示卡</li>
+    <li>纸质测评表若干份（无智能手机人员兜底）</li>
+  </ul>
+</div>
+
+<div class="scene">
+  <div class="scene-head">
+    <span class="sn">场 景 二</span>
+    <h2>到达考察单位与现场组网</h2>
+    <p>考察组进入会场，用自带装备搭建一个独立的测评网络，验证连通后发布测评、分发令牌单。全程不需要被考察单位网管配合。</p>
+  </div>
+</div>
+
+<h2 class="sec" id="s4"><span class="num">04</span>场景二：到达与组网</h2>
+
+<h3>4.1 测评网络是什么样的</h3>
+<p>考察组自带的笔记本、交换机和四台无线接入点，在会场组成一个<strong>独立的、不通互联网、也不接被考察单位任何网络</strong>的小型局域网。参评人员的手机连接这个网络的 WiFi 完成作答。</p>
+
+<div class="figure">
+<pre>
+              笔记本（服务端）  192.168.66.1
+                     │  网线
+              ┌──────┴──────┐
+              │   交换机      │
+              └─┬───┬───┬───┬┘
+                │   │   │   │  网线
+              ┌─┴┐┌─┴┐┌─┴┐┌─┴┐
+              │AP││AP││AP││AP│   四台无线接入点
+              │1 ││2 ││3 ││4 │   分散布置在会场四周
+              └╥─┘└╥─┘└╥─┘└╥─┘
+               ║   ║   ║   ║   5GHz 无线
+             KCZ-1 KCZ-2 KCZ-3 KCZ-4
+              50人 50人 50人 50人  ≈ 200 人
+
+     全部设备考察组自备 · 不接互联网 · 不接对方网络
+</pre>
+<div class="figcap">图 4-1　测评网络。手机无论连哪台 AP，访问的都是同一台笔记本。<strong>笔记本走网线接入，不占用无线信道。</strong>技术参数与配置规范见版本A第 8 章。</div>
+</div>
+
+<div class="box crit">
+  <span class="bt">为什么设备必须考察组自备（版本A <code>CON-01</code>）</span>
+  <p>这不只是技术问题，更是程序问题。<strong>被考察单位是本次测评的利益相关方。</strong>由其提供承载测评数据的网络设备，等同于让被监督方提供监督工具：</p>
+  <ul style="margin-top:8px">
+    <li>一旦测评结果产生争议，考察组<strong>没有任何可拿出来自证的独立证据</strong>；</li>
+    <li>参评人员看到设备是本单位网管搬来架好的，只要会场里有一句"这网是咱们自己的"，匿名性的可信度就崩了——<strong>大家开始投安全票，结果全优、毫无区分度，这次考察等于白做</strong>。这个损害不需要任何人真的做坏事就会发生；</li>
+    <li>设备配置不在我们手里，现场出问题只能等对方网管，而几十上百位干部正坐在会场等着。</li>
+  </ul>
+  <p style="margin-top:8px">整套网络装备约 2100 元，一次采购长期复用，摊到每场考察不过几十元。</p>
+  <p style="margin-top:8px"><strong>唯一例外</strong>：单批参评超过 100 人且确实无法分批时，可借用被考察单位既有的企业级无线（大礼堂通常已有覆盖）。此时须执行行前对接清单，并由考察组负责人书面知悉残余风险。<strong>这是例外，不是可以因为省钱而选择的默认项。</strong></p>
+</div>
+
+<h3>4.2 现场部署（15–20 分钟）</h3>
+<ol class="steps">
+  <li><b>供电与汇聚</b>插排通电 → UPS 上电 → 交换机上电，确认指示灯正常。<br><span style="color:#5c6675;font-size:13.5px">UPS 不是可有可无的：会场临时断电对纸质测评没影响，对本系统是灾难。</span></li>
+
+  <li><b>笔记本就位</b>网线插入交换机，启动程序。管理后台首页显示<strong>启动自检结果</strong>（<code>FR-NET-040</code>）：网卡地址、端口绑定、证书（域名匹配与有效期），三项须全部为绿色。<br><span style="color:#5c6675;font-size:13.5px">出发前已检查过一次，此处是复核——现场若因临时更换网段而改过配置，这一步会把不一致拦下来。</span></li>
+
+  <li><b>接入点上电</b>四台 AP 依次上电，网线插入交换机。<strong>AP 这一侧的网线必须插 LAN 口，不能插 WAN 口。</strong><br>用手机扫描无线列表，确认 KCZ-EVAL-1 到 -4 四个信号全部可见。<br><span style="color:#5c6675;font-size:13.5px">AP 的全部配置（工作模式、信道、SSID、关闭 DHCP）在出发前已完成并保存备份，现场不需要重新调试，只需上电插线。</span></li>
+
+  <li><b>布置位置</b>四台 AP <strong>分散</strong>在会场四角或按座区分布，不要堆在讲台旁。<strong>架高</strong>——挂墙、放高柜或桌面立起，避开桌下、金属柜后、纸箱堆。<br><span style="color:#5c6675;font-size:13.5px">人体对 5GHz 信号吸收明显。空会议室实测很好看，坐满 50 人后后排会明显劣化，布置时要按坐满状态考虑。</span></li>
+
+  <li><b>连通验证</b>用两部手机<strong>分别连接 AP1 和 AP4</strong>（覆盖信道两端），各扫一张<strong>测试令牌</strong>令牌单，完整走完"进入 → 填写 → 提交 → 完成页"。<br>试填数据不进统计，可放心操作。这是验收现场网络是否可用的标准动作。</li>
+
+  <li><b>核对接入数</b>管理后台首页显示实时接入终端数（<code>FR-NET-041</code>）。数字与实际连接的手机数一致，说明地址分配正常。</li>
+</ol>
+
+<div class="box warn">
+  <span class="bt">现场最高频的两个故障</span>
+  <p><strong>其一：AP 网线误插 WAN 口。</strong>插 WAN 口会让这台 AP 变成路由器，自己开始分配地址，手机拿到错误的网关。症状是"WiFi 连上了但页面打不开"。</p>
+  <p style="margin-top:8px"><strong>其二：某台 AP 的 DHCP 服务没关。</strong>症状完全相同，且随机出现——只有连到这台 AP 的人受影响。</p>
+  <p style="margin-top:8px"><strong>排查方法</strong>：查看手机拿到的 IP 地址。正常应在 <code>192.168.66.50</code> 到 <code>192.168.66.250</code> 之间。若是别的网段（如 192.168.1.x），即为上述原因之一。</p>
+</div>
+
+<h3>4.3 手机连上后提示"无法上网"是正常的</h3>
+<p>测评网络本来就不通互联网，手机连上后会做联网检测并发现失败。若不处理，后果很严重：</p>
+<ul>
+  <li><strong>安卓手机的"自动切换网络"默认开启，会主动切回移动数据</strong>——此后手机再也访问不到笔记本，参评人员看到的是打不开的页面；</li>
+  <li>部分机型会弹出网络登录窗口，遮挡作答页面。</li>
+</ul>
+<p>系统已内置应对机制（<code>FR-NET-030</code>）：对手机的联网检测请求做出应答，使其判定网络正常，不再切换。<strong>现场无需引导参评人员关闭移动数据</strong>——上百人逐个设置不具可行性。</p>
+<p>若个别手机仍提示，可告知参评人员："提示不能上网是正常的，选择'仍然连接/保持连接'即可。"</p>
+
+<h3>4.4 发布测评</h3>
+<p>确认网络正常后，管理员点击"发布"。系统执行<strong>发布前置校验</strong>（<code>FR-PRJ-023</code>）：至少一个测评对象、至少一道题、时间合法、令牌已生成、试填已通过。任一不满足则禁止发布并明示原因。</p>
+<ul>
+  <li>发布后状态变为"已发布"，到达开始时间自动转为"进行中"；</li>
+  <li>发布后测评表结构与测评对象<strong>不可修改</strong>；</li>
+  <li><strong>已发布但尚无任何提交</strong>时，允许撤回发布回到草稿修改（<code>FR-PRJ-025</code>）。一旦有人提交则不可撤回。</li>
+</ul>
+
+<h3>4.5 分发令牌单与引导入会</h3>
+<ol class="steps">
+  <li><b>随机分发</b>按 WiFi 分袋的令牌单<strong>随机发放</strong>，不按座次、不按名单顺序、不按部门。同时在会场白板或大屏公布本场 WiFi 密码。</li>
+  <li><b>分排引导扫码</b><strong>不要统一号令"现在开始扫码"。</strong>按排引导，让几十台手机的连接过程自然错开到 5 分钟。<br><span style="color:#5c6675;font-size:13.5px">开场同步入会是全场无线负载最重的时刻。这个峰值靠主持流程消解，比堆硬件有效得多。</span></li>
+  <li><b>不喊统一提交</b>填完即交，自然错开提交峰值。</li>
+  <li><b>当场回收令牌单</b>散会时<strong>全部令牌单当场回收</strong>（含未使用的），集中销毁。<br><span style="color:#5c6675;font-size:13.5px">令牌单留在桌上或纸篓里是很常见的。持有一张令牌单即持有一个令牌，若有人在链路上留存了数据，就可能反查这张令牌单主人的作答。回收这一步不花钱，但缺了就是个洞。</span></li>
+</ol>
+
+<div class="box ok">
+  <span class="bt">场景二检查清单</span>
+  <ul class="check" style="margin-bottom:0">
+    <li>UPS、交换机、笔记本、四台 AP 全部上电，指示灯正常</li>
+    <li>管理后台自检三项全绿（网卡地址 / 端口 / 证书域名与有效期）</li>
+    <li>四个 WiFi 信号全部可见</li>
+    <li>AP 分散架高布置完成，网线走线固定不绊人</li>
+    <li>用测试令牌在 AP1 与 AP4 各完整走通一次</li>
+    <li>手机拿到的 IP 在 192.168.66.50–250 之间</li>
+    <li>管理后台接入终端数与实际一致</li>
+    <li>发布前置校验通过，测评已发布</li>
+    <li>WiFi 密码已公示</li>
+    <li>令牌单已按 WiFi 分袋，准备随机分发</li>
+    <li>备用令牌在手，令牌单回收袋已备好</li>
+  </ul>
+</div>
+
+<div class="scene">
+  <div class="scene-head">
+    <span class="sn">场 景 三</span>
+    <h2>测评进行中</h2>
+    <p>参评人员扫码作答，管理员在后台监控进度。本场景的关键是作答体验与异常处置。</p>
+  </div>
+</div>
+
+<h2 class="sec" id="s5"><span class="num">05</span>场景三：测评进行中</h2>
+
+<h3>5.1 参评人员的作答流程</h3>
+<ol class="steps">
+  <li><b>连接 WiFi</b>按令牌单上印的名称连接（如 KCZ-EVAL-2），输入公示的密码。</li>
+  <li><b>扫码进入</b>用手机扫描令牌单上的二维码，浏览器打开作答页面。<br>扫码失败时，打开浏览器访问令牌单上的短码入口地址，输入 8 位短码进入（<code>FR-ANS-010</code>）。<br>页面<strong>不显示任何个人信息，不要求登录、不要求输姓名</strong>。</li>
+  <li><b>阅读说明</b>页面顶部展示测评说明与评价标准。</li>
+  <li><b>逐位评价</b><strong>每页只评一位测评对象</strong>（<code>FR-FRM-033</code>），页面顶部显示"第 2/5 位　已完成 18/75"。<br>等级题为四档大按钮 + 弃权，整行可点，不需要精确点小圆点。必填题标星号。<br><strong>右上角可切换字号</strong>，三档可调（<code>FR-ANS-021</code>）。</li>
+  <li><b>提交</b>点击提交 → 系统检查必填项，未完成则高亮并滚动定位到第一处 → 弹出确认框"提交后将无法修改，确定提交？" → 确认后提交 → 显示"感谢参与"完成页。</li>
+  <li><b>提交后</b>该令牌立即失效。再次访问显示"您已完成测评，感谢参与"。<br>系统同时<strong>清除手机本地的草稿</strong>（<code>FR-ANS-016</code>），不会把内容留在手机上。</li>
+</ol>
+
+<div class="box">
+  <span class="bt">关于草稿与借用手机</span>
+  <p>填写过程中系统会在手机本地暂存草稿，<strong>按令牌分别存放</strong>（<code>FR-ANS-015</code>）。这意味着两个人先后用同一部手机作答不会互相串档；提交后草稿立即清除，也不会把上一个人的内容留给下一个人看到。</p>
+</div>
+
+<h3>5.2 作答页面要求</h3>
+<table>
+  <thead><tr><th style="width:130px">要点</th><th style="width:80px">编号</th><th>要求</th></tr></thead>
+  <tbody>
+    <tr><td>逐对象分页</td><td class="id">FR-FRM-033</td><td>每页只呈现一位测评对象的全部题目，禁止把展开后的几十上百个作答项排在同一长页</td></tr>
+    <tr><td>移动端适配</td><td class="id">NFR-USA-011</td><td>320px 竖屏正常显示；触摸目标 ≥44×44px；选项整行可点</td></tr>
+    <tr><td>字号可调</td><td class="id">FR-ANS-021</td><td>三档切换，默认不小于 17px。参评群体中年长者比例较高</td></tr>
+    <tr><td>进度指示</td><td class="id">FR-ANS-013</td><td>显示当前第几位、已完成多少项</td></tr>
+    <tr><td>必填标注</td><td class="id">FR-ANS-014</td><td>星号标注；提交时高亮并滚动定位到第一处未填</td></tr>
+    <tr><td>离线可填</td><td class="id">FR-ANS-020</td><td>页面资源全部内嵌，加载后可离线填写，仅提交需要网络</td></tr>
+    <tr><td>网络提示</td><td class="id">NFR-USA-015</td><td>网络异常时顶部提示条，不影响已填内容，恢复后自动消失</td></tr>
+  </tbody>
+</table>
+
+<h3>5.3 管理员进度监控</h3>
+<p>管理后台实时显示（<code>FR-STA-010</code>）：</p>
+<ul>
+  <li>已提交份数 / 应参加人数 / 提交率，如"已提交 168/200，提交率 84.0%"；</li>
+  <li>分批测评时各批次进度分别显示；</li>
+  <li>实时接入终端数，用于判断无线覆盖是否正常；</li>
+  <li>手动刷新按钮。</li>
+</ul>
+<div class="box crit">
+  <span class="bt">管理员看不到谁交了、谁没交</span>
+  <p>系统不记录令牌与人员的对应关系，因此管理员只知道"有 168 个令牌已被使用，还有 32 个未使用"，无从知道具体是哪 32 位没交。</p>
+  <p style="margin-top:8px">现场的通行做法是由会议主持人统一提示"还有 30 余位尚未提交，请抓紧"，而不是点名催办。<strong>这既是系统的限制，也是匿名性的必然代价。</strong></p>
+</div>
+<p>测评进行中<strong>不能查看内容统计</strong>，只能看提交进度（<code>FR-STA-020</code>）。统计结果在结果开放时间之后方可查看。</p>
+
+<h3>5.4 异常处置</h3>
+<table>
+  <thead><tr><th style="width:180px">情况</th><th>处置</th></tr></thead>
+  <tbody>
+    <tr><td>误关页面，尚未提交</td><td>重新打开原链接可继续，草稿在手机本地。若令牌单已丢失，发放<strong>备用令牌</strong></td></tr>
+    <tr><td>令牌单丢失 / 二维码扫不出</td><td>直接发放一张<strong>备用令牌</strong>（<code>FR-TKN-035</code>），不要试图"重置"原令牌<br><span style="color:#5c6675;font-size:13.5px">V1.0 曾设计令牌重置功能，本版删除：参评人员来找管理员说"我这个码不行了"，这个交互本身就暴露了人码对应关系。</span></td></tr>
+    <tr><td>手机连不上 WiFi</td><td>换连另一个 KCZ-EVAL 信号；或确认密码输入正确；或改用备用平板</td></tr>
+    <tr><td>连上但页面打不开</td><td>查看手机 IP 是否在 192.168.66.50–250 段。不在则按 4.2 的两个高频故障排查</td></tr>
+    <tr><td>手机自动切回移动数据</td><td>关闭该手机的"自动切换网络"，或重新连接 WiFi。系统已有应对机制，此情况应属个别</td></tr>
+    <tr><td>页面变慢</td><td>查看管理后台各 AP 接入数，若某台负载过重，引导部分人员改连其他 SSID</td></tr>
+    <tr><td>笔记本死机 / 断电</td><td>UPS 保障 30 分钟以上；硬件故障则启用<strong>冷备笔记本</strong>接管（<code>NFR-REL-021</code>），已提交数据最多损失 5 分钟</td></tr>
+    <tr><td>无智能手机</td><td>用电脑浏览器；或借用他人手机（不串档）；或使用考察组备用平板；或填纸质表由考察组<strong>双人密封补录</strong>（<code>FR-ANS-090</code>）</td></tr>
+    <tr><td>当天有人出差不在</td><td>时间窗放宽至当日，允许当天返回者补测；确不能到场者按纸质密封补录处理</td></tr>
+    <tr><td>超过截止时间</td><td>页面显示"测评已结束"，不可提交</td></tr>
+    <tr><td>同一令牌重复提交</td><td>第二次被拒绝，返回"您已完成测评"</td></tr>
+  </tbody>
+</table>
+
+<h3>5.5 纸质密封补录</h3>
+<p>不在场人员的处理办法，沿用纸质时代的成熟做法（<code>FR-ANS-090</code>）：</p>
+<ol>
+  <li>发放纸质测评表，本人填写后<strong>密封信封</strong>交回；</li>
+  <li>由考察组<strong>两人共同拆封</strong>，一人念、一人录入系统；</li>
+  <li>录入界面须双人确认；</li>
+  <li>补录记录与在线记录<strong>合并统计，数据中不可区分</strong>；</li>
+  <li>补录<strong>份数</strong>在统计概要与正式报告中单独标注，如"共 187 份，其中纸质补录 6 份"。</li>
+</ol>
+<p>这一环节的匿名性由工作程序保障，不由技术保障。这是可接受的——它与纸质测评的保障强度相同。</p>
+
+<div class="scene">
+  <div class="scene-head">
+    <span class="sn">场 景 四</span>
+    <h2>测评结束与归档</h2>
+    <p>测评截止，系统自动汇总。管理员查看统计、导出报告、加密封存并擦除本机数据。本场景的核心是统计口径——数字怎么算，直接决定结论能否被采信。</p>
+  </div>
+</div>
+
+<h2 class="sec" id="s6"><span class="num">06</span>场景四：结束与归档</h2>
+
+<h3>6.1 截止与汇总</h3>
+<ul>
+  <li><strong>自动截止</strong>：到达截止时间自动关闭提交通道；</li>
+  <li><strong>手动关闭</strong>：所有人提交完毕后管理员可提前关闭（<code>FR-PRJ-024</code>）；</li>
+  <li><strong>自动汇总</strong>：截止后统计秒级完成（200 人 × 200 作答项，&lt;1 秒）。</li>
+</ul>
+
+<h3 id="s61">6.2 为什么用四档等级而不是打分</h3>
+<p>V1.0 的示例测评表全部用 1–10 分制。本版改为<strong>四档等级为主</strong>，这是本次修订中影响最大的业务变更，理由需要向业务方说明清楚：</p>
+<table>
+  <thead><tr><th style="width:130px">对比维度</th><th>四档等级</th><th>1–10 分</th></tr></thead>
+  <tbody>
+    <tr><td><strong>能否进考察报告</strong></td><td>优秀 / 称职 / 基本称职 / 不称职直接对应年度考核法定等次。报告里写"张三同志优秀率 92.3%，称职以上率 100%，无不称职票"是标准表述</td><td>"张三同志平均分 8.6 分"在公文里没有制度依据，上级看不懂，也无法与其他单位横向比较</td></tr>
+    <tr><td>不同人打分是否可比</td><td>四档有明确文字锚点，理解趋同</td><td>有人从不给 10 分，有人普遍给 9 分。同一个"8 分"在不同人手里含义完全不同</td></tr>
+    <tr><td>精度是否真实</td><td>不产生虚假精度</td><td>平均分 8.6 与 8.5 的差异在统计上没有意义，但一旦印在报告上就会被当作排名依据过度解读</td></tr>
+    <tr><td>手机上好不好点</td><td>4–5 个大按钮，年长干部友好</td><td>10 个选项在手机上密集难点</td></tr>
+    <tr><td>区分度</td><td>较低。三人同为"优秀率 95%"时难以排序 → 由加权得分辅助解决（见 6.4）</td><td>较高</td></tr>
+  </tbody>
+</table>
+<p>打分制并未删除，<strong>保留用于满意度测评、专项工作评议等确实使用分数的场景</strong>。</p>
+
+<h3>6.3 统计口径（最需要业务确认的一节）</h3>
+<div class="box crit">
+  <span class="bt">为什么必须先把口径定死</span>
+  <p>同一批作答数据，分母取"应到人数"还是"实到人数"，能算出两个差异显著的"优秀率"。口径不明是测评结论最容易被质疑的地方。本系统把口径固化为系统行为，并随报告一同输出，避免事后争议。</p>
+</div>
+
+<h4>分母：默认取应参加人数</h4>
+<table>
+  <thead><tr><th style="width:130px">口径</th><th style="width:130px">分母</th><th>使用</th></tr></thead>
+  <tbody>
+    <tr><td><strong>标准口径</strong></td><td><strong>应参加人数</strong></td><td><strong>全部比率的默认口径</strong>，与组织工作通行做法一致。未提交者相当于未投票，不减小分母。<strong>正式报告用这个</strong></td></tr>
+    <tr><td>实到口径</td><td>已提交份数</td><td>界面上与标准口径并列显示供核对，<strong>不进入正式报告主表</strong>，仅在附注列出</td></tr>
+  </tbody>
+</table>
+
+<h4>弃权：单列统计，计入分母</h4>
+<table>
+  <thead><tr><th style="width:180px">情形</th><th style="width:120px">计入分子</th><th style="width:100px">计入分母</th><th>说明</th></tr></thead>
+  <tbody>
+    <tr><td>选择某一等级</td><td>对应等级</td><td>是</td><td>正常作答</td></tr>
+    <tr><td><strong>显式选择"弃权"</strong></td><td>弃权项</td><td><strong>是</strong></td><td>相当于纸质测评的"未表态"，是有效表达</td></tr>
+    <tr><td>选填题未作答</td><td>不计</td><td><strong>是</strong></td><td>视同弃权，并入弃权统计</td></tr>
+    <tr><td>整份未提交</td><td>不计</td><td>是</td><td>相当于缺席未投票</td></tr>
+  </tbody>
+</table>
+<p><strong>四档比率之和 + 弃权率 = 100%</strong>。报表须保证这个恒等式成立。</p>
+
+<h4>主要指标</h4>
+<table>
+  <thead><tr><th style="width:150px">指标</th><th>算法</th><th style="width:110px">用途</th></tr></thead>
+  <tbody>
+    <tr><td><strong>优秀率</strong></td><td>优秀票 ÷ 应参加人数</td><td>报告主指标</td></tr>
+    <tr><td><strong>称职以上率</strong></td><td>（优秀 + 称职）票 ÷ 应参加人数</td><td>报告主指标</td></tr>
+    <tr><td>基本称职率</td><td>基本称职票 ÷ 应参加人数</td><td>—</td></tr>
+    <tr><td><strong>不称职率</strong></td><td>不称职票 ÷ 应参加人数</td><td>关注指标，报表醒目呈现</td></tr>
+    <tr><td>弃权率</td><td>（弃权 + 未作答 + 未提交）÷ 应参加人数</td><td>反映参与充分度</td></tr>
+    <tr><td>提交率</td><td>已提交份数 ÷ 应参加人数</td><td>过程指标</td></tr>
+  </tbody>
+</table>
+<p>比率保留一位小数。因舍入导致合计不等于 100.0% 时在最大项上调平，并在口径说明页注明。</p>
+
+<h3>6.4 加权得分：只用于排序，不用于结论</h3>
+<p>四档制的短板是区分度低——三位测评对象同为"优秀率 95%"时无法排序。系统提供<strong>加权得分</strong>作为补充：</p>
+<ul>
+  <li>默认赋分：优秀 100 / 称职 80 / 基本称职 60 / 不称职 0，赋分可在测评表中配置；</li>
+  <li>加权得分 = Σ（各档票数 × 档位赋分）÷ 有效票数，弃权不计入分子分母；</li>
+  <li><strong>界面与报告中以次要样式呈现，标注为"辅助排序指标"</strong>，不作为结论表述。</li>
+</ul>
+<p>结论仍然写比率。加权得分只在需要内部排序时参考。</p>
+
+<h3>6.5 统计结果查看</h3>
+<table>
+  <thead><tr><th style="width:150px">统计类型</th><th style="width:80px">编号</th><th>内容</th></tr></thead>
+  <tbody>
+    <tr><td><strong>等级题主报表</strong></td><td class="id">FR-STA-011</td><td>每位测评对象、每道题的四档人数与比率，加上弃权率。这是最主要的一张表</td></tr>
+    <tr><td>加权得分辅表</td><td class="id">FR-STA-012</td><td>次要样式呈现</td></tr>
+    <tr><td>汇总矩阵</td><td class="id">FR-STA-013</td><td>测评对象 × 题目 的优秀率矩阵，一眼看出强弱项</td></tr>
+    <tr><td>打分题</td><td class="id">FR-STA-014</td><td>平均分、中位数、最高、最低、分值分布柱状图</td></tr>
+    <tr><td>单选题</td><td class="id">FR-STA-015</td><td>各选项人数与占比，饼图或横向柱状图</td></tr>
+    <tr><td>多选题</td><td class="id">FR-STA-016</td><td>各选项选中次数与占比</td></tr>
+    <tr><td>开放评语</td><td class="id">FR-STA-017</td><td>逐条匿名列出，<strong>顺序随机</strong>，格式"评语 #N"</td></tr>
+    <tr><td>分组筛选</td><td class="id">FR-STA-019</td><td>按测评对象分组标签筛选。<strong>分组内不足 3 人时不展示该分组独立统计</strong></td></tr>
+  </tbody>
+</table>
+
+<h3>6.6 导出报告</h3>
+<table>
+  <thead><tr><th style="width:150px">导出类型</th><th style="width:90px">格式</th><th>内容与用途</th></tr></thead>
+  <tbody>
+    <tr><td><strong>正式统计报告</strong></td><td>PDF</td><td>测评概况、应参加与实到人数、四档比率主表、加权得分辅表、图表、评语汇总、<strong>口径说明页</strong>、生成时间与核验编号。供考察报告引用与打印封存</td></tr>
+    <tr><td>统计数据明细</td><td>Excel</td><td>按题型分 Sheet 的逐项统计表，供二次制表</td></tr>
+    <tr><td>原始匿名数据</td><td>Excel / CSV</td><td>每份提交的原始答案，标识为"作答记录 #N"</td></tr>
+    <tr><td>加密归档包</td><td>加密压缩包</td><td>项目全量数据的加密封存，口令单独设定</td></tr>
+  </tbody>
+</table>
+<div class="box crit">
+  <span class="bt">导出数据不含任何身份信息</span>
+  <p>原始数据导出中，每条记录只标识为"作答记录 #1""作答记录 #2"，<strong>不含姓名、提交时间、IP 地址、设备信息</strong>。而且编号是<strong>导出时随机重排后现场生成的</strong>——两次导出的编号互不相同，这是刻意设计，防止通过编号顺序推断提交先后。</p>
+</div>
+
+<h3>6.7 留痕、归档与擦除</h3>
+<p>干部考察工作通常要求测评原始材料留存备查。电子化后的对应做法：</p>
+<ol class="steps">
+  <li><b>导出并打印</b>导出原始匿名数据与正式统计报告 PDF，全部打印。</li>
+  <li><b>签字封存</b>两份材料由考察组两名以上成员签字，装入密封袋，按考察材料管理规定归档。<strong>这是电子测评的纸质留痕环节，不可省略。</strong></li>
+  <li><b>加密归档</b>导出加密归档包，口令由管理员单独设定（与登录密码不同），保存至指定介质。<strong>介质与纸质材料分别保管。</strong></li>
+  <li><b>本机安全擦除</b>确认归档包已保存后，系统执行：删除项目全部记录 → 重建数据库文件 → 覆写原文件所占空间 → 校验残留（<code>FR-SYS-031</code>）。<br>擦除前须二次确认并勾选"已确认加密归档包已保存至指定介质"。<br><span style="color:#5c6675;font-size:13.5px">单纯删除后 SQLite 文件里的数据仍可被恢复工具还原。涉及干部考察材料，必须做安全擦除。</span></li>
+  <li><b>项目转为已归档</b>列表中仅保留元信息记录，作答数据已不在本机。</li>
+</ol>
+
+<div class="box ok">
+  <span class="bt">场景四检查清单</span>
+  <ul class="check" style="margin-bottom:0">
+    <li>提交率与纸质补录份数已核对确认</li>
+    <li>四档比率主表已确认，四档 + 弃权合计为 100%</li>
+    <li>正式统计报告 PDF 已导出并打印</li>
+    <li>原始匿名数据已导出并打印</li>
+    <li>两份材料已双人签字、密封袋封存</li>
+    <li>加密归档包已导出，口令已单独登记保管</li>
+    <li>归档包已确认保存至指定介质</li>
+    <li>本机已执行安全擦除并通过残留校验</li>
+    <li>令牌单已全部回收销毁</li>
+    <li>网络装备已断电、清点、装箱带离</li>
+  </ul>
+</div>
+
+<h2 class="sec" id="s7"><span class="num">07</span>非功能需求汇总</h2>
+
+<h3>7.1 匿名性保障（最高优先级）</h3>
+<div class="box crit">
+  <span class="bt">承诺边界（本版修订）</span>
+  <p>V1.0 承诺"即使管理员看数据库也无法关联"。这个承诺<strong>无法兑现，也无法验收</strong>——管理员物理持有笔记本，可以修改程序、抓取内存、读取文件残留，还可以在会场直接观察谁先交谁后交。</p>
+  <p style="margin-top:8px"><strong>本版承诺</strong>：在<strong>不修改程序、不使用取证手段</strong>的前提下，管理员通过系统界面、数据库文件、日志和全部导出文件，无法把任何一条作答记录关联到具体的人。超出这个边界的防护，由工作程序承担（双人在场、设备封存、令牌单回收）。</p>
+  <p style="margin-top:8px">这个降级不是退让，而是把承诺改成可以被验收、也可以对参评人员诚实说明的形式。</p>
+</div>
+<table>
+  <thead><tr><th style="width:170px">要求</th><th>说明</th></tr></thead>
+  <tbody>
+    <tr><td>两表物理隔离</td><td>令牌表与作答记录表之间无外键、无任何可连接字段</td></tr>
+    <tr><td><strong>切断时序通道</strong></td><td>两表主键均为随机值、均不存时间、输出顺序每次随机重排、物理写入顺序打散。<strong>这是本版最重要的修复</strong>，见下</td></tr>
+    <tr><td>令牌与人无算法关联</td><td>令牌由密码学随机数生成，不从人员信息推导</td></tr>
+    <tr><td>不记录分发轨迹</td><td>系统不存"哪个令牌发给谁"；令牌单打印前已随机重排</td></tr>
+    <tr><td>IP 与 MAC 不落地</td><td>IP 仅在内存限流窗口中使用；地址分配记录仅在内存；日志、数据库、导出文件中均不出现</td></tr>
+    <tr><td>小样本保护</td><td>分组统计不足 3 人时不展示</td></tr>
+    <tr><td>令牌单当场回收</td><td>由操作规程保障</td></tr>
+  </tbody>
+</table>
+
+<div class="box warn">
+  <span class="bt">V1.0 的关键缺陷：顺序会出卖一切</span>
+  <p>V1.0 中作答记录用自增编号（R001、R002……），令牌表记录使用时间。两张表虽然"没有外键"，但<strong>插入顺序天然一一对应</strong>——第 N 个被使用的令牌，就是第 N 条作答记录。把两张表各自按顺序排出来并排一看，人码映射完整还原。再结合管理员在会场对提交先后的直接观察，V1.0 的匿名性在实践中根本不成立。</p>
+  <p style="margin-top:8px">V1.0 提出的"时间戳模糊到分钟"解决不了问题：100 人测评通常 15 分钟内交完，分钟级精度下每分钟只有几个人；而且时序通道的根源是<strong>顺序</strong>不是<strong>精度</strong>，降低精度不改变顺序信息。本版直接取消时间存储，并同时改用随机主键、输出随机重排、物理写入打散——四项措施须同时实施，缺一无效。</p>
+</div>
+
+<h4>怎么验证匿名性达标</h4>
+<ul>
+  <li><strong>审计测试</strong>：组织 10 人以上完成一次完整测评，其中 3 名测试人员的答案事先由第三方记录。测评后由管理员在不修改程序的前提下，尝试从数据库、日志、全部导出文件中推断这 3 人的答案。准确率不高于随机猜测则达标；</li>
+  <li><strong>时序专项测试</strong>：3 名测试人员按指定顺序提交（第 1、第 5、第 9 位）。审计者获知该顺序信息后仍无法定位对应记录，方为通过；</li>
+  <li><strong>残留检查</strong>：擦除后用文件恢复工具扫描，不应恢复出任何作答内容明文。</li>
+</ul>
+<p>测试结果可在测评会前向参评人员说明，有助于缓解"大家不相信匿名"这一最现实的风险。</p>
+
+<h3>7.2 安全性</h3>
+<table>
+  <thead><tr><th style="width:150px">安全项</th><th>措施</th></tr></thead>
+  <tbody>
+    <tr><td><strong>传输加密</strong></td><td>测评端<strong>强制 HTTPS</strong>，使用<strong>考察部门自有域名</strong>的公共 CA 证书，手机端无任何告警。<strong>不接受自签名证书</strong>——上百部手机逐一点"继续访问"不具可行性，且严重损害参评人员的信任</td></tr>
+    <tr><td><strong>防篡改</strong></td><td>HTTPS 的首要目的是防止在途篡改，而不是防偷看。作答内容若能被链路上的第三方静默改写，测评结果的真实性就不存在了，而这种篡改无声无痕、事后无法发现</td></tr>
+    <tr><td>存储加密</td><td><strong>应用层字段加密</strong>：作答内容、评语、姓名、名单等敏感字段以密文存储，密钥由管理员口令派生，不落盘。主要防护场景是<strong>笔记本失窃</strong></td></tr>
+    <tr><td>管理端隔离</td><td>管理后台仅能在笔记本本机访问，<strong>测评网络中不可达</strong></td></tr>
+    <tr><td>防重复提交</td><td>令牌一次有效，提交事务内原子置位</td></tr>
+    <tr><td>口令与会话</td><td>密码强度要求、5 次失败锁定、会话超时可配置（现场监控场景可调长）</td></tr>
+    <tr><td>无线加密</td><td>WPA2-PSK，密码每场更换</td></tr>
+  </tbody>
+</table>
+
+<h3>7.3 性能</h3>
+<table>
+  <thead><tr><th style="width:170px">指标</th><th>要求</th></tr></thead>
+  <tbody>
+    <tr><td>并发作答</td><td>单批 ≥200 人同时在线，页面响应 &lt;2 秒</td></tr>
+    <tr><td>入会峰值</td><td>50 台终端在 2 分钟内完成连接、获址、页面加载</td></tr>
+    <tr><td>提交响应</td><td>&lt;1 秒</td></tr>
+    <tr><td>统计生成</td><td>&lt;1 秒（200 人 × 200 作答项）</td></tr>
+    <tr><td>容量上限</td><td>题目 ≤50 道、测评对象 ≤20 人、展开后作答项 ≤400 个</td></tr>
+    <tr><td>单批人数</td><td>≤200 人/批，批次数不限</td></tr>
+  </tbody>
+</table>
+
+<h3>7.4 便携与易用</h3>
+<ul>
+  <li><strong>绿色免安装</strong>：单个可执行文件，复制到任意目录即可运行；</li>
+  <li><strong>跨平台</strong>：Windows / macOS / Linux 三平台编译版本；</li>
+  <li><strong>离线可用</strong>：不依赖互联网，全部功能本地完成；</li>
+  <li><strong>免注册作答</strong>：扫码即答，不装 App、不注册、不输姓名；</li>
+  <li><strong>字号可调</strong>：作答页三档字号，默认不小于 17px；</li>
+  <li><strong>操作引导</strong>：管理端首次使用提供快速入门向导。</li>
+</ul>
+
+<h3>7.5 可靠性</h3>
+<ul>
+  <li><strong>UPS 保障</strong>：会场断电时维持运行 30 分钟以上；</li>
+  <li><strong>过程快照</strong>：测评中每 5 分钟自动快照至指定目录（可指向 U 盘）；</li>
+  <li><strong>冷备接管</strong>：备用笔记本预装同版本程序，主机故障时接管，5 分钟内恢复，已提交数据最多损失 5 分钟；</li>
+  <li><strong>崩溃恢复</strong>：异常退出重启后数据一致；</li>
+  <li><strong>提交幂等</strong>：重复提交不产生重复记录。</li>
+</ul>
+
+<h2 class="sec" id="s8"><span class="num">08</span>附录</h2>
+
+<h3 id="a1">8.1 标准"德能勤绩廉"测评表（内置模板）</h3>
+<table>
+  <caption>表 8-1　内置标准模板。以四档等级为主，与年度考核等次对接。假设 3 位测评对象，展开后共 3 × 17 = 51 个作答项。</caption>
+  <thead><tr><th style="width:110px">题组</th><th style="width:110px">题型</th><th>题目内容</th><th style="width:100px">关联对象</th><th class="c" style="width:60px">必填</th></tr></thead>
+  <tbody>
+    <tr><td rowspan="5">德<br>（政治品德）</td><td rowspan="12">四档等级<br><span style="font-weight:400;color:#5c6675">优秀/称职/<br>基本称职/<br>不称职/弃权</span></td><td>政治立场和党性修养</td><td rowspan="14">全部</td><td class="c" rowspan="13">是</td></tr>
+    <tr><td>道德品质和个人修养</td></tr>
+    <tr><td>公道正派和廉洁自律意识</td></tr>
+    <tr><td>大局意识和团结协作</td></tr>
+    <tr><td>宗旨意识和群众观念</td></tr>
+    <tr><td rowspan="4">能<br>（能力素质）</td><td>政策理论水平</td></tr>
+    <tr><td>组织协调能力</td></tr>
+    <tr><td>开拓创新能力</td></tr>
+    <tr><td>解决复杂问题能力</td></tr>
+    <tr><td>勤（工作作风）</td><td>工作态度和敬业精神</td></tr>
+    <tr><td>绩（工作实绩）</td><td>履职成效和工作业绩</td></tr>
+    <tr><td>廉（廉洁自律）</td><td>廉洁从政和遵纪守法</td></tr>
+    <tr><td><strong>综合评价</strong></td><td><strong>四档等级</strong></td><td><strong>总体评价</strong></td></tr>
+    <tr><td>突出优点</td><td>多选</td><td>该同志的突出优点（可多选）：担当作为 / 改革创新 / 求真务实 / 联系群众 / 专业素养 / 其他</td><td class="c">否</td></tr>
+    <tr><td>需改进方面</td><td>多选</td><td>该同志需要改进的方面（可多选）：担当精神 / 工作作风 / 协调能力 / 专业能力 / 廉洁自律 / 其他</td><td>全部</td><td class="c">否</td></tr>
+    <tr><td>评语</td><td>开放</td><td>请写下您对该同志的具体评价意见（选填，200 字以内）</td><td>全部</td><td class="c">否</td></tr>
+  </tbody>
+</table>
+<div class="box">
+  <span class="bt">规模提示</span>
+  <p>本模板每位对象 17 项。<strong>3 位对象 = 51 项，约需 6–8 分钟；8 位对象 = 136 项，约需 15–20 分钟；15 位对象 = 255 项，约需 30 分钟以上。</strong>测评对象较多时应精简题目——参评人员的耐心是有限的，题目过多会导致后半程草率作答，反而降低数据质量。</p>
+</div>
+
+<h3>8.2 装备清单与部署环境</h3>
+<table>
+  <thead><tr><th style="width:200px">项目</th><th class="c" style="width:70px">数量</th><th class="c" style="width:100px">参考单价</th><th>说明</th></tr></thead>
+  <tbody>
+    <tr><td>双频无线路由器（AP 用）</td><td class="c">4</td><td class="c">300</td><td>AX3000 级；须支持 AP 模式与手动固定信道</td></tr>
+    <tr><td>千兆交换机（8 口）</td><td class="c">1</td><td class="c">150</td><td>非网管型即可</td></tr>
+    <tr><td>网线（5m / 10m 混装）</td><td class="c">6</td><td class="c">20</td><td>备 1 根 20m</td></tr>
+    <tr><td>插排</td><td class="c">2</td><td class="c">50</td><td>带独立开关</td></tr>
+    <tr><td>小型 UPS</td><td class="c">1</td><td class="c">400</td><td>500VA</td></tr>
+    <tr><td>收纳箱</td><td class="c">1</td><td class="c">150</td><td>含配置卡与线缆分装</td></tr>
+    <tr><td style="background:var(--band)"><strong>网络装备合计</strong></td><td class="c" style="background:var(--band)">—</td><td class="c" style="background:var(--band)"><strong>约 2120 元</strong></td><td style="background:var(--band)">一次采购，长期复用</td></tr>
+    <tr><td>考察组笔记本</td><td class="c">1</td><td class="c">—</td><td>Windows 10+ / macOS 12+ / Linux，内存 ≥4GB，须有千兆有线网口</td></tr>
+    <tr><td>冷备笔记本</td><td class="c">1</td><td class="c">—</td><td>可用现有设备。<strong>作用是故障接管，不是分担负载</strong></td></tr>
+    <tr><td>备用平板</td><td class="c">1–2</td><td class="c">—</td><td>供无智能手机人员使用</td></tr>
+    <tr><td>参评人员设备</td><td class="c">—</td><td class="c">—</td><td>任意能连 WiFi 的智能手机 / 平板 / 电脑，有浏览器即可，无需预装任何软件</td></tr>
+  </tbody>
+</table>
+
+<h3>8.3 常见问题</h3>
+<table>
+  <thead><tr><th style="width:250px">问题</th><th>答复</th></tr></thead>
+  <tbody>
+    <tr><td>为什么不能用被考察单位的网络设备？</td><td>核心不是技术问题而是程序问题：由被监督方提供承载测评数据的设备，一旦结果产生争议，考察组没有任何可自证的独立证据；而且只要会场里流传一句"这网是他们自己的"，大家就会开始投安全票，结果全优、毫无区分度。装备约 2100 元一次采购长期复用，摊到每场几十元。</td></tr>
+    <tr><td>为什么不能在外网使用？</td><td>限定局域网内访问是为了保障匿名性与保密。干部考察数据走公网会带来数据泄露与被攻击的风险，且多数单位的保密规定通不过。测评本来就是线下会议场景，独立局域网完全满足需求。</td></tr>
+    <tr><td>手机提示"此 WLAN 不可上网"？</td><td>正常现象，测评网络本来就不通互联网。系统已内置应对机制，手机不会自动切回移动数据。若个别手机仍提示，选择"仍然连接"即可。</td></tr>
+    <tr><td>笔记本断电或死机会丢数据吗？</td><td>UPS 可维持 30 分钟以上；数据库使用 WAL 模式，已提交数据不会丢失；硬件故障则由冷备笔记本接管，已提交数据最多损失 5 分钟。未提交的草稿会丢失，需重新作答。</td></tr>
+    <tr><td>200 人能同时测评吗？</td><td>四台接入点可支撑单批约 200 人同时作答。超过 200 人建议分批——系统支持令牌按批开放，400 人分两批，每批约 15 分钟。会议本身通常也是分场进行的。</td></tr>
+    <tr><td>能不能多带几台笔记本分担？</td><td>不能，也没有意义。瓶颈在无线信道而不在笔记本——一台笔记本处理 200 人的提交只占用个位数的 CPU。扩容的正确做法是增加接入点。而且多台笔记本会按部门分流，每台机器的数据就成了"某几个处室的作答"，反而制造出匿名性缺口。第二台笔记本的正确用途是<strong>冷备</strong>。</td></tr>
+    <tr><td>测评对象临时变动？</td><td>发布前可随时修改。已发布但无人提交时可撤回发布。已有提交则不可修改，需关闭后复制为新项目。</td></tr>
+    <tr><td>有人当天出差不在？</td><td>时间窗可放宽至当日，允许当天返回者补测；确不能到场者填纸质表，由考察组两人共同拆封、一人念一人录。跨地远程参评不在系统范围。</td></tr>
+    <tr><td>参评人员没有智能手机？</td><td>可用电脑浏览器；或借用他人手机（草稿按令牌分开存放，不串档，提交后自动清除）；或使用考察组备用平板；或填纸质表由双人密封补录。</td></tr>
+    <tr><td>能同时进行多场测评吗？</td><td>系统支持管理多个项目，但建议同一时段只开放一个，避免参评人员混淆。</td></tr>
+    <tr><td>为什么系统要用一个域名？直接用 IP 地址不行吗？</td><td>不行。手机浏览器只信任"证书上的域名与地址栏一致"的站点，而公共机构不会为 <code>192.168.66.1</code> 这类私有 IP 签发证书。若改用自签名证书，每部手机都会弹出全屏安全警告——上百人现场逐一点"继续访问"既不现实，也会让大家对系统的可信度产生怀疑。因此需要考察部门注册一个域名（或用现有政务域名的子域），把它指向 <code>192.168.66.1</code>，再为这个域名申请正规证书。<strong>现场仍然完全离线</strong>：域名解析由笔记本自己完成，不需要连互联网。</td></tr>
+    <tr><td>证书是谁负责办的？多久办一次？</td><td>由信息化岗位办理，考察组只负责在出发前检查。<strong>多数情况下可以做到全自动、不用人管</strong>——关键看这个域名的 DNS 能否给出 API 密钥，或能否加一条一次性的委托记录；两者任一可行，续签就由办公室的机器自动完成。<strong>只有在两条路都走不通、每次都要走工单时，才建议采购一年期商业证书</strong>，把一年四次的跨部门协调降为一年一次。系统会在证书剩余 21 天时持续提醒。</td></tr>
+    <tr><td>域名续费和证书续期是一回事吗？</td><td><strong>是两件事，不能混同。</strong>证书过期，手机会弹安全警告；<strong>域名过期更致命——解析直接失效，整套系统用不了</strong>。建议把两者的续费日期设为同一天、记入同一个提醒，由信息化岗位统一管理。</td></tr>
+    <tr><td>怎么向参评人员说明匿名性？</td><td>可说明三点：一是令牌单随机发放，系统不知道哪张给了谁；二是系统不记录提交时间与顺序，无法通过先后推断；三是网络设备全部是考察组自带的，数据不经过本单位任何设备。审计测试的结果也可一并说明。</td></tr>
+  </tbody>
+</table>
+
+<h3>8.4 线下与线上流程对照</h3>
+<table>
+  <thead><tr><th style="width:110px">环节</th><th>线下</th><th>本系统</th></tr></thead>
+  <tbody>
+    <tr><td>准备</td><td>设计、排版、打印测评表</td><td>在线设计，标准模板复用</td></tr>
+    <tr><td>名单</td><td>手工整理编号</td><td>Excel 一键导入</td></tr>
+    <tr><td>发放准备</td><td>盖章、打印多份</td><td>出发前打印令牌单（A4 一人一张），按 WiFi 分袋</td></tr>
+    <tr><td>现场准备</td><td>布置票箱</td><td>组网部署 15–20 分钟，试填验证</td></tr>
+    <tr><td>分发</td><td>逐人分发纸质表</td><td>随机分发令牌单，分排引导扫码</td></tr>
+    <tr><td>作答</td><td>纸质填写、投入票箱</td><td>手机扫码在线作答、一键提交</td></tr>
+    <tr><td>统计</td><td>开箱、人工逐表计数（数小时）</td><td>系统自动汇总，秒级出结果，口径固定</td></tr>
+    <tr><td>报告</td><td>手工整理数据、制表、写报告</td><td>一键导出 PDF / Excel，含图表与口径说明</td></tr>
+    <tr><td>留痕</td><td>纸质表装箱存放</td><td>导出打印、双人签字、密封封存</td></tr>
+    <tr><td>归档</td><td>档案室长期保存</td><td>加密包保存至指定介质，本机安全擦除</td></tr>
+  </tbody>
+</table>
+
+<h3>8.5 版本历史</h3>
+<table>
+  <thead><tr><th style="width:80px">版本</th><th style="width:110px">日期</th><th>修改内容</th><th style="width:100px">编制</th></tr></thead>
+  <tbody>
+    <tr><td>V1.0</td><td>2026-08-07</td><td>初稿，按场景驱动方式组织</td><td>—</td></tr>
+    <tr><td><strong>V2.2</strong></td><td>2026-08-08</td><td>按《证书与域名方案讨论纪要》写入：FAQ 补充续签自动化条件与"域名续费≠证书续期"的区分</td><td>—</td></tr>
+    <tr><td><strong>V2.1</strong></td><td>2026-08-08</td><td>修正 HTTPS 证书方案：改为自有域名 + 外部签发 + 程序校验，删除"一键续签"表述；场景一证书检查步骤、场景二启动自检、两处检查清单、非功能需求传输加密条目相应调整；FAQ 增加域名与证书办理两问</td><td>—</td></tr>
+    <tr><td><strong>V2.0</strong></td><td>2026-08-07</td><td>评审修订稿。场景二重写为自备独立测评网络；发放机制改为一码三形态；评分制改为四档等级为主并新增统计口径说明；归档改为加密包导出 + 本机擦除；新增试填验证、字号可调、纸质密封补录、冷备接管；删除通用验证码、令牌重置、公网通道；各步骤标注版本A需求编号</td><td>—</td></tr>
+  </tbody>
+</table>
+
+<h3>8.6 文档签署</h3>
+<table class="sign">
+  <tr><td class="lbl">编制</td><td></td><td class="lbl">日期</td><td style="width:150px"></td></tr>
+  <tr><td class="lbl">审核</td><td></td><td class="lbl">日期</td><td></td></tr>
+  <tr><td class="lbl">批准</td><td></td><td class="lbl">日期</td><td></td></tr>
+</table>
+
+<footer>
+  <div class="rline"></div>
+  线上民主测评系统 · 需求分析说明书（版本B：场景驱动）· V2.2 · 2026-08-08<br>
+  本文档适用于业务确认与用户验收，须与版本A（结构化需求规格）配合使用
+</footer>
+
+</div>
+
+</body>
+</html>
