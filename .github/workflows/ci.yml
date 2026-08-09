@@ -136,3 +136,32 @@ jobs:
           go-version: "1.24"
           cache-dependency-path: eval/go.sum
       - run: go test ./internal/store/ -run SchemaMatchesDesignDoc -v
+
+  # ⑥ 浏览器端到端（LLD 11.2 的 UI-01 / UI-02 等）
+  #
+  # Go 测试守数据与不变量，这一层守"人在浏览器里真的能把流程走完"。
+  # 两者不重叠：Go 测试全绿而作答页白屏是完全可能的，开发中这一层
+  # 实测逮出过五个 Go 测试完全够不着的缺陷（见 test/e2e/README.md）。
+  e2e:
+    name: 浏览器端到端（UI-01 / UI-02）
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: eval
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.24"
+          cache-dependency-path: eval/go.sum
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      # 只装 chromium：管理端与作答端的断言都只针对 Chromium 内核，
+      # 多装 firefox/webkit 要多花几分钟而没有对应用例。
+      - name: 安装 Playwright 与 Chromium
+        run: npm i -g playwright && npx playwright install --with-deps chromium
+
+      - name: 跑端到端套件
+        run: node test/e2e/run.js
