@@ -1077,7 +1077,7 @@ Content-Type: application/json
   <tbody>
     <tr><td class="id">AT-01</td><td>时序不可还原</td><td>构造 200 份提交并记录真实顺序 → 截止并 VACUUM → 按物理顺序读回 → 计算与真实顺序的斯皮尔曼相关系数。<strong>跑 7 轮独立试验，判据为 &#124;ρ&#124; 的中位数 &lt; 0.15</strong>，另设单轮 5σ 上限（对照组自增主键为 1.000）</td></tr>
     <tr><td class="id">AT-02</td><td>无关联字段</td><td><code>PRAGMA table_info</code> 与 <code>foreign_key_list</code> 断言两表无时间列、无互相引用。<strong>CI 常驻</strong></td></tr>
-    <tr><td class="id">AT-03</td><td>输出顺序随机</td><td>同一数据集连续导出 10 次，比较记录顺序，两两之间相关系数均 &lt; 0.15</td></tr>
+    <tr><td class="id">AT-03</td><td>输出顺序随机</td><td>同一数据集连续导出 10 次，两两比较记录顺序（共 45 对）。<strong>判据为 &#124;ρ&#124; 的中位数 &lt; 0.15</strong>，另设单对 5σ ≈ 0.354 上限（顺序固定的对照组为 1.000）</td></tr>
     <tr><td class="id">AT-04</td><td>日志洁净</td><td>跑完整流程后扫描 <code>op_log</code> 与日志文件，不得出现令牌值、IP、MAC、作答内容</td></tr>
     <tr><td class="id">AT-05</td><td>租约不落盘</td><td>DHCP 分配 50 个地址后强杀进程，扫描全部文件不得出现 MAC 地址</td></tr>
     <tr><td class="id">AT-06</td><td>擦除无残留</td><td>擦除后二进制扫描数据文件，不得命中作答特征串</td></tr>
@@ -1095,6 +1095,17 @@ Content-Type: application/json
   0.674σ ≈ 0.048，7 轮同时偏高的概率可忽略；而一旦物理顺序真的反映了提交顺序
   （如误用自增主键），每一轮都会接近 1.0，中位数判据同样立刻触发。另保留单轮 5σ
   上限检查，用于捕捉极端异常。</p>
+</div>
+<div class="box">
+  <span class="bt">AT-03 判据同样由"每一对均 &lt; 0.15"改为多对中位数 <span class="tag chg">修订</span></span>
+  <p>原判据是"两两之间相关系数<strong>均</strong> &lt; 0.15"。这与 AT-01 是同一类错误，
+  且更严重：10 次导出共 <strong>45 对</strong>，n = 200 时单对自然超出 0.15 的概率约 3.4%，
+  45 对中至少一对超出的概率约 <strong>79%</strong>。蒙特卡洛实测（2000 次试验）
+  <strong>按字面判据有 80% 的构建会红</strong>，而红的时候并不代表匿名性出了问题。</p>
+  <p>改为：45 对 &#124;ρ&#124; 的<strong>中位数 &lt; 0.15</strong>（随机排列下实测均值 0.048、
+  最大 0.080），另设单对 5σ ≈ 0.354 的上限（2000 次试验中单对最大值 0.312）。
+  一旦导出顺序真的固定下来，每一对都会是 1.000，两段判据同时触发；
+  实现侧配有"顺序固定"的对照组用例守住这一点。</p>
 </div>
 
 <h3>11.2 其它关键用例</h3>

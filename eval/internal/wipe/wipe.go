@@ -15,6 +15,7 @@ import (
 	"database/sql"
 	"fmt"
 	"os"
+	"path/filepath"
 )
 
 // Run 执行擦除后处理。sample 是擦除前取下的作答密文特征串，
@@ -42,7 +43,20 @@ func Run(db *sql.DB, path string, sample [][]byte) error {
 		return fmt.Errorf("覆写后 VACUUM 失败: %w", err)
 	}
 
-	// ③ 残留校验：以二进制方式扫描数据文件，搜索擦除前记下的特征串。
+	// ③ **再截断一次 WAL**。这一步不能省，原因是 WAL 模式下 VACUUM 重建
+	// 出来的页先写进 -wal，主库文件本身直到 checkpoint 才被改写——
+	// 实测：删数据 → checkpoint → VACUUM → 覆写 → VACUUM 之后，
+	// 主库文件里作答密文与令牌值**原样还在**，只有再补一次 checkpoint
+	// 才真正消失。
+	//
+	// 少了这一步的后果不是"擦得不够干净"，而是**整个归档擦除永远失败**：
+	// 下面的残留校验读的就是主库文件，必然命中、必然硬失败，项目永远
+	// 标记不成已归档。CON-06 的收尾动作因此从来没有真正完成过。
+	if _, err := db.Exec(`PRAGMA wal_checkpoint(TRUNCATE)`); err != nil {
+		return fmt.Errorf("覆写后 WAL 截断失败: %w", err)
+	}
+
+	// ④ 残留校验：以二进制方式扫描数据文件，搜索擦除前记下的特征串。
 	// 命中即硬失败——不得在残留未清除的情况下标记为已归档。
 	if err := verifyNoResidue(path, sample); err != nil {
 		return err
@@ -79,18 +93,27 @@ func overwriteFreeSpace(db *sql.DB, targetBytes int64) error {
 	return err
 }
 
+// verifyNoResidue 扫描主库文件**与其边车文件**。
+//
+// -wal 与 -shm 必须一起扫：它们和主库文件同进同出，拷贝数据目录时会被
+// 一并带走，只扫主库等于漏掉一半的面。
 func verifyNoResidue(path string, sample [][]byte) error {
 	if len(sample) == 0 {
 		return nil
 	}
-	data, err := os.ReadFile(path)
-	if err != nil {
-		return fmt.Errorf("残留校验无法读取数据文件: %w", err)
-	}
-	for _, s := range sample {
-		if len(s) >= 16 && bytes.Contains(data, s) {
-			return fmt.Errorf("残留校验未通过：数据文件中仍能命中作答记录特征串，" +
-				"擦除不彻底，项目不得标记为已归档")
+	for _, p := range []string{path, path + "-wal", path + "-shm"} {
+		data, err := os.ReadFile(p)
+		if err != nil {
+			if os.IsNotExist(err) {
+				continue // 边车文件可能已被截断删除，属正常
+			}
+			return fmt.Errorf("残留校验无法读取 %s: %w", p, err)
+		}
+		for _, s := range sample {
+			if len(s) >= 16 && bytes.Contains(data, s) {
+				return fmt.Errorf("残留校验未通过：%s 中仍能命中作答记录特征串，"+
+					"擦除不彻底，项目不得标记为已归档", filepath.Base(p))
+			}
 		}
 	}
 	return nil

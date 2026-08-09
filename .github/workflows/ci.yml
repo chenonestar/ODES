@@ -32,8 +32,20 @@ jobs:
       - name: 时序不可还原（AT-01，含自增主键对照组）
         run: go test ./internal/store/ -run AT01 -v
 
-      - name: 口径恒等式穷举（ST-01）
-        run: go test ./internal/stats/ -run ST01 -v
+      - name: 输出顺序随机（AT-03，含固定顺序对照组）
+        run: go test ./internal/export/ -run AT03 -v
+
+      - name: 日志洁净（AT-04）
+        run: go test ./internal/service/ -run AT04 -v
+
+      - name: DHCP 租约不落盘（AT-05）
+        run: go test ./internal/netsvc/ -run AT05 -v
+
+      - name: 擦除无残留（AT-06）
+        run: go test ./internal/service/ -run AT06 -v
+
+      - name: 口径恒等式穷举（ST-01）与分母口径（ST-02）
+        run: go test ./internal/stats/ -run 'ST01|ST02' -v
 
       - name: 提交幂等（TX-01 / TX-02）
         run: go test ./internal/service/ -run 'TX01|TX02' -v

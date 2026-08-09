@@ -1,6 +1,10 @@
 package netsvc
 
 import (
+	"crypto/hmac"
+	"crypto/rand"
+	"crypto/sha256"
+	"encoding/base32"
 	"encoding/binary"
 	"fmt"
 	"net"
@@ -16,6 +20,11 @@ import (
 //   · 不记录 hostname（选项 12）。手机的主机名常含机主姓名拼音，
 //     一旦写入日志即构成身份线索。尖刺阶段曾把它打印到控制台观察，
 //     移入正式项目时已删除：本包任何路径都不得读取或输出选项 12。
+//   · **日志里也不得出现 MAC 原文**。租约不落盘只挡住了数据库那条路；
+//     现场常把程序输出重定向到文件（`eval.exe > run.log`），MAC 照样落盘，
+//     而一份「MAC ↔ IP ↔ 时间」的记录配上 Web 侧任何带时间的痕迹，
+//     就能把某次提交对应到某部手机、进而对应到人——这条旁路不需要解密。
+//     日志改打 maskMAC 产出的短标识，见下。
 
 const (
 	dhcpHeaderLen = 236
@@ -63,6 +72,30 @@ type DHCPServer struct {
 	mu     sync.Mutex
 	leases map[string]lease // key: MAC 字符串，仅内存
 	conn   net.PacketConn
+}
+
+// macKey 是进程启动时生成的随机密钥，只存在于内存、从不落盘。
+// 用它把 MAC 变成日志里的短标识：同一次运行内同一部手机稳定为同一个
+// 标识（现场排障需要"这台反复在请求"这种判断），而进程一退出，
+// 标识与 MAC 的对应关系就永久不可还原——日志留着也推不回是谁。
+var macKey = func() []byte {
+	k := make([]byte, 32)
+	if _, err := rand.Read(k); err != nil {
+		// 拿不到随机数时宁可让标识彻底无用，也不退回打印 MAC
+		return nil
+	}
+	return k
+}()
+
+// maskMAC 返回可安全写进日志的设备标识。
+func maskMAC(mac net.HardwareAddr) string {
+	if macKey == nil {
+		return "设备?"
+	}
+	h := hmac.New(sha256.New, macKey)
+	h.Write(mac)
+	return "设备" + base32.StdEncoding.WithPadding(base32.NoPadding).
+		EncodeToString(h.Sum(nil))[:6]
 }
 
 func (s *DHCPServer) logf(f string, a ...any) {
@@ -152,10 +185,10 @@ func (s *DHCPServer) handle(pkt []byte) []byte {
 	case dhcpDiscover:
 		ip := s.allocate(mac, opts[optRequestedIP])
 		if ip == nil {
-			s.logf("DHCP 地址池已耗尽，拒绝 %s", mac)
+			s.logf("DHCP 地址池已耗尽，拒绝 %s", maskMAC(mac))
 			return nil
 		}
-		s.logf("DHCP DISCOVER %s → OFFER %s", mac, ip)
+		s.logf("DHCP DISCOVER %s → OFFER %s", maskMAC(mac), ip)
 		return s.build(dhcpOffer, xid, pkt[10:12], mac, hlen, ip)
 
 	case dhcpRequest:
@@ -165,10 +198,10 @@ func (s *DHCPServer) handle(pkt []byte) []byte {
 		}
 		ip := s.allocate(mac, want)
 		if ip == nil {
-			s.logf("DHCP REQUEST %s → NAK", mac)
+			s.logf("DHCP REQUEST %s → NAK", maskMAC(mac))
 			return s.build(dhcpNak, xid, pkt[10:12], mac, hlen, net.IPv4zero)
 		}
-		s.logf("DHCP REQUEST %s → ACK %s  （当前接入 %d 台）", mac, ip, s.LeaseCount())
+		s.logf("DHCP REQUEST %s → ACK %s  （当前接入 %d 台）", maskMAC(mac), ip, s.LeaseCount())
 		return s.build(dhcpAck, xid, pkt[10:12], mac, hlen, ip)
 
 	case dhcpRelease, dhcpDecline:
