@@ -170,6 +170,7 @@ web/
   fonts/           PDF 报告字体（不入库，见该目录 README）
 tools/buildcss/    CSS 构建器（Go 程序，三平台通用）
 tools/checkfont/   报告字体自查：glyf 还是 CFF
+tools/otf2ttf/     一次性把思源宋体转成 gopdf 能用的 glyf 轮廓
 ```
 
 依赖方向：`admin / evalui → service → store / crypto / stats / anon`，反向依赖禁止。
@@ -285,9 +286,13 @@ PDF 导出给出可照做的提示并拒绝出报告，HTML / xlsx / CSV 三个�
 
 两件在实现过程中查证出来、文档里没写的事：
 
-1. **gopdf 只认 glyf 轮廓，不支持 CFF。** 而思源宋体与 Noto Serif CJK 的
-   官方 `.otf` 都是 CFF 轮廓——照 ADR-009 的字面直接放思源宋体 `.otf`
-   会加载失败。`go run ./tools/checkfont <文件>` 可当场自查是哪一种。
+1. **gopdf 只认 glyf 轮廓的单体 `.ttf`。** 不支持 CFF 轮廓，也不解析
+   `.ttc` 字体集合——而思源宋体与 Noto Serif CJK 的官方发布恰好两条都占。
+   照 ADR-009 的字面直接放思源宋体 `.otf` 会加载失败。
+   解法是转一次格式：OFL 明确允许，脚本在 `tools/otf2ttf/`，办公室机器上
+   跑一次约 2 分钟。转换后实测 GB2312 与 CJK 基本区、扩展 A 全部 100%
+   覆盖，54 个生僻姓名样本无一缺失。候选对比见 `web/fonts/README.md`。
+   `go run ./tools/checkfont <文件>` 可当场自查手上这份是哪一种。
 2. **gopdf 遇到字库里没有的字是直接丢掉**：不报错、不画方框，报告上只是
    少几个字。实测用日文字库排中文报告，"测评项目"会印成"目"、"统计报告"
    印成"告"，而拿到报告的人只会以为是打印机的问题。姓名少一个字的正式
