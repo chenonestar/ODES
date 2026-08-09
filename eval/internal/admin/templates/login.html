@@ -1,0 +1,19 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1"><title>登录 · 管理端</title>
+<style>body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;background:#fbfaf7;
+color:#1b2434;display:flex;align-items:center;justify-content:center;height:100vh;margin:0}
+.box{background:#fff;border:1px solid #ddd7cb;padding:32px 30px;width:360px}
+h1{font-size:18px;margin:0 0 6px}p.m{color:#5c6675;font-size:13px;margin:0 0 20px}
+input{width:100%;padding:10px;border:1px solid #ddd7cb;border-radius:3px;font-size:15px}
+button{width:100%;margin-top:14px;padding:11px;background:#9e2b25;color:#fff;border:none;
+border-radius:3px;font-size:15px;cursor:pointer}
+.err{background:#fdf1f0;border-left:3px solid #9e2b25;padding:9px 11px;font-size:13px;margin-bottom:14px}
+.tip{margin-top:18px;font-size:12px;color:#5c6675;border-top:1px solid #ddd7cb;padding-top:12px}
+</style></head><body><div class="box">
+<h1>管理员登录</h1><p class="m">口令同时用于解开数据加密密钥</p>
+{{if .Err}}<div class="err">{{.Err}}</div>{{end}}
+<form method="post" action="/admin/login">
+<input type="password" name="password" placeholder="管理员口令" autofocus>
+<button type="submit">登录</button></form>
+<div class="tip">口令无找回机制，遗忘则数据不可访问。建议考察组两人分别知悉。</div>
+</div></body></html>

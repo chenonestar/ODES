@@ -1,0 +1,7 @@
+data/
+snapshot/
+output/
+cert/
+config.toml
+eval
+eval.exe

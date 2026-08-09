@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="referrer" content="no-referrer">
+<title>{{.Title}}</title>
+<style>
+/* 作答端专用精简样式。不复用管理端样式表——作答页要下发到 200 部手机，
+   体积预算 <500KB（NFR-PER-014），管理端的完整样式带不进来。 */
+:root{--fs:1rem;--ink:#1b2434;--seal:#9e2b25;--line:#ddd7cb;--bg:#fbfaf7;--soft:#f3f1ec}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{font-size:17px}                        /* 默认档 ≥17px（FR-ANS-021） */
+body{margin:0;background:var(--bg);color:var(--ink);font-size:var(--fs);line-height:1.7;
+ font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif}
+header{background:#fff;border-bottom:1px solid var(--line);padding:12px 16px;
+ position:sticky;top:0;z-index:5}
+h1{font-size:1.05em;margin:0 0 4px;line-height:1.5}
+.intro{font-size:.82em;color:#5c6675;margin:0}
+.bar{display:flex;align-items:center;gap:10px;margin-top:8px;font-size:.8em;color:#5c6675}
+.bar .grow{flex:1}
+.track{height:4px;background:var(--soft);border-radius:2px;overflow:hidden;margin-top:6px}
+.track i{display:block;height:100%;background:var(--seal);transition:width .2s}
+.fs-btn{border:1px solid var(--line);background:#fff;border-radius:4px;padding:3px 9px;
+ font-size:13px;color:var(--ink);cursor:pointer}
+.fs-btn[aria-pressed=true]{background:var(--seal);color:#fff;border-color:var(--seal)}
+main{padding:14px 16px 120px;max-width:640px;margin:0 auto}
+.subject{background:#fff;border:1px solid var(--line);border-left:3px solid var(--seal);
+ padding:12px 14px;margin-bottom:14px}
+.subject b{font-size:1.1em}
+.subject span{color:#5c6675;font-size:.85em;margin-left:8px}
+.grp{margin:18px 0 8px;font-weight:600;color:var(--seal);font-size:.95em}
+.q{background:#fff;border:1px solid var(--line);padding:12px 14px;margin-bottom:12px}
+.q.miss{border-color:var(--seal);box-shadow:0 0 0 2px rgba(158,43,37,.12)}
+.qt{margin:0 0 10px;font-weight:600}
+.qt em{color:var(--seal);font-style:normal;margin-left:3px}
+.hint{font-size:.8em;color:#5c6675;margin:-6px 0 10px}
+/* 选项整行可点，触摸目标 ≥48px；已选用填充色块而非细边框——
+   老花眼下细线难以分辨（HLD 9.4） */
+label.opt{display:flex;align-items:center;gap:10px;min-height:48px;padding:6px 12px;
+ border:1px solid var(--line);border-radius:3px;margin-bottom:7px;cursor:pointer;background:#fff}
+label.opt input{width:20px;height:20px;accent-color:var(--seal);flex:none}
+label.opt.on{background:var(--seal);border-color:var(--seal);color:#fff;font-weight:600}
+label.opt.abst{color:#5c6675}
+label.opt.abst.on{background:#5c6675;border-color:#5c6675;color:#fff}
+textarea{width:100%;min-height:88px;padding:10px;border:1px solid var(--line);
+ border-radius:3px;font:inherit;font-size:.95em;resize:vertical}
+.cnt{text-align:right;font-size:.75em;color:#5c6675}
+nav{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px solid var(--line);
+ padding:10px 16px calc(10px + env(safe-area-inset-bottom));display:flex;gap:10px;z-index:6}
+nav button{flex:1;min-height:50px;border-radius:4px;font:inherit;font-size:1em;
+ font-weight:600;cursor:pointer;border:1px solid var(--line);background:#fff;color:var(--ink)}
+nav button.primary{background:var(--seal);border-color:var(--seal);color:#fff}
+nav button:disabled{opacity:.45}
+.banner{background:#b8860b;color:#fff;text-align:center;padding:7px;font-size:.85em;font-weight:600}
+.toast{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);background:rgba(27,36,52,.94);
+ color:#fff;padding:16px 22px;border-radius:6px;z-index:20;max-width:80%;text-align:center;font-size:.95em}
+.offline{background:#5c6675;color:#fff;text-align:center;padding:6px;font-size:.82em}
+.done{text-align:center;padding:64px 24px}
+.done .tick{font-size:60px;color:#2f6f4f}
+.done h2{font-size:1.2em;margin:10px 0}
+.done p{color:#5c6675;font-size:.9em}
+[hidden]{display:none !important}
+</style>
+</head>
+<body>
+
+<!-- 题目数据一次性内嵌。此后翻页、校验、进度全部本地完成，
+     直到提交才再次接触网络（ADR-001）。 -->
+<script type="application/json" id="form-data">{{.FormJSON}}</script>
+
+<div id="app">
+  <div class="banner" id="trial" hidden>试填模式 · 数据不计入统计</div>
+  <div class="offline" id="offline" hidden>当前网络不可用，已填内容不会丢失</div>
+
+  <header id="hd">
+    <h1 id="title"></h1>
+    <p class="intro" id="intro"></p>
+    <div class="bar">
+      <span id="pos"></span>
+      <span class="grow"></span>
+      <span>字号</span>
+      <button class="fs-btn" data-fs="0">小</button>
+      <button class="fs-btn" data-fs="1">中</button>
+      <button class="fs-btn" data-fs="2">大</button>
+    </div>
+    <div class="track"><i id="prog"></i></div>
+  </header>
+
+  <main id="body"></main>
+
+  <nav id="nav">
+    <button id="prev">‹ 上一位</button>
+    <button id="next" class="primary">下一位 ›</button>
+  </nav>
+</div>
+
+<div id="finish" class="done" hidden>
+  <div class="tick">&#10003;</div>
+  <h2>提交成功，感谢参与</h2>
+  <p id="finish-note">您的作答已匿名记录，无法与您的身份关联。<br>请将令牌单投入会场出口回收箱。</p>
+</div>
+
+<script>
+(function(){
+"use strict";
+var DATA = JSON.parse(document.getElementById("form-data").textContent);
+var TOKEN = DATA.token, TRIAL = DATA.trial;
+var DRAFT_KEY = "draft:" + TOKEN;      // 按令牌分 key，同设备多人先后作答不串档
+var FS_KEY = "fs";
+var A = {};                             // "qid:sid" -> 值
+var page = 0, missing = {};
+
+var $ = function(id){ return document.getElementById(id); };
+
+// ── 草稿（FR-ANS-015）────────────────────────────────────────────
+// LocalStorage 被禁用（无痕模式）时静默降级，不阻断作答。
+var LS = (function(){
+  try { localStorage.setItem("__t","1"); localStorage.removeItem("__t"); return localStorage; }
+  catch(e){ return null; }
+})();
+
+function saveDraft(){
+  if(!LS) return;
+  try { LS.setItem(DRAFT_KEY, JSON.stringify({t:Date.now(), a:A})); } catch(e){}
+}
+function loadDraft(){
+  if(!LS) return;
+  try {
+    var raw = LS.getItem(DRAFT_KEY);
+    if(raw){ var d = JSON.parse(raw); if(d && d.a) A = d.a; }
+    // 清理 24 小时前的其它草稿，避免内容长期残留在他人手机上
+    for(var i=LS.length-1;i>=0;i--){
+      var k = LS.key(i);
+      if(k && k.indexOf("draft:")===0){
+        try{ var o=JSON.parse(LS.getItem(k));
+             if(!o || !o.t || Date.now()-o.t > 864e5) LS.removeItem(k); }catch(e){ LS.removeItem(k); }
+      }
+    }
+  } catch(e){}
+}
+function clearDraft(){ if(LS){ try{ LS.removeItem(DRAFT_KEY); }catch(e){} } }
+
+// ── 字号三档（FR-ANS-021）───────────────────────────────────────
+var SIZES = ["16px","19px","22px"];
+function setFS(i){
+  document.documentElement.style.fontSize = SIZES[i];
+  if(LS){ try{ LS.setItem(FS_KEY, i); }catch(e){} }
+  [].forEach.call(document.querySelectorAll(".fs-btn"), function(b){
+    b.setAttribute("aria-pressed", b.dataset.fs === String(i));
+  });
+}
+
+// ── 渲染：按测评对象逐页（FR-FRM-033）───────────────────────────
+// 禁止把矩阵展开后的全部作答项排在单一长页上：5 位对象 × 15 题 = 75 项，
+// 手机上无法使用。
+function render(){
+  var subs = DATA.subjects, s = subs[page];
+  $("pos").textContent = "第 " + (page+1) + " / " + subs.length + " 位　已完成 " + answered() + "/" + total();
+  $("prog").style.width = (total() ? answered()*100/total() : 0) + "%";
+
+  var h = '<div class="subject"><b>' + esc(s.name) + '</b>';
+  if(s.duty) h += '<span>' + esc(s.duty) + '</span>';
+  h += '</div>';
+
+  DATA.groups.forEach(function(g){
+    var qs = g.questions.filter(function(q){ return q.subjects.indexOf(s.id) >= 0; });
+    if(!qs.length) return;
+    h += '<div class="grp">' + esc(g.title) + '</div>';
+    qs.forEach(function(q){ h += renderQ(q, s.id); });
+  });
+  $("body").innerHTML = h;
+  window.scrollTo(0,0);
+
+  $("prev").disabled = page === 0;
+  $("next").textContent = page === subs.length-1 ? "提交测评" : "下一位 ›";
+  $("next").className = "primary";
+}
+
+function renderQ(q, sid){
+  var k = q.id + ":" + sid, v = A[k];
+  var h = '<div class="q' + (missing[k] ? ' miss' : '') + '" id="q-' + cssid(k) + '">';
+  h += '<p class="qt">' + esc(q.title) + (q.required ? '<em>*</em>' : '') + '</p>';
+  if(q.hint) h += '<p class="hint">' + esc(q.hint) + '</p>';
+
+  if(q.kind === "grade"){
+    (DATA.grades).forEach(function(g,i){
+      h += optRow(k, "grade", i, g, v === i, "");
+    });
+    // 弃权是显式选择，与"漏填"区分：它是有效表达，单列统计并计入分母
+    h += optRow(k, "grade", -1, "弃权", v === -1, " abst");
+  } else if(q.kind === "single"){
+    q.options.forEach(function(o){ h += optRow(k, "opt", o.id, o.label, v === o.id, ""); });
+    h += optRow(k, "opt", "__abstain", "弃权", v === "__abstain", " abst");
+  } else if(q.kind === "multi"){
+    var arr = v || [];
+    q.options.forEach(function(o){
+      h += optRow(k, "multi", o.id, o.label, arr.indexOf(o.id) >= 0, "");
+    });
+  } else if(q.kind === "score"){
+    var lo = q.scoreMin || 1, hi = q.scoreMax || 10;
+    for(var n = lo; n <= hi; n++) h += optRow(k, "score", n, n + " 分", v === n, "");
+  } else if(q.kind === "text"){
+    var max = q.maxChars || 500, cur = v || "";
+    h += '<textarea data-k="' + k + '" maxlength="' + max + '" placeholder="' +
+         esc(q.hint || "请写下具体意见（选填）") + '">' + esc(cur) + '</textarea>';
+    h += '<div class="cnt"><span>' + cur.length + '</span>/' + max + '</div>';
+  }
+  return h + '</div>';
+}
+
+function optRow(k, type, val, label, on, extra){
+  var input = type === "multi" ? "checkbox" : "radio";
+  return '<label class="opt' + extra + (on ? ' on' : '') + '" data-k="' + k +
+    '" data-t="' + type + '" data-v="' + String(val) + '">' +
+    '<input type="' + input + '" name="' + cssid(k) + '"' + (on ? ' checked' : '') + '>' +
+    '<span>' + esc(label) + '</span></label>';
+}
+
+// ── 交互 ────────────────────────────────────────────────────────
+document.addEventListener("click", function(e){
+  var fs = e.target.closest && e.target.closest(".fs-btn");
+  if(fs){ setFS(+fs.dataset.fs); return; }
+
+  var lab = e.target.closest && e.target.closest("label.opt");
+  if(!lab) return;
+  e.preventDefault();
+  var k = lab.dataset.k, t = lab.dataset.t, raw = lab.dataset.v;
+
+  if(t === "multi"){
+    var arr = A[k] || [];
+    var i = arr.indexOf(raw);
+    if(i >= 0) arr.splice(i,1); else arr.push(raw);
+    A[k] = arr.length ? arr : undefined;
+  } else if(t === "grade" || t === "score"){
+    A[k] = (A[k] === +raw) ? undefined : +raw;   // 再点一次可取消
+  } else {
+    A[k] = (A[k] === raw) ? undefined : raw;
+  }
+  delete missing[k];
+  saveDraft();
+  render();
+});
+
+document.addEventListener("input", function(e){
+  if(e.target.tagName !== "TEXTAREA") return;
+  var k = e.target.dataset.k;
+  A[k] = e.target.value || undefined;
+  var c = e.target.parentNode.querySelector(".cnt span");
+  if(c) c.textContent = e.target.value.length;
+  clearTimeout(window.__dt);
+  window.__dt = setTimeout(saveDraft, 500);       // 防抖 500ms
+});
+
+$("prev").onclick = function(){ if(page > 0){ page--; saveDraft(); render(); } };
+
+$("next").onclick = function(){
+  var miss = missOn(page);
+  if(miss.length){
+    miss.forEach(function(k){ missing[k] = 1; });
+    render();
+    var el = document.getElementById("q-" + cssid(miss[0]));
+    if(el) el.scrollIntoView({block:"center", behavior:"smooth"});
+    toast("本页有必填项未完成，已为您定位到第一处");
+    return;
+  }
+  if(page < DATA.subjects.length - 1){ page++; saveDraft(); render(); return; }
+  if(!confirm("提交后将无法修改，确定提交？")) return;   // FR-ANS-017
+  submit();
+};
+
+// ── 提交 ────────────────────────────────────────────────────────
+function submit(){
+  var items = [];
+  DATA.groups.forEach(function(g){
+    g.questions.forEach(function(q){
+      q.subjects.forEach(function(sid){
+        var k = q.id + ":" + sid, v = A[k];
+        if(v === undefined || v === null || v === "") return;
+        var it = {q:q.id, s:sid};
+        if(q.kind === "grade") it.grade = v;
+        else if(q.kind === "score") it.score = v;
+        else if(q.kind === "multi") it.opts = v;
+        else if(q.kind === "single") it.opt = v;
+        else it.text = v;
+        items.push(it);
+      });
+    });
+  });
+
+  $("next").disabled = true;
+  toast("正在提交…");
+  fetch(DATA.submitURL, {
+    method:"POST", headers:{"Content-Type":"application/json"},
+    body: JSON.stringify({v:1, items:items})
+  }).then(function(r){ return r.json().then(function(j){ return {s:r.status, j:j}; }); })
+    .then(function(o){
+      untoast();
+      $("next").disabled = false;
+      if(o.j && o.j.ok){
+        clearDraft();                              // 提交成功立即清除（FR-ANS-016）
+        $("app").hidden = true;
+        $("finish").hidden = false;
+        if(TRIAL) $("finish-note").innerHTML = "这是<b>试填模式</b>，本次数据不计入统计。";
+        window.scrollTo(0,0);
+        return;
+      }
+      if(o.j && o.j.missing && o.j.missing.length){
+        o.j.missing.forEach(function(k){ missing[k] = 1; });
+        jumpTo(o.j.missing[0]);
+      }
+      toast((o.j && o.j.msg) || "提交失败，请重试", 3000);
+    })
+    .catch(function(){
+      untoast();
+      $("next").disabled = false;
+      // 提交失败保留草稿并支持重试（FR-ANS-020）
+      toast("提交失败，请检查是否已连上测评 WiFi，然后重试。已填内容已保留。", 4000);
+    });
+}
+
+function jumpTo(k){
+  for(var i=0;i<DATA.subjects.length;i++){
+    if(k.split(":")[1] === DATA.subjects[i].id){ page = i; break; }
+  }
+  render();
+  var el = document.getElementById("q-" + cssid(k));
+  if(el) el.scrollIntoView({block:"center"});
+}
+
+// ── 校验与进度 ──────────────────────────────────────────────────
+function missOn(pi){
+  var sid = DATA.subjects[pi].id, out = [];
+  DATA.groups.forEach(function(g){
+    g.questions.forEach(function(q){
+      if(!q.required || q.subjects.indexOf(sid) < 0) return;
+      var k = q.id + ":" + sid, v = A[k];
+      if(v === undefined || v === null || v === "" || (Array.isArray(v) && !v.length)) out.push(k);
+    });
+  });
+  return out;
+}
+function total(){
+  var n = 0;
+  DATA.groups.forEach(function(g){ g.questions.forEach(function(q){ n += q.subjects.length; }); });
+  return n;
+}
+function answered(){
+  var n = 0;
+  for(var k in A){ var v = A[k];
+    if(v !== undefined && v !== null && v !== "" && !(Array.isArray(v) && !v.length)) n++; }
+  return n;
+}
+
+// ── 工具 ────────────────────────────────────────────────────────
+function esc(s){ return String(s == null ? "" : s).replace(/[&<>"']/g, function(c){
+  return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }); }
+function cssid(s){ return s.replace(/[^A-Za-z0-9_-]/g, "_"); }
+function toast(m, ms){
+  untoast();
+  var d = document.createElement("div");
+  d.className = "toast"; d.id = "toast"; d.textContent = m;
+  document.body.appendChild(d);
+  if(ms) setTimeout(untoast, ms);
+}
+function untoast(){ var t = $("toast"); if(t) t.remove(); }
+
+// 网络中断提示条，不影响已填内容，恢复后自动消失（NFR-USA-015）
+window.addEventListener("offline", function(){ $("offline").hidden = false; });
+window.addEventListener("online",  function(){ $("offline").hidden = true; });
+
+// ── 启动 ────────────────────────────────────────────────────────
+$("title").textContent = DATA.title;
+$("intro").textContent = DATA.intro || "";
+if(TRIAL) $("trial").hidden = false;
+loadDraft();
+var savedFS = LS && LS.getItem(FS_KEY);
+setFS(savedFS === null || savedFS === undefined ? 1 : +savedFS);
+render();
+})();
+</script>
+</body>
+</html>

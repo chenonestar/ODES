@@ -1,0 +1,82 @@
+{{template "head" .}}
+<h1>{{.P.Name}} <span class="tag t-{{.P.Status}}">{{.P.Status.Label}}</span></h1>
+<p class="muted">{{date .P.StartAt}} 至 {{date .P.EndAt}}　·　结果开放 {{date .P.ResultOpenAt}}</p>
+
+<div class="kpi">
+<div><span class="muted">应参加人数</span><b>{{.P.ExpectedCount}}</b></div>
+<div><span class="muted">已提交</span><b>{{.Submitted}}</b></div>
+<div><span class="muted">令牌 / 已用</span><b>{{.Tokens}} / {{.Used}}</b></div>
+<div><span class="muted">展开作答项</span><b>{{.Items}}</b></div>
+<div><span class="muted">纸质补录</span><b>{{.P.PaperEntryCount}}</b></div>
+</div>
+
+<h2>发布前置校验</h2>
+<div class="card">
+{{range .Checks}}<div class="chk">{{if .OK}}<span class="y">✓</span>{{else}}<span class="n">✗</span>{{end}}
+<code>{{.Code}}</code> {{.Msg}}</div>{{end}}
+</div>
+
+<h2>操作</h2>
+<div class="card">
+<form method="post" action="/admin/projects/{{hex .P.ID}}/tokens" class="row">
+  <span>生成令牌　数量</span><input name="count" size="5" value="{{.P.ExpectedCount}}">
+  <span>批次</span><input name="batches" size="3" value="1">
+  <button class="btn">生成（含 10% 备用 + 3 个试填）</button>
+</form>
+<div class="row">
+  <a class="btn" href="/admin/projects/{{hex .P.ID}}/print">打印令牌单</a>
+  <a class="btn" href="/admin/projects/{{hex .P.ID}}/trial">试填验证</a>
+  <a class="btn" href="/admin/projects/{{hex .P.ID}}/paper">纸质密封补录</a>
+  <a class="btn" href="/admin/projects/{{hex .P.ID}}/stats">查看统计</a>
+</div>
+<div class="row">
+  {{if eq .P.Status.Label "草稿"}}
+  <form method="post" action="/admin/projects/{{hex .P.ID}}/status">
+    <input type="hidden" name="to" value="published">
+    <button class="btn primary">发布测评</button></form>
+  {{end}}
+  {{if or (eq .P.Status.Label "进行中") (eq .P.Status.Label "已发布")}}
+  <form method="post" action="/admin/projects/{{hex .P.ID}}/status"
+        onsubmit="return confirm('截止后将执行 WAL 截断与 VACUUM 重建（匿名化必需步骤），确认？')">
+    <input type="hidden" name="to" value="closed">
+    <button class="btn danger">手动截止</button></form>
+  {{end}}
+  {{if eq .P.Status.Label "已截止"}}
+  <a class="btn" href="/admin/projects/{{hex .P.ID}}/export">统计报告</a>
+  <a class="btn" href="/admin/projects/{{hex .P.ID}}/export?kind=csv">明细 CSV</a>
+  <a class="btn" href="/admin/projects/{{hex .P.ID}}/export?kind=raw">原始匿名数据</a>
+  {{end}}
+</div>
+</div>
+
+{{if eq .P.Status.Label "已截止"}}
+<h2>归档与安全擦除</h2>
+<div class="card warn">
+<p>归档 = 导出加密包 + <b>本机数据擦除</b>。擦除不可逆，请先下载归档包并确认已保存至指定介质。</p>
+<div class="row">
+  <input id="apass" type="password" placeholder="归档口令（须与登录口令不同，≥8 位）" size="34">
+  <button class="btn" onclick="dl()">下载加密归档包</button>
+</div>
+<form method="post" action="/admin/projects/{{hex .P.ID}}/archive" class="row"
+      onsubmit="return confirm('本机数据将被永久擦除，无法恢复。确认继续？')">
+  <input type="hidden" name="pass" id="apass2">
+  <label><input type="checkbox" name="saved"> 已确认加密归档包已保存至指定介质</label>
+  <input name="sha8" placeholder="包 SHA-256 前 8 位" size="16">
+  <button class="btn danger" onclick="document.getElementById('apass2').value=document.getElementById('apass').value">
+    执行归档并擦除</button>
+</form>
+<p class="muted">擦除覆盖数据库文件内部残留。SSD 的磨损均衡与 TRIM 可能在物理介质上
+保留旧页面副本，应用层无法控制——更高密级要求须依靠介质级措施。</p>
+</div>
+<script>function dl(){var p=document.getElementById('apass').value;
+if(p.length<8){alert('归档口令至少 8 位');return;}
+location.href='/admin/projects/{{hex .P.ID}}/export?kind=archive&pass='+encodeURIComponent(p);}</script>
+{{end}}
+
+<h2>操作日志</h2>
+<table><tr><th class="c">时间</th><th class="c">动作</th><th class="c">结果</th><th>详情</th></tr>
+{{range .Logs}}<tr><td class="c">{{.CreatedAt}}</td><td class="c"><code>{{.Action}}</code></td>
+<td class="c">{{.Result}}</td><td>{{.Detail}}</td></tr>
+{{else}}<tr><td colspan="4" class="muted">暂无</td></tr>{{end}}</table>
+<p class="muted">日志不记录任何令牌值、IP 地址或作答内容。</p>
+{{template "foot" .}}

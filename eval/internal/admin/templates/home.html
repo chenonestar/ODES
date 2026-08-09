@@ -1,0 +1,27 @@
+{{template "head" .}}
+<h1>测评项目</h1>
+<p class="muted">单管理员模式。测评结束后请执行「导出加密归档包 + 本机安全擦除」。</p>
+<table>
+<tr><th>名称</th><th class="c">状态</th><th class="c">提交 / 应参加</th><th class="c">令牌</th>
+<th class="c">截止时间</th><th class="c">操作</th></tr>
+{{range .Rows}}
+<tr><td><a href="/admin/projects/{{hex .P.ID}}">{{.P.Name}}</a></td>
+<td class="c"><span class="tag t-{{.P.Status}}">{{.P.Status.Label}}</span></td>
+<td class="c">{{.Submitted}} / {{.P.ExpectedCount}}</td>
+<td class="c">{{.Tokens}}</td>
+<td class="c">{{date .P.EndAt}}</td>
+<td class="c"><a href="/admin/projects/{{hex .P.ID}}">打开</a></td></tr>
+{{else}}
+<tr><td colspan="6" class="muted">暂无项目。用 <code>-seed</code> 参数启动可生成一份演示数据。</td></tr>
+{{end}}
+</table>
+{{if .Archives}}
+<h2>已归档项目</h2>
+<p class="muted">本机数据已擦除，仅保留元信息用于列表展示与核验。</p>
+<table><tr><th>名称</th><th class="c">应参加</th><th class="c">提交</th>
+<th class="c">核验编号</th><th class="c">归档时间</th></tr>
+{{range .Archives}}<tr><td>{{.Name}}</td><td class="c">{{.Expected}}</td>
+<td class="c">{{.Submitted}}</td><td class="c"><code>{{.VerifyCode}}</code></td>
+<td class="c">{{.ArchivedAt}}</td></tr>{{end}}</table>
+{{end}}
+{{template "foot" .}}

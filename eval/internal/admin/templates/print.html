@@ -1,0 +1,42 @@
+{{template "head" .}}
+<h1>{{.P.Name}} · 令牌单</h1>
+<div class="card">
+共 <b>{{len .Sheets}}</b> 张，已按 SSID 分组。<b>令牌集合在生成与打印前均已随机重排</b>，
+打印顺序与名单顺序、生成顺序均无关。<br>
+令牌单上不含任何人员姓名、编号或序号。分发时请随机发放，不按座次、不按名单顺序。
+</div>
+<div class="row"><button class="btn primary" onclick="window.print()">打印</button>
+<a class="btn" href="/admin/projects/{{hex .P.ID}}">返回项目</a></div>
+<style>
+.sheet{border:1px solid var(--line);background:#fff;padding:26px 30px;margin:16px 0;
+page-break-after:always;text-align:center}
+.sheet h3{font-size:17px;margin:0 0 4px}
+.sheet .ssid{font-size:26px;font-weight:700;letter-spacing:.06em;margin:14px 0 2px}
+.sheet .code{font-size:38px;font-weight:700;letter-spacing:.12em;border:1px solid var(--line);
+display:inline-block;padding:10px 26px;margin:10px 0}
+.sheet .url{font-size:11px;color:var(--slate);word-break:break-all;margin-top:8px}
+.sheet .note{text-align:left;font-size:12.5px;color:var(--slate);border-top:1px solid var(--line);
+margin-top:16px;padding-top:10px}
+.qrbox{border:1px dashed var(--line);padding:26px;margin:12px auto;max-width:260px;
+color:var(--slate);font-size:12px}
+@media print{header,.card,.row,.btn{display:none}.sheet{border:none}}
+</style>
+{{range .Sheets}}
+<div class="sheet">
+<h3>{{$.P.Name}}</h3>
+<div class="muted">第一步　连接无线网络</div>
+<div class="ssid">{{.SSID}}</div>
+<div class="muted">网络密码：现场公布</div>
+<div class="muted" style="margin-top:16px">第二步　扫描二维码或输入下方编号</div>
+<div class="qrbox">二维码占位<br><span style="font-size:11px">（本地二维码生成尚未实现，见 README）</span></div>
+<div class="code">{{.Code}}</div>
+<div class="url">{{.URL}}</div>
+<div class="note">
+· 本单一人一份，仅可提交一次，提交后自动失效<br>
+· 手机提示"无法上网"属正常现象，选择"仍然连接"即可<br>
+· 扫码不成功？浏览器打开 {{$.Entry}} 输入上方编号<br>
+· 填写完毕请将本单投入会场出口回收箱
+</div>
+</div>
+{{end}}
+{{template "foot" .}}
