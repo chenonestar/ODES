@@ -6,3 +6,4 @@ config.toml
 eval
 eval.exe
 tools/.tailwindcss
+tools/.tailwindcss.exe

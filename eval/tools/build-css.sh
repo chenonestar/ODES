@@ -5,27 +5,18 @@
 # 拿到代码直接 go run 即可，不需要任何工具链。
 #
 # 全程零 Node、零 npm、零联网：
-#   · Tailwind 用官方 standalone CLI（自包含二进制，仓库内 xz 压缩提交）
+#   · Tailwind 用官方 standalone CLI（自包含二进制，锁版本 + 校验和后按需取回）
 #   · daisyUI 5 以纯 CSS 分发，vendored 在 web/vendor/
 set -e
 cd "$(dirname "$0")/.."
 
 CLI=tools/.tailwindcss
-case "$(uname -s)" in
-  Linux)  PACK=tools/tailwindcss-linux-x64.xz ;;
-  Darwin) PACK=tools/tailwindcss-macos-arm64.xz ;;
-  *)      PACK=tools/tailwindcss-windows-x64.exe.xz ;;
-esac
+[ -f "$CLI.exe" ] && CLI="$CLI.exe"
 
+# Tailwind CLI 不入库：锁版本 + 校验 SHA-256 后按需取回（见 fetch-tailwind.sh）
 if [ ! -x "$CLI" ]; then
-  if [ ! -f "$PACK" ]; then
-    echo "缺少 $PACK。" >&2
-    echo "该平台的 Tailwind CLI 尚未入库，请见 tools/README.md 的取用说明。" >&2
-    exit 1
-  fi
-  echo "解压 $PACK …"
-  xz -dc "$PACK" > "$CLI"
-  chmod +x "$CLI"
+  sh tools/fetch-tailwind.sh
+  [ -f tools/.tailwindcss.exe ] && CLI=tools/.tailwindcss.exe || CLI=tools/.tailwindcss
 fi
 
 echo "构建管理端 CSS（Tailwind + 完整 daisyUI）…"
