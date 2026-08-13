@@ -90,12 +90,47 @@ jobs:
         with:
           go-version: "1.24"
           cache-dependency-path: eval/go.sum
-      - name: CGO_ENABLED=0 构建
+      # 先整包编一遍，确认所有包在该平台下都编得过（含测试用不到的分支）
+      - name: CGO_ENABLED=0 全包构建
         env:
           CGO_ENABLED: "0"
           GOOS: ${{ matrix.goos }}
           GOARCH: ${{ matrix.goarch }}
         run: go build -o /dev/null ./...
+
+      # 再单独产出可执行文件。
+      #
+      # -trimpath 去掉构建机的绝对路径，-buildvcs=false 不把仓库信息写进
+      # 二进制：这个程序要拷到考察笔记本上运行，构建机的目录结构与提交号
+      # 都不该跟着走。
+      #
+      # -s -w 去掉符号表与调试信息。字体已经占了 30MB，符号表再加十几兆
+      # 没有意义——现场是 U 盘拷贝，体积就是拷贝时间。
+      - name: 产出可执行文件
+        env:
+          CGO_ENABLED: "0"
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+        run: |
+          BIN=eval
+          if [ "${{ matrix.goos }}" = "windows" ]; then BIN=eval.exe; fi
+          mkdir -p dist
+          go build -trimpath -buildvcs=false -ldflags="-s -w" -o "dist/$BIN" ./cmd/eval
+          ls -lh "dist/$BIN"
+
+      # 一并带上现场需要的配套文件，免得拿到 exe 还要回仓库翻配置样例
+      - name: 打包现场文件
+        run: |
+          cp config.example.toml dist/ 2>/dev/null || true
+          cp README.md dist/ 2>/dev/null || true
+
+      - name: 上传构建产物
+        uses: actions/upload-artifact@v4
+        with:
+          name: eval-${{ matrix.goos }}-${{ matrix.goarch }}
+          path: eval/dist/
+          retention-days: 30
+          if-no-files-found: error
 
   # ④ 生成物是否最新
   #
