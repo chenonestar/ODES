@@ -175,7 +175,7 @@ node test/e2e/run.js designer   # 只跑某一个
 |---|---|
 | `test` | 匿名性审计 AT-01~AT-06、口径 ST-01/ST-02、事务原子性 TX-01/02、分层依赖（arch），再跑一遍全量 |
 | `vet` | `go vet ./...` 与 `go test -race ./...` |
-| `build` | 四平台交叉编译（`CGO_ENABLED=0`，CON-07），并把可执行文件上传为 artifact |
+| `build` | 四平台交叉编译（`CGO_ENABLED=0`，CON-07）；仅 Windows 版上传为 artifact |
 | `generated` | `go generate ./...` 后 `git diff --quiet`，防止 sqlc/templ 生成物与源文件脱节 |
 | `schema` | 迁移脚本与根目录设计文档的 schema 逐字节比对 |
 | `e2e` | 四个浏览器套件（UI-01 / UI-02 与三条主流程） |
@@ -184,20 +184,20 @@ node test/e2e/run.js designer   # 只跑某一个
 
 ## 现场部署
 
-### 拿现成的可执行文件
+### 拿现成的 eval.exe
 
-每次 CI 跑完都会产出四个平台的可执行文件，在 GitHub 的 Actions 页面上
-对应那次运行的 **Artifacts** 区下载：
+每次 CI 跑完在 GitHub 的 Actions 页面上、对应那次运行的 **Artifacts** 区
+下载 `eval-windows-amd64`，内含 `eval.exe` + `config.example.toml` +
+`README.md`，保留 30 天。
 
-| 产物名 | 内容 |
-|---|---|
-| `eval-windows-amd64` | `eval.exe` + `config.example.toml` + `README.md` |
-| `eval-linux-amd64` | 同上，`eval` |
-| `eval-darwin-arm64` / `eval-darwin-amd64` | 同上 |
+约 **49 MB**——其中 30MB 是内嵌的中文字库（PDF 报告用），这正是 LLD 13.1
+的判断："二进制是用 U 盘拷到一台笔记本、一年用数次的东西，15MB 与 40MB
+在操作上无差别"。
 
-保留 30 天。约 **49 MB**——其中 30MB 是内嵌的中文字库（PDF 报告用），
-这正是 LLD 13.1 的判断："二进制是用 U 盘拷到一台笔记本、一年用数次的
-东西，15MB 与 40MB 在操作上无差别"。
+**只产 Windows 版**，因为现场用的就是 Windows 笔记本。但 CI 里
+darwin/linux 的**编译校验照旧跑**——LLD A.1 把三平台交叉编译列为强制检查
+（CON-07），那是在验证"没有混进 CGO 依赖"，与要不要分发产物是两件事。
+需要别的平台自己按下面的命令编即可。
 
 ### 自己编
 

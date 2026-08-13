@@ -100,34 +100,33 @@ jobs:
 
       # 再单独产出可执行文件。
       #
-      # -trimpath 去掉构建机的绝对路径，-buildvcs=false 不把仓库信息写进
-      # 二进制：这个程序要拷到考察笔记本上运行，构建机的目录结构与提交号
-      # 都不该跟着走。
+      # **只产 Windows 版**：现场用的就是 Windows 笔记本，其余平台没有
+      # 分发需求。上面那步的全平台编译照旧——LLD A.1 把三平台交叉编译
+      # 列为强制检查（CON-07），那是验证"没有混进 CGO 依赖"，与要不要
+      # 分发产物是两件事，不能因为只发 Windows 就把它砍掉。
       #
-      # -s -w 去掉符号表与调试信息。字体已经占了 30MB，符号表再加十几兆
-      # 没有意义——现场是 U 盘拷贝，体积就是拷贝时间。
-      - name: 产出可执行文件
+      # -trimpath / -buildvcs=false 去掉构建机的绝对路径与仓库信息：
+      # 程序要拷到考察笔记本上运行，这些不该跟着走。
+      # -s -w 去掉符号表与调试信息——字体已占 30MB，现场是 U 盘拷贝，
+      # 体积就是拷贝时间。
+      - name: 产出 eval.exe
+        if: matrix.goos == 'windows'
         env:
           CGO_ENABLED: "0"
-          GOOS: ${{ matrix.goos }}
-          GOARCH: ${{ matrix.goarch }}
+          GOOS: windows
+          GOARCH: amd64
         run: |
-          BIN=eval
-          if [ "${{ matrix.goos }}" = "windows" ]; then BIN=eval.exe; fi
           mkdir -p dist
-          go build -trimpath -buildvcs=false -ldflags="-s -w" -o "dist/$BIN" ./cmd/eval
-          ls -lh "dist/$BIN"
+          go build -trimpath -buildvcs=false -ldflags="-s -w" -o dist/eval.exe ./cmd/eval
+          cp config.example.toml dist/
+          cp README.md dist/
+          ls -lh dist/
 
-      # 一并带上现场需要的配套文件，免得拿到 exe 还要回仓库翻配置样例
-      - name: 打包现场文件
-        run: |
-          cp config.example.toml dist/ 2>/dev/null || true
-          cp README.md dist/ 2>/dev/null || true
-
-      - name: 上传构建产物
+      - name: 上传 eval.exe
+        if: matrix.goos == 'windows'
         uses: actions/upload-artifact@v4
         with:
-          name: eval-${{ matrix.goos }}-${{ matrix.goarch }}
+          name: eval-windows-amd64
           path: eval/dist/
           retention-days: 30
           if-no-files-found: error
